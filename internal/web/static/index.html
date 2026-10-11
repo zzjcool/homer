@@ -92,6 +92,9 @@ button.danger-btn:hover { background: var(--danger); color: #fff; border-color: 
 
 .view-body { max-width: 720px; max-height: 65vh; overflow: auto; }
 .view-adapter { margin: 10px 0 4px; font-weight: 650; }
+.view-adapter-actions { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; flex: none; }
+.view-adapter-actions button.small-btn { min-height: 26px; padding: 0 8px; }
+.view-adapter-disabled-badge { border: 1px solid var(--danger); border-radius: 99px; color: var(--danger); padding: 1px 6px; white-space: nowrap; }
 .view-cat { margin: 4px 0 2px 10px; color: var(--ink-dim); display: flex; gap: 8px; align-items: baseline; }
 .view-folder > .view-cat { margin-left: 0; }
 button.view-toggle { background: none; border: none; color: var(--ink); cursor: pointer; padding: 2px 0; font: inherit; text-align: left; }
@@ -226,7 +229,8 @@ dialog { border: 1px solid var(--line); border-radius: 4px; padding: 20px; max-w
 .choice-item input { width: auto; min-height: 0; margin-top: 3px; }
 .choice-item .choice-copy { display: grid; gap: 2px; }
 .choice-item .choice-id { font-weight: 650; }
-.choice-item.disabled { opacity: .6; cursor: default; }
+.choice-item.disabled { opacity: .55; cursor: not-allowed; background: var(--bg-sink); }
+.choice-item.disabled input { cursor: not-allowed; }
 .choice-tools { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .resolution-choice-row { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 0 10px 8px 40px; font-size: var(--fs-small); }
 .resolution-choice-row label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
@@ -2059,6 +2063,14 @@ $("btn-confirm-ok").addEventListener("click", ev => {
   const action = app.pendingAction;
   if (!action) return;
   const okBtn = $("btn-confirm-ok");
+  if (action.kind === "agent-adapter-override") {
+    okBtn.disabled = true; okBtn.textContent = "处理中…";
+    $("dlg-confirm").returnValue = "confirm";
+    $("dlg-confirm").close("confirm");
+    app.pendingAction = null;
+    void saveAgentAdapterOverride(action);
+    return;
+  }
   if (action.kind === "ssh-key") {
     const githubUser = ($("ssh-user") && $("ssh-user").value || "").trim();
     okBtn.disabled = true; okBtn.textContent = "处理中…";
@@ -3355,15 +3367,69 @@ function pairConflictRuns(rows) {
   return out;
 }
 
+function confirmAgentAdapterOverride(agent, adapterID, disabled, displayName) {
+  const verb = disabled ? "停用" : "启用";
+  $("confirm-title").textContent = "确认" + verb + "适配器「" + displayName + "」";
+  $("confirm-desc").textContent = disabled
+    ? "停用后这台机器不再同步该适配器，本地文件保留。"
+    : "启用则立即恢复该适配器同步。";
+  $("confirm-note").textContent = "仅影响这台机器，不会修改其他机器。";
+  $("confirm-choices").replaceChildren();
+  $("confirm-choices").classList.add("hidden");
+  clear($("confirm-resolutions"));
+  $("confirm-resolutions").classList.add("hidden");
+  clearDispatchUnlocks();
+  $("dispatch-unlocks").classList.add("hidden");
+  $("confirm-err").textContent = "";
+  $("btn-confirm-back").classList.add("hidden");
+  $("btn-confirm-alt").classList.add("hidden");
+  $("btn-confirm-alt").textContent = "";
+  $("btn-confirm-ok").disabled = false;
+  $("btn-confirm-ok").textContent = "确认" + verb;
+  $("btn-confirm-cancel").textContent = "取消";
+  app.pendingAction = { kind: "agent-adapter-override", agent: agent, adapterId: adapterID, disabled: disabled };
+  app.scopeAgent = agent;
+  app.scopeDirection = "";
+  app.scopeStep = "choose";
+  app.scopeLoading = false;
+  app.scopeStreamFailed = false;
+  if (!$("dlg-confirm").open) $("dlg-confirm").showModal();
+}
+async function saveAgentAdapterOverride(action) {
+  const path = "/api/agents/" + encodeURIComponent(action.agent.agentId)
+    + "/adapters/" + encodeURIComponent(action.adapterId);
+  try {
+    await api(path, { method: "POST", body: { disabled: action.disabled } });
+    toast(action.disabled ? "已停用适配器 " + action.adapterId : "已启用适配器 " + action.adapterId);
+    await openMachineView(action.agent);
+  } catch (e) {
+    toast((action.disabled ? "停用" : "启用") + "失败：" + e.message);
+  }
+}
 async function openMachineView(a) {
   const dlg = $("dlg-view"); const body = $("view-body"); clear(body);
   $("view-title").textContent = "机器 " + (a.hostname || a.agentId) + " · 当前情况";
   body.append(el("div", "muted small", "正在向这台机器实时查询…"));
-  dlg.showModal();
+  if (!dlg.open) dlg.showModal();
   try {
     const d = await api("/api/agents/" + encodeURIComponent(a.agentId) + "/status", { method: "POST" });
+    let overrideView = { adapters: [] };
+    let overrideViewFailed = false;
+    try {
+      overrideView = await api("/api/agents/" + encodeURIComponent(a.agentId) + "/adapters");
+    } catch (_) {
+      // 兼容尚未提供按机器适配器接口的旧 hub；状态抽屉仍照常显示。
+      overrideViewFailed = true;
+    }
     clear(body);
-    const adapters = (d && d.report && d.report.adapters) || d.adapters || [];
+    const statusAdapters = (d && d.report && d.report.adapters) || d.adapters || [];
+    const reportedAdapterIDs = new Set(statusAdapters.map(adapter => adapter.id));
+    const overrideAdapters = Array.isArray(overrideView && overrideView.adapters) ? overrideView.adapters : [];
+    const overrides = new Map(overrideAdapters.filter(adapter => adapter && adapter.id).map(adapter => [adapter.id, adapter]));
+    const adapters = statusAdapters.slice();
+    overrides.forEach((override, id) => {
+      if (!reportedAdapterIDs.has(id)) adapters.push({ id: id, categories: [] });
+    });
     if (!adapters.length) {
       // 优先展示机器自己解释的原因（如"未找到 homer 配置…等待下发"），
       // fallback 才是通用文案——空态不等于新机器（也可能全 disabled）。
@@ -3379,17 +3445,52 @@ async function openMachineView(a) {
           ? "所有适配器均已禁用：" + disabled.join("、")
           : "这台机器还没有可报告的配置"));
       }
+      if (overrideViewFailed) body.append(el("div", "muted small", "暂时无法读取这台机器的适配器停用状态。"));
       return;
     }
     adapters.forEach(adapter => {
+      const override = overrides.get(adapter.id);
+      const reported = reportedAdapterIDs.has(adapter.id);
+      const displayName = override && override.name || adapter.id;
       const bits = [];
       if (adapter.push) bits.push("↑" + adapter.push + " 未收取");
       if (adapter.pull) bits.push("↓" + adapter.pull + " 待下发");
       if (adapter.conflicts) bits.push(adapter.conflicts + " 项冲突");
-      const node = makeCollapsible(adapter.id, bits.length ? bits.join(" · ") : "已对齐", true);
-      node.setFill(kids => renderOutlineCategories(kids, adapter.categories, { adapterId: adapter.id, drift: true, agentId: a.agentId }));
+      const meta = bits.length ? bits.join(" · ") : (override && override.disabled ? "" : reported ? "已对齐" : "未报告状态");
+      const node = makeCollapsible(displayName, meta, true);
+      node.block.dataset.adapterId = adapter.id;
+      node.setFill(kids => {
+        const categories = Array.isArray(adapter.categories) ? adapter.categories : [];
+        if (categories.length) {
+          renderOutlineCategories(kids, categories, { adapterId: adapter.id, drift: true, agentId: a.agentId });
+        } else {
+          kids.append(el("div", "muted small", override && override.disabled
+            ? "该适配器当前未报告状态；本地文件保留。"
+            : "这台机器还没有报告该适配器的配置。"));
+        }
+      });
+      if (override && adapter.id !== "keyring" && adapter.id !== "ssh-key") {
+        const actions = el("span", "view-adapter-actions");
+        if (override.disabled) {
+          const badge = el("span", "view-adapter-disabled-badge small", "已停用");
+          badge.setAttribute("aria-label", "已停用");
+          actions.append(badge);
+        }
+        const switchButton = el("button", "small-btn", override.disabled ? "启用" : "停用");
+        switchButton.type = "button";
+        switchButton.dataset.adapterOverride = adapter.id;
+        switchButton.setAttribute("aria-label", (override.disabled ? "启用 " : "停用 ") + displayName);
+        switchButton.addEventListener("click", ev => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          confirmAgentAdapterOverride(a, adapter.id, !override.disabled, displayName);
+        });
+        actions.append(switchButton);
+        node.row.append(actions);
+      }
       body.append(node.block);
     });
+    if (overrideViewFailed) body.append(el("div", "muted small", "暂时无法读取这台机器的适配器停用状态。"));
     const note = el("div", "muted small", "计数是这台机器相对服务器存储的漂移：↑机器有新内容未收取 · ↓存储有新内容待下发");
     note.style.marginTop = "10px";
     body.append(note);
