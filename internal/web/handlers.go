@@ -22,6 +22,12 @@ import (
 )
 
 func (s *Server) serveHTTP(w http.ResponseWriter, r *http.Request) {
+	if s.opts.Overrides != nil {
+		r = r.WithContext(withFanoutOverridePolicy(r.Context(), fanoutOverridePolicy{
+			overrides:        s.opts.Overrides,
+			centerAdapterIDs: s.centerDispatchAdapterIDs,
+		}))
+	}
 	path := r.URL.Path
 	if path == "/" {
 		if r.Method != http.MethodGet {
@@ -429,12 +435,26 @@ func (s *Server) handleAgentRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/agents/"), "/")
+	if len(parts) == 3 && parts[0] != "" && parts[1] == "adapters" && parts[2] != "" {
+		if r.Method != http.MethodPost {
+			writeMethodNotAllowed(w)
+			return
+		}
+		s.handleAgentAdapterOverride(w, r, parts[0], parts[2])
+		return
+	}
 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
 		writeError(w, http.StatusNotFound, "not-found", "请求的资源不存在", nil)
 		return
 	}
 	agentID, operation := parts[0], parts[1]
 	switch operation {
+	case "adapters":
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w)
+			return
+		}
+		s.handleAgentAdapters(w, r, agentID)
 	case "status":
 		if r.Method != http.MethodPost {
 			writeMethodNotAllowed(w)
@@ -557,6 +577,10 @@ func (s *Server) handleAgentPull(w http.ResponseWriter, r *http.Request, agentID
 		return
 	}
 	scope.Overwrite = false
+	if adapterID := s.disabledAdapterInScope(agentID, scope); adapterID != "" {
+		writeError(w, http.StatusBadRequest, "adapter-disabled-for-agent", adapterID+" 已在这台机器停用", nil)
+		return
+	}
 	if scope.Explicit {
 		if err := s.requireCenterAdapters(scope.Adapters); err != nil {
 			status := http.StatusBadRequest

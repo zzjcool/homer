@@ -47,6 +47,7 @@ type agentApplyResult struct {
 	Hostname string `json:"hostname"`
 	OK       bool   `json:"ok"`
 	Skipped  bool   `json:"skipped"`
+	Reason   string `json:"reason,omitempty"`
 	Status   string `json:"status,omitempty"`
 	Error    string `json:"error,omitempty"`
 }
@@ -354,12 +355,90 @@ func (s *Server) syncToOthers(w http.ResponseWriter, r *http.Request, confirmed 
 // break the loop.
 const maxConcurrentAgentPulls = 8
 
+type fanoutOverrideContextKey struct{}
+
+type fanoutOverridePolicy struct {
+	overrides        *AgentOverrides
+	centerAdapterIDs func() ([]string, bool, error)
+}
+
+func withFanoutOverridePolicy(ctx context.Context, policy fanoutOverridePolicy) context.Context {
+	return context.WithValue(ctx, fanoutOverrideContextKey{}, policy)
+}
+
+func fanoutOverridePolicyFromContext(ctx context.Context) fanoutOverridePolicy {
+	if ctx == nil {
+		return fanoutOverridePolicy{}
+	}
+	policy, _ := ctx.Value(fanoutOverrideContextKey{}).(fanoutOverridePolicy)
+	return policy
+}
+
+func fanoutScopeForAgent(scope SyncScope, agentID string, policy fanoutOverridePolicy) (SyncScope, bool, error) {
+	if policy.overrides == nil {
+		return scope, false, nil
+	}
+	disabled := policy.overrides.DisabledAdapters(agentID)
+	if len(disabled) == 0 {
+		return scope, false, nil
+	}
+	disabledSet := make(map[string]struct{}, len(disabled))
+	for _, adapterID := range disabled {
+		disabledSet[adapterID] = struct{}{}
+	}
+
+	adapterIDs := scope.Adapters
+	if !scope.Explicit {
+		if policy.centerAdapterIDs == nil {
+			return scope, false, errors.New("center adapter list unavailable")
+		}
+		centerIDs, published, err := policy.centerAdapterIDs()
+		if err != nil {
+			return scope, false, err
+		}
+		if !published {
+			return scope, false, nil
+		}
+		adapterIDs = centerIDs
+	}
+
+	remaining := make([]string, 0, len(adapterIDs))
+	removed := false
+	for _, adapterID := range adapterIDs {
+		if _, isDisabled := disabledSet[adapterID]; isDisabled {
+			removed = true
+			continue
+		}
+		remaining = append(remaining, adapterID)
+	}
+	if !removed {
+		return scope, false, nil
+	}
+	if len(remaining) == 0 {
+		return scope, true, nil
+	}
+
+	filtered := scope
+	filtered.Explicit = true
+	filtered.Adapters = remaining
+	if len(scope.ConfigPolicy) > 0 {
+		filtered.ConfigPolicy = make(map[string]string, len(scope.ConfigPolicy))
+		for adapterID, choice := range scope.ConfigPolicy {
+			if _, isDisabled := disabledSet[adapterID]; !isDisabled {
+				filtered.ConfigPolicy[adapterID] = choice
+			}
+		}
+	}
+	return filtered, false, nil
+}
+
 func fanoutPullOnlineAgents(ctx context.Context, agents AgentsSource, scope SyncScope) []agentApplyResult {
 	// A fan-out is never a staged-decision consumer or clearer, even when its
 	// caller originated from the immediate resolve fallback.
 	scope.ApplyResolutions = false
 	scope.ClearResolutions = false
 	scope.CenterGeneration = 0
+	policy := fanoutOverridePolicyFromContext(ctx)
 	if agents == nil {
 		return []agentApplyResult{}
 	}
@@ -384,7 +463,20 @@ func fanoutPullOnlineAgents(ctx context.Context, agents AgentsSource, scope Sync
 					results[index] = result
 					continue
 				}
-				raw, err := agents.AgentPull(ctx, info.AgentID, true, scope)
+				agentScope, skipped, scopeErr := fanoutScopeForAgent(scope, info.AgentID, policy)
+				if scopeErr != nil {
+					result.OK = false
+					result.Error = name + "中心适配器列表读取失败，这次没能更新它。"
+					results[index] = result
+					continue
+				}
+				if skipped {
+					result.Skipped = true
+					result.Reason = "adapters disabled for this agent"
+					results[index] = result
+					continue
+				}
+				raw, err := agents.AgentPull(ctx, info.AgentID, true, agentScope)
 				switch {
 				case err != nil:
 					result.OK = false

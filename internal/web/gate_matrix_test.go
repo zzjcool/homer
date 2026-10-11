@@ -23,6 +23,8 @@ func TestGateMatrix(t *testing.T) {
 		HomerHome:  fixture.home,
 		Token:      "hub-token",
 		Enrollment: enrollment,
+		Agents:     &statusOnlySource{list: []AgentInfo{{AgentID: "box", Hostname: "box"}}},
+		Overrides:  LoadAgentOverrides(fixture.home),
 		AgentEndpointAuthorized: func(r *http.Request) bool {
 			return r.Header.Get("Authorization") == "Bearer agent-secret-live"
 		},
@@ -141,6 +143,28 @@ func TestGateMatrix(t *testing.T) {
 			want: func(credential gateCredential) int {
 				if gateAllowsHumanAPI(credential) {
 					return http.StatusOK
+				}
+				return http.StatusUnauthorized
+			},
+		},
+		{
+			name: "GET /api/agents/box/adapters",
+			path: "/api/agents/box/adapters",
+			want: func(credential gateCredential) int {
+				if gateAllowsHumanAPI(credential) {
+					return http.StatusOK
+				}
+				return http.StatusUnauthorized
+			},
+		},
+		{
+			name:   "POST /api/agents/box/adapters/keyring",
+			method: http.MethodPost,
+			path:   "/api/agents/box/adapters/keyring",
+			body:   `{"disabled":true}`,
+			want: func(credential gateCredential) int {
+				if gateAllowsHumanAPI(credential) {
+					return http.StatusServiceUnavailable // authenticated, but this fixture has no plugin state
 				}
 				return http.StatusUnauthorized
 			},

@@ -96,6 +96,7 @@ func runServe(options CommandOptions, out, errOut io.Writer) int {
 		AgentEndpointAuthorized: authenticator.Authorized,
 		AgentIDOfRequest:        authenticator.AgentID,
 		Plugins:                 plugins,
+		Overrides:               web.LoadAgentOverrides(options.Home),
 	})
 	if err != nil {
 		_ = listener.Close()

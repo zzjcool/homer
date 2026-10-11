@@ -193,6 +193,9 @@ type ServeOptions struct {
 	// Plugins is the hub's persistent plugin installation state. Nil keeps
 	// legacy embedded servers compatible and exposes an empty plugin table.
 	Plugins *pluginruntime.State
+	// Overrides is the hub-owned per-machine adapter disable set. Nil keeps
+	// embedded servers compatible and behaves as though no adapters are disabled.
+	Overrides *AgentOverrides
 }
 
 // PlatformSource is the optional capability AgentsSource implementations

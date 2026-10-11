@@ -123,6 +123,18 @@ func readSyncScope(r *http.Request) (SyncScope, error) {
 	return scope, nil
 }
 
+func (s *Server) disabledAdapterInScope(agentID string, scope SyncScope) string {
+	if s == nil || s.opts.Overrides == nil || !scope.Explicit {
+		return ""
+	}
+	for _, adapterID := range scope.Adapters {
+		if s.opts.Overrides.Disabled(agentID, adapterID) {
+			return adapterID
+		}
+	}
+	return ""
+}
+
 func parseConfigPolicy(raw json.RawMessage) (map[string]string, error) {
 	if string(bytes.TrimSpace(raw)) == "null" {
 		return nil, fmt.Errorf("configPolicy 必须是对象")
@@ -197,6 +209,39 @@ func (s *Server) centerAdapterIDs() ([]string, bool, error) {
 	ids := make([]string, 0, len(store))
 	for id := range store {
 		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	return ids, true, nil
+}
+
+// centerDispatchAdapterIDs includes both adapters with stored files and
+// adapters declared in the generation metadata. An unrestricted fan-out must
+// become an explicit filtered scope even when a disabled adapter has no files
+// in this generation, otherwise a later read of the full meta/store could
+// reintroduce it on the machine.
+func (s *Server) centerDispatchAdapterIDs() ([]string, bool, error) {
+	head, ok := gens.New(s.opts.HomerHome).Read()
+	if !ok {
+		return nil, false, nil
+	}
+	store, err := readGenerationStore(head.StoreDir)
+	if err != nil {
+		return nil, true, err
+	}
+	seen := make(map[string]struct{}, len(store))
+	for adapterID := range store {
+		seen[adapterID] = struct{}{}
+	}
+	if config, _ := core.ValidateConfig(head.Meta); config != nil {
+		for adapterID := range config.Adapters {
+			if core.ValidAdapterID(adapterID) {
+				seen[adapterID] = struct{}{}
+			}
+		}
+	}
+	ids := make([]string, 0, len(seen))
+	for adapterID := range seen {
+		ids = append(ids, adapterID)
 	}
 	sort.Strings(ids)
 	return ids, true, nil

@@ -813,6 +813,7 @@ func collectInspectParams(rules []CredentialRule) InspectParams {
 
 func (s *Server) buildCollectChoicesResponse(agentID string, report commands.StatusReport, present map[string]bool, secrets []InspectSecret) syncChoicesResponse {
 	choices := BuildCollectChoices(report.Adapters)
+	s.markDisabledCollectChoices(agentID, choices)
 	s.enrichCollectChoices(choices, present, secrets)
 	if choices == nil {
 		choices = []AdapterChoice{}
@@ -823,6 +824,20 @@ func (s *Server) buildCollectChoicesResponse(agentID string, report commands.Sta
 		AgentID:   agentID,
 		Hint:      collectChoiceHint(report, choices),
 		Adapters:  choices,
+	}
+}
+
+func (s *Server) markDisabledCollectChoices(agentID string, choices []AdapterChoice) {
+	if s == nil || s.opts.Overrides == nil {
+		return
+	}
+	for index := range choices {
+		if !s.opts.Overrides.Disabled(agentID, choices[index].ID) {
+			continue
+		}
+		choices[index].Enabled = false
+		choices[index].Checked = false
+		choices[index].Reason = "已在这台机器停用"
 	}
 }
 
@@ -962,6 +977,7 @@ func (s *Server) handleCollectChoicesStream(w http.ResponseWriter, r *http.Reque
 			if len(rows) == 0 {
 				return
 			}
+			s.markDisabledCollectChoices(agentID, rows)
 			s.enrichCollectChoices(rows, present, secrets)
 			updated := false
 			for i := range currentChoices {
