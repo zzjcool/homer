@@ -442,3 +442,79 @@ func publishOverrideTestCenter(t *testing.T, home string) {
 
 var _ AgentsSource = (*overrideTestAgents)(nil)
 var _ ReportedAdaptersSource = (*overrideTestAgents)(nil)
+
+// TestAgentPullDefaultScopeFiltersDisabledAdapter locks reviewer finding 1:
+// a single-machine pull without an explicit adapters list must narrow the
+// scope to the center's adapters minus this machine's disabled set, instead
+// of letting the machine apply the whole snapshot.
+func TestAgentPullDefaultScopeFiltersDisabledAdapter(t *testing.T) {
+	home := t.TempDir()
+	publishOverrideTestCenter(t, home)
+	overrides := LoadAgentOverrides(home)
+	if err := overrides.SetDisabled("alpha", "editor", true); err != nil {
+		t.Fatal(err)
+	}
+	agents := &overrideTestAgents{
+		sourceStub: sourceStub{
+			list:    []AgentInfo{{AgentID: "alpha", Hostname: "alpha"}},
+			pullRaw: json.RawMessage(`{"ok":true,"status":"synced"}`),
+		},
+	}
+	server := newOverrideTestServer(t, home, agents, overrides, nil)
+
+	response := request(t, server.Handler(), http.MethodPost, "/api/agents/alpha/pull?confirm=true", `{}`)
+	if response.Code != http.StatusOK {
+		t.Fatalf("default-scope pull = %d %s", response.Code, response.Body)
+	}
+	if len(agents.pullScopes) != 1 {
+		t.Fatalf("pull scopes = %#v", agents.pullScopes)
+	}
+	got := agents.pullScopes[0]
+	if !got.Explicit || !reflect.DeepEqual(got.Adapters, []string{"shell"}) {
+		t.Fatalf("default scope after filtering = %+v, want explicit [shell] (editor disabled)", got)
+	}
+}
+
+// TestDispatchChoicesMarkDisabledAdapter locks reviewer finding 2: the
+// dispatch dialog must show a disabled adapter as Enabled=false with the
+// disable reason instead of leaving it selectable (guaranteed 400 dead end).
+func TestDispatchChoicesMarkDisabledAdapter(t *testing.T) {
+	home := t.TempDir()
+	publishOverrideTestCenter(t, home)
+	overrides := LoadAgentOverrides(home)
+	if err := overrides.SetDisabled("alpha", "editor", true); err != nil {
+		t.Fatal(err)
+	}
+	agents := &overrideTestAgents{
+		sourceStub: sourceStub{
+			list:      []AgentInfo{{AgentID: "alpha", Hostname: "alpha"}},
+			statusRaw: json.RawMessage(`{"ok":true,"report":{"adapters":[{"id":"editor","push":1},{"id":"shell"}]}}`),
+		},
+	}
+	server := newOverrideTestServer(t, home, agents, overrides, nil)
+
+	response := request(t, server.Handler(), http.MethodGet, "/api/sync/choices?direction=dispatch&agent=alpha", `{}`)
+	if response.Code != http.StatusOK {
+		t.Fatalf("dispatch choices = %d %s", response.Code, response.Body)
+	}
+	var payload struct {
+		Adapters []AdapterChoice `json:"adapters"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	byID := map[string]AdapterChoice{}
+	for _, choice := range payload.Adapters {
+		byID[choice.ID] = choice
+	}
+	editor, ok := byID["editor"]
+	if !ok {
+		t.Fatalf("editor missing from dispatch choices: %+v", payload.Adapters)
+	}
+	if editor.Enabled || editor.Checked || editor.Reason != "已在这台机器停用" {
+		t.Fatalf("editor choice = %+v, want disabled with reason", editor)
+	}
+	if shell := byID["shell"]; !shell.Enabled {
+		t.Fatalf("shell choice = %+v, want enabled", shell)
+	}
+}

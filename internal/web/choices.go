@@ -635,6 +635,9 @@ func (s *Server) buildSyncChoicesResponse(direction, agentID string, report comm
 			sort.Strings(ids)
 			views := statusResolutionViews(report.Resolutions, head.Generation)
 			choices = BuildDispatchChoicesWithKeys(ids, report.Adapters, views, s.keyBoundAdapters())
+			// dispatch 弹窗同样标记停用行：否则停用 adapter 可勾选，
+			// 确认必吃 400（reviewer F2）。
+			s.markDisabledChoices(agentID, choices)
 			if _, adapters, outlineErr := s.readStorageOutline(); outlineErr == nil {
 				attachStorageOutline(choices, adapters)
 			}
@@ -813,7 +816,7 @@ func collectInspectParams(rules []CredentialRule) InspectParams {
 
 func (s *Server) buildCollectChoicesResponse(agentID string, report commands.StatusReport, present map[string]bool, secrets []InspectSecret) syncChoicesResponse {
 	choices := BuildCollectChoices(report.Adapters)
-	s.markDisabledCollectChoices(agentID, choices)
+	s.markDisabledChoices(agentID, choices)
 	s.enrichCollectChoices(choices, present, secrets)
 	if choices == nil {
 		choices = []AdapterChoice{}
@@ -827,7 +830,7 @@ func (s *Server) buildCollectChoicesResponse(agentID string, report commands.Sta
 	}
 }
 
-func (s *Server) markDisabledCollectChoices(agentID string, choices []AdapterChoice) {
+func (s *Server) markDisabledChoices(agentID string, choices []AdapterChoice) {
 	if s == nil || s.opts.Overrides == nil {
 		return
 	}
@@ -977,7 +980,7 @@ func (s *Server) handleCollectChoicesStream(w http.ResponseWriter, r *http.Reque
 			if len(rows) == 0 {
 				return
 			}
-			s.markDisabledCollectChoices(agentID, rows)
+			s.markDisabledChoices(agentID, rows)
 			s.enrichCollectChoices(rows, present, secrets)
 			updated := false
 			for i := range currentChoices {

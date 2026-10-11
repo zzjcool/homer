@@ -64,6 +64,7 @@ type syncReport struct {
 // error vocabulary of sync — nothing else may be interpolated.
 const (
 	msgSecretsStopped   = "检测到疑似密钥，已停止。请从文件里去掉密钥后再试。"
+	msgAdapterListRead  = "读取中心适配器列表失败，这台机器这次没能更新。"
 	msgBothChanged      = "两边都改过同一处，这次没有写入。"
 	msgCenterAhead      = "中心有这台机器还没有的改动，已停止写入。请改选从中心同步，或先处理冲突。"
 	msgNotConfirmed     = "没有确认，未做任何改动。"
@@ -466,7 +467,7 @@ func fanoutPullOnlineAgents(ctx context.Context, agents AgentsSource, scope Sync
 				agentScope, skipped, scopeErr := fanoutScopeForAgent(scope, info.AgentID, policy)
 				if scopeErr != nil {
 					result.OK = false
-					result.Error = name + "中心适配器列表读取失败，这次没能更新它。"
+					result.Error = name + "：" + msgAdapterListRead + "（" + scopeErr.Error() + "）"
 					results[index] = result
 					continue
 				}

@@ -2657,7 +2657,13 @@ async function dispatchPluginToAll(plugin, button) {
       body: { adapters: [plugin.id], confirm: true },
     });
     if (result.ok) {
-      toast("已下发「" + plugin.id + "」到全部在线机器");
+      // 被按机器停用剔除的机器在 skipped+reason 里，明确告诉用户谁没收到。
+      const skipped = (result.agents || []).filter(agent => agent.skipped && agent.reason);
+      if (skipped.length) {
+        toast("已下发「" + plugin.id + "」；" + skipped.length + " 台机器因已停用该适配器被跳过");
+      } else {
+        toast("已下发「" + plugin.id + "」到全部在线机器");
+      }
     } else {
       setPluginError((result.errors || []).join("；") || result.status || "下发没有完成");
     }
@@ -3469,7 +3475,9 @@ async function openMachineView(a) {
             : "这台机器还没有报告该适配器的配置。"));
         }
       });
-      if (override && adapter.id !== "keyring" && adapter.id !== "ssh-key") {
+      if (override && (override.installed || override.disabled) && adapter.id !== "keyring" && adapter.id !== "ssh-key") {
+        // 已安装的 adapter 可停用；已停用的（含插件已卸载的陈旧条目）
+        // 可启用；仅机器上报但未安装的行不提供开关（POST 会被拒）。
         const actions = el("span", "view-adapter-actions");
         if (override.disabled) {
           const badge = el("span", "view-adapter-disabled-badge small", "已停用");

@@ -581,6 +581,18 @@ func (s *Server) handleAgentPull(w http.ResponseWriter, r *http.Request, agentID
 		writeError(w, http.StatusBadRequest, "adapter-disabled-for-agent", adapterID+" 已在这台机器停用", nil)
 		return
 	}
+	// 默认 scope（不带 adapters）也必须剔除停用项：否则机器从 /api/snapshot
+	// 全量应用，停用 adapter 的文件照常落盘（reviewer F1）。与 fanout 的
+	// 收口同规则：中心 adapter 集合 − 该机器停用集合，变成显式 scope。
+	if !scope.Explicit {
+		if filtered, skipped, filterErr := fanoutScopeForAgent(scope, agentID, fanoutOverridePolicyFromContext(r.Context())); filterErr == nil {
+			if skipped {
+				writeError(w, http.StatusBadRequest, "adapter-disabled-for-agent", "这台机器的全部适配器都已停用", nil)
+				return
+			}
+			scope = filtered
+		}
+	}
 	if scope.Explicit {
 		if err := s.requireCenterAdapters(scope.Adapters); err != nil {
 			status := http.StatusBadRequest

@@ -79,9 +79,11 @@ func TestAgentAdapterOverridesUI(t *testing.T) {
 			if (url === "/api/agents/ui-box/adapters") {
 				window.__agentOverridesUIRequests.push({ url, method, body: init.body ? JSON.parse(init.body) : null });
 				if (method === "GET") {
+					// 后端按 role 过滤：keyring（carrier）永不出现在 GET 响应里，
+					// mock 与真实实现保持同形状（reviewer minor：不要用真实后端
+					// 不可能产生的输入做断言）。
 					return Promise.resolve(jsonResponse({ adapters: [
-						{ id: "pi", name: "pi", disabled: window.__agentOverridesDisabled },
-						{ id: "keyring", name: "密钥环", disabled: false },
+						{ id: "pi", name: "pi", disabled: window.__agentOverridesDisabled, installed: true },
 					] }));
 				}
 			}

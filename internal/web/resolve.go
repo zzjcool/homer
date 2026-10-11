@@ -198,6 +198,17 @@ func (s *Server) resolveOnMachine(w http.ResponseWriter, r *http.Request, choice
 	} else {
 		scope.Overwrite = false
 	}
+	// "center" 是一次下发（resolve 的伪装 dispatch）：默认 scope 同样剔除
+	// 该机器停用的 adapter，与 handleAgentPull 的收口规则一致（reviewer F1）。
+	if choice == resolveCenter && !scope.Explicit {
+		if filtered, skipped, filterErr := fanoutScopeForAgent(scope, agentID, fanoutOverridePolicyFromContext(r.Context())); filterErr == nil {
+			if skipped {
+				writeError(w, http.StatusBadRequest, "adapter-disabled-for-agent", "这台机器的全部适配器都已停用", nil)
+				return
+			}
+			scope = filtered
+		}
+	}
 	// "Center wins" writes the center's content onto this machine, so it is a
 	// dispatch like any other: a bound key must travel with it and be opened
 	// first, or nothing is written. The password step is the same one a plain

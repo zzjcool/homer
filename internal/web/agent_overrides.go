@@ -58,6 +58,11 @@ func LoadAgentOverrides(home string) *AgentOverrides {
 			if !disabled || !core.ValidAdapterID(adapterID) {
 				continue
 			}
+			// 手改文件防御：keyring（carrier）与官方非 adapter 插件的停用
+			// 条目丢弃。keyring 停用会静默切断密钥随行，宁可丢条目也不接受。
+			if plugin, builtin := pluginregistry.Builtin(adapterID); builtin && plugin.Role != pluginregistry.RoleAdapter {
+				continue
+			}
 			if overrides.disabled[agentID] == nil {
 				overrides.disabled[agentID] = make(map[string]bool)
 			}
@@ -195,6 +200,9 @@ type agentAdapterView struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Disabled bool   `json:"disabled"`
+	// Installed 区分「中心已安装的 adapter」（可停用）与「仅机器上报
+	// 但未安装」的陈现行（不可停用，POST 会被拒）。
+	Installed bool `json:"installed"`
 }
 
 func (s *Server) handleAgentAdapters(w http.ResponseWriter, _ *http.Request, agentID string) {
@@ -213,7 +221,7 @@ func (s *Server) handleAgentAdapters(w http.ResponseWriter, _ *http.Request, age
 			if name == "" {
 				name = plugin.ID
 			}
-			adaptersByID[plugin.ID] = agentAdapterView{ID: plugin.ID, Name: name}
+			adaptersByID[plugin.ID] = agentAdapterView{ID: plugin.ID, Name: name, Installed: true}
 		}
 	}
 
@@ -259,6 +267,21 @@ func (s *Server) handleAgentAdapterOverride(w http.ResponseWriter, r *http.Reque
 	if strings.TrimSpace(agentID) == "" {
 		writeError(w, http.StatusBadRequest, "override-invalid", "agent id 不能为空", nil)
 		return
+	}
+	// 幽灵机器防御：只为真实存在的机器建覆盖条目，避免 agent-overrides.json
+	// 积累已移除机器的垃圾（reviewer minor）。
+	if s.opts.Agents != nil {
+		known := false
+		for _, info := range s.opts.Agents.ListAgents() {
+			if info.AgentID == agentID {
+				known = true
+				break
+			}
+		}
+		if !known {
+			writeError(w, http.StatusNotFound, "agent-not-found", "机器不存在或尚未接入", nil)
+			return
+		}
 	}
 	if !core.ValidAdapterID(adapterID) {
 		writeError(w, http.StatusUnprocessableEntity, "override-invalid", fmt.Sprintf("adapter id %q 无效", adapterID), nil)
