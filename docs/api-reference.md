@@ -196,3 +196,39 @@ curl -sS -X POST "$HUB/api/sync?direction=dispatch&confirm=true" \
 失败不会中止其他机器；整体 `status` 可能是 `partial`。未确认时返回 `aborted`；中心尚无快照、
 adapter ID 无效或下发触发密钥守卫时，请先处理相应错误再重试。插件页的「下发到全部机器」
 按钮复用此端点，不会新增 agent/stream 协议。
+
+## `GET /api/agents/<id>/adapters`
+
+某台机器视角的适配器列表（中心已安装 adapter ∪ 该机器最后上报的 adapter）。
+`keyring`/`ssh-key` 永不出现。每项：`{id, name, disabled, installed}`——
+`installed` 区分「中心已安装（可停用）」与「仅机器上报的陈旧行（只能启用）」。
+
+```sh
+curl -sS -H "Authorization: Bearer $HOMER_HUB_TOKEN" \
+  "$HUB/api/agents/<agentID>/adapters"
+```
+
+```json
+{"adapters":[{"id":"pi","name":"pi","disabled":false,"installed":true}]}
+```
+
+Agents 未启用时 501 `agents-disabled`。
+
+## `POST /api/agents/<id>/adapters/<adapterID>`
+
+按机器停用/启用一个适配器插件。停用 = 该机器不再同步此适配器（collect/dispatch
+自动排除、扇出跳过）；本地文件保留；机器侧声明不动（hub 侧覆盖层方案）。
+
+```sh
+curl -sS -X POST "$HUB/api/agents/<agentID>/adapters/pi" \
+  -H "Authorization: Bearer $HOMER_HUB_TOKEN" \
+  -H 'Content-Type: application/json' \
+  --data '{"disabled":true}'
+```
+
+- 200 `{"ok":true}`；400/422 `override-invalid`（坏 body、非法 adapterID、
+  未安装或非 adapter 角色、幽灵机器 404 `agent-not-found`）
+- 覆盖层未接（嵌入式）503 `overrides-disabled`
+- 显式下发停用项：`POST /api/agents/<id>/pull` 返回 400 `adapter-disabled-for-agent`
+- 扇出跳过：`POST /api/sync?direction=dispatch` 响应 `agents[].skipped=true` +
+  `reason: "adapters disabled for this agent"`
