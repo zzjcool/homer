@@ -411,7 +411,9 @@ func CollectSnapshotSources(paths core.HomerPaths, config *core.HomerConfig) (Dr
 		local = append(local, engine.StripExcludeKeys(outcome.Snapshot, excludeKeysByCategory(*config, adapterID)))
 	}
 
-	if gitx.IsGitRepo(paths.Home) && !gitx.IsStoreClean(paths.Home) {
+	if gitx.IsGitRepo(paths.Home) && gitx.HeadCommit(paths.Home) == "" {
+		warnings = append(warnings, "同步基线未建立（git 仓库还没有提交）。请运行 `homer push --yes` 建立基线。")
+	} else if gitx.IsGitRepo(paths.Home) && !gitx.IsStoreClean(paths.Home) {
 		warnings = append(warnings, "store 工作区有未提交的改动（漂移计数以 git 基线为准，可能未反映刚直改的内容）；如需提交请运行 `homer push`")
 	}
 

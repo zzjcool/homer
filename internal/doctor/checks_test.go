@@ -218,6 +218,20 @@ func TestCheckAgeShowsPairedDevices(t *testing.T) {
 	}
 }
 
+func TestDoctorMarksUnbornGitRepoAsMissingBaseline(t *testing.T) {
+	paths := testPaths(t)
+	if err := gitx.EnsureGitRepo(paths.Home); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(paths.StoreDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	check := CheckRepoAndStore(paths)[0]
+	if check.Status != CheckWarn || !strings.Contains(check.Message, "同步基线未建立") {
+		t.Fatalf("unborn repo check = %#v", check)
+	}
+}
+
 func TestDoctorRemoteReachabilityAndStoreDirty(t *testing.T) {
 	paths := testPaths(t)
 	if err := gitx.EnsureGitRepo(paths.Home); err != nil {
