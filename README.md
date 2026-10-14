@@ -30,7 +30,9 @@ homer home <配置仓库 URL> --yes
 
 ```sh
 homer serve                     # http://127.0.0.1:7760
-# 浏览器打开即可看本机与中心的差异，并在确认后同步
+# 浏览器打开控制台后，还须在本机接入 agent，才能看差异并同步：
+homer agent --hub http://127.0.0.1:7760
+# 若 serve 开了 token，加上 --token <token>（或 HOMER_HUB_TOKEN）
 ```
 
 多机拓扑（中心节点部署在可达处，其余机器主动连接中心）：
