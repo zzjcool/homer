@@ -175,6 +175,23 @@ section > h2 { font-size: var(--fs-small); text-transform: uppercase; letter-spa
 .adapter-line .counts .c-clean { color: var(--ink-dim); }
 .adapter-line .row-actions { margin-left: auto; display: flex; gap: 8px; }
 .adapter-row.disabled-row { opacity: .55; }
+#sec-adapters .adapters-clean-line { margin: 0; padding: 2px 4px; }
+#sec-adapters .adapters-degraded-note { margin: 0 0 8px; padding: 0 4px; }
+#sec-adapters .adapter-line .jump { margin-left: auto; }
+#sec-adapters .adapter-line .aid-hint { font-family: var(--mono); font-size: var(--fs-small); color: var(--ink-dim); }
+#sec-keys details.keys-fold { margin: 0; }
+#sec-keys details.keys-fold > summary.keys-fold-sum {
+  list-style: none; cursor: pointer; display: flex; align-items: baseline; gap: 10px;
+  flex-wrap: wrap; margin: 0 0 10px;
+}
+#sec-keys details.keys-fold > summary.keys-fold-sum::-webkit-details-marker { display: none; }
+#sec-keys details.keys-fold > summary.keys-fold-sum::marker { content: ""; }
+#sec-keys details.keys-fold > summary .keys-fold-title {
+  font-size: var(--fs-small); text-transform: uppercase; letter-spacing: .06em;
+  color: var(--ink-dim); font-weight: 600;
+}
+#sec-keys details.keys-fold > summary .keys-fold-chevron { color: var(--ink-dim); font-size: var(--fs-small); }
+#sec-keys details.keys-fold > summary:hover .keys-fold-title { color: var(--ink); }
 .cat-line { display: flex; align-items: center; gap: 10px; padding: 6px 0 6px 20px; font-size: var(--fs-small); flex-wrap: wrap; }
 .cat-line .cat-name { font-family: var(--mono); min-width: 8em; color: var(--ink-dim); }
 .cat-line .row-actions { margin-left: auto; }
@@ -645,10 +662,22 @@ dialog menu { display: flex; gap: 8px; justify-content: flex-end; padding: 0; ma
     <!-- page-level alert (secrets rejected / failures) -->
     <div id="alert-slot"></div>
 
+    <!-- ② fleet adapter overview (between hero and machines; #51) -->
+    <section id="sec-adapters" class="hidden" aria-label="适配器明细">
+      <h2>适配器明细</h2>
+      <div id="adapter-overview"></div>
+    </section>
+
     <section id="sec-keys" aria-label="密钥">
-      <h2>密钥</h2>
-      <p class="muted small">这里显示中心已经收下的密钥。在某台机器上新建之后，收取时勾选它绑定的适配器，密钥会自动跟着收上来，收完就会出现在这里。下发时同理，密钥自动跟随，不用单独选。</p>
-      <div id="key-body"></div>
+      <details class="keys-fold" id="keys-fold">
+        <summary class="keys-fold-sum">
+          <span class="keys-fold-title">密钥</span>
+          <span class="muted small" id="keys-fold-hint">已收下的密钥 · 点开管理</span>
+          <span class="keys-fold-chevron" aria-hidden="true">▸</span>
+        </summary>
+        <p class="muted small">这里显示中心已经收下的密钥。在某台机器上新建之后，收取时勾选它绑定的适配器，密钥会自动跟着收上来，收完就会出现在这里。下发时同理，密钥自动跟随，不用单独选。</p>
+        <div id="key-body"></div>
+      </details>
     </section>
 
     <!-- ③ machines -->
@@ -779,6 +808,7 @@ const $ = id => document.getElementById(id);
  * GET  /api/auth/join     {command}
  * GET  /api/health        {version}
  * GET  /api/console       {published, generation, machines:[{agentId,hostname,stale,drift:{push,pull,conflicts}}]}
+ *                         (no per-adapter breakdown yet — #51 overview degrades to 按机器看)
  * GET  /api/status        {report:{...}} (机器视角的兼容端点)
  * GET  /api/diff?adapter&category  {empty, text}
  * GET  /api/sync/choices?direction=collect|dispatch|resolve&agent=<id>&stream=1 (collect NDJSON)
@@ -986,6 +1016,74 @@ function fmtDrift(d) {
   if (d.pull) parts.push("↓" + d.pull + " 项待下发");
   if (d.conflicts) parts.push(d.conflicts + " 项冲突");
   return parts.join(" · ");
+}
+
+/* ---------- ② fleet adapter overview (#51) ---------- */
+/* Console payload today only has machines[].drift totals (no per-adapter
+ * breakdown). Until Reed exposes per-machine per-adapter counts on
+ * GET /api/console, this section runs in degraded「按机器看」mode. */
+function machineHasOverviewDrift(m) {
+  if (!m || m.stale) return false;
+  const d = m.drift;
+  if (!d || d.error) return false;
+  return ((d.push || 0) + (d.pull || 0) + (d.conflicts || 0)) > 0;
+}
+function fmtOverviewCounts(d) {
+  const parts = [];
+  if (d.push) parts.push("↑" + d.push);
+  if (d.pull) parts.push("↓" + d.pull);
+  if (d.conflicts) parts.push("⚡" + d.conflicts);
+  return parts.join(" ");
+}
+function scrollToMachineById(agentId) {
+  const card = findAgentCard(a => a.agentId === agentId);
+  flashScrollAgentCard(card || document.getElementById("agent-list"));
+}
+function renderAdaptersOverview() {
+  const sec = $("sec-adapters");
+  const box = $("adapter-overview");
+  if (!sec || !box) return;
+  clear(box);
+  const c = app.console;
+  // Hide when empty / unpublished so we don't fight #40 empty-hero copy.
+  if (!c || !c.published || !(c.machines || []).length) {
+    sec.classList.add("hidden");
+    return;
+  }
+  sec.classList.remove("hidden");
+  const drifted = (c.machines || []).filter(machineHasOverviewDrift);
+  if (!drifted.length) {
+    box.append(el("p", "muted small adapters-clean-line", "适配器全部干净"));
+    return;
+  }
+  // Degraded: console has only machine-level totals — list drifted machines.
+  box.append(el("p", "muted small adapters-degraded-note",
+    "当前控制台载荷仅有机器合计，按机器看"));
+  drifted.forEach(m => {
+    const row = el("div", "adapter-row");
+    const line = el("div", "adapter-line");
+    line.append(el("span", "name", m.hostname || m.agentId || "—"));
+    if (m.agentId && m.hostname && m.agentId !== m.hostname) {
+      line.append(el("span", "aid-hint", m.agentId));
+    }
+    const d = m.drift || {};
+    const counts = el("span", "counts " + (d.conflicts ? "c-conflict" : "c-drift"),
+      fmtOverviewCounts(d));
+    line.append(counts);
+    const jump = el("button", "small-btn jump", "查看机器");
+    jump.type = "button";
+    jump.title = "跳到这台机器卡";
+    jump.addEventListener("click", () => scrollToMachineById(m.agentId));
+    line.append(jump);
+    row.append(line);
+    // Whole row is also clickable (button stops propagation via its own handler).
+    row.style.cursor = "pointer";
+    row.addEventListener("click", (ev) => {
+      if (ev.target && ev.target.closest && ev.target.closest("button")) return;
+      scrollToMachineById(m.agentId);
+    });
+    box.append(row);
+  });
 }
 
 function isWaitingFirstDispatch(a) {
@@ -4533,6 +4631,7 @@ async function refresh() {
     app.agents = agents.agents || [];
     app.plugins = plugins;
     renderHero();
+    renderAdaptersOverview();
     renderPlugins();
     loadAgentsRender(app.agents, false);
     loadKeys();
