@@ -93,7 +93,12 @@ services:
     command:
       - |
         set -e
-        mkdir -p /root/toolhome
+        # Same baseline as the hub and agent-a. A missing settings.json is a
+        # local delete against the cloned store, so agent-a's later edit
+        # would conflict instead of flowing over.
+        mkdir -p /root/toolhome/.pi/agent
+        printf '{\n  "fromHub": true\n}\n' \
+          > /root/toolhome/.pi/agent/settings.json
         export HOME=/root/toolhome
         for i in $(seq 1 60); do
           if git clone -q /srv/center.git /root/.homer 2>/dev/null \
