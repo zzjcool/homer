@@ -1134,7 +1134,7 @@ function renderAdaptersOverview() {
       fmtOverviewCounts(r));
     line.append(counts);
     const n = r.machines.length;
-    const involve = el("button", "small-btn jump", "涉及 " + n + " 台");
+    const involve = el("button", "small-btn jump involve", "涉及 " + n + " 台");
     involve.type = "button";
     const labels = r.machines.map(m => m.hostname).join("、");
     involve.title = n === 1 ? ("跳到 " + labels) : ("相关机器：" + labels + "（点此跳到第一台）");
