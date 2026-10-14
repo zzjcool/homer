@@ -122,20 +122,26 @@ echo "==> 1. hub 健康检查"
 wait_for "GET /api/health" "$HUB_URL/api/health"
 
 echo "==> 2. 双 agent 在线"
-for _ in $(seq 1 30); do
+# 不用 $_：它会在 sleep/curl 之后变成上一条命令的参数，超时分支永远进不去。
+agents_online=0
+for attempt in $(seq 1 30); do
   if curl -fsS -H "$AUTH" "$HUB_URL/api/agents" 2>/dev/null \
       | jq -e '[.agents[] | select(.stale == false) | .agentId]
           | contains(["agent-a","agent-b"])' >/dev/null; then
     echo "    OK: agent-a 与 agent-b 均在线"
+    agents_online=1
     break
   fi
   sleep 2
-  if [ "$_" = "30" ]; then
+  if [ "$attempt" = "30" ]; then
     echo "    FAIL: agents 未注册"
     curl -fsS -H "$AUTH" "$HUB_URL/api/agents" 2>/dev/null | jq . || true
     exit 1
   fi
 done
+if [ "$agents_online" != 1 ]; then
+  fail "agents 未注册"
+fi
 
 echo "==> 2b. 机器资源快照（agent 自己采集的 CPU / 内存 / 网卡）"
 for id in agent-a agent-b; do

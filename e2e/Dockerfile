@@ -9,6 +9,10 @@ RUN CGO_ENABLED=0 go build -o /out/homer ./cmd/homer \
 
 FROM alpine:3.20
 RUN apk add --no-cache git ca-certificates curl
+# Dispatch of the pi adapter refuses when `pi` is not on PATH, even for a
+# settings-only pull. The smoke image does not install the real CLI; this
+# stub only satisfies that check and answers `pi list` with an empty manifest.
+RUN printf '#!/bin/sh\nexit 0\n' > /usr/local/bin/pi && chmod 0755 /usr/local/bin/pi
 # Tests inside containers commit to the local origin; a fixed identity keeps
 # git happy without touching the host config.
 ENV GIT_CONFIG_GLOBAL=/etc/gitconfig
