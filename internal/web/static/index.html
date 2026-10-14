@@ -370,7 +370,32 @@ pre .ln-meta { color: var(--ink-dim); display: block; }
 .agent-net .nic { color: var(--ink); font-weight: 600; }
 .agent-net .mac { color: var(--ink-dim); }
 .agent-net .addr { color: var(--ink); }
-.agent-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.agent-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
+.agent-card.flash-target {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  transition: background-color var(--dur-3) var(--ease-out), outline-color var(--dur-3) var(--ease-out);
+}
+.agent-more { position: relative; display: inline-block; }
+.agent-more > summary {
+  list-style: none; cursor: pointer;
+  min-height: 32px; padding: 0 10px; font-size: var(--fs-small);
+  background: var(--bg); color: var(--ink); border: 1px solid var(--control-border);
+  border-radius: var(--radius); display: inline-flex; align-items: center;
+  transition: background-color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
+}
+.agent-more > summary::-webkit-details-marker { display: none; }
+.agent-more > summary::marker { content: ""; }
+.agent-more > summary:hover { border-color: var(--ink); }
+.agent-more[open] > summary { border-color: var(--ink); }
+.agent-more-panel {
+  position: absolute; z-index: 30; top: calc(100% + 4px); left: 0;
+  min-width: 9em; display: flex; flex-direction: column; gap: 4px;
+  padding: 8px; background: var(--bg); border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--ink) 14%, transparent);
+}
+.agent-more-panel button { width: 100%; justify-content: flex-start; text-align: left; }
 .secret-row { display: flex; gap: 8px; align-items: center; margin: 6px 0; flex-wrap: wrap; }
 .secret-row input { flex: 1; min-width: 140px; }
 .secret-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
@@ -957,6 +982,70 @@ function fmtDrift(d) {
   if (d.conflicts) parts.push(d.conflicts + " 项冲突");
   return parts.join(" · ");
 }
+
+function isWaitingFirstDispatch(a) {
+  const d = a && a.drift;
+  return !!(d && d.error && d.error.indexOf("homer") >= 0 && d.error.indexOf("init") >= 0);
+}
+function findAgentCard(pred) {
+  const agents = app.agents || [];
+  const match = agents.find(pred);
+  if (!match) return null;
+  const id = match.agentId;
+  const cards = document.querySelectorAll(".agent-card[data-agent-id]");
+  for (const card of cards) {
+    if (card.getAttribute("data-agent-id") === id) return card;
+  }
+  return null;
+}
+function flashScrollAgentCard(card) {
+  if (!card) return;
+  card.classList.remove("flash-target");
+  void card.offsetWidth;
+  card.scrollIntoView({ behavior: "smooth", block: "center" });
+  card.classList.add("flash-target");
+  clearTimeout(card._flashTimer);
+  card._flashTimer = setTimeout(() => card.classList.remove("flash-target"), 1400);
+}
+function scrollToFirstConflictMachine() {
+  const card = findAgentCard(a => !a.stale && a.drift && (a.drift.conflicts || 0) > 0);
+  flashScrollAgentCard(card || document.getElementById("agent-list"));
+}
+function scrollToFirstDriftMachine() {
+  const card = findAgentCard(a => {
+    if (a.stale) return false;
+    const d = a.drift;
+    if (!d || d.error) return false;
+    if ((d.conflicts || 0) > 0) return false;
+    return ((d.push || 0) + (d.pull || 0)) > 0;
+  });
+  flashScrollAgentCard(card || document.getElementById("agent-list"));
+}
+function makeAgentMoreMenu(buttons) {
+  const wrap = el("details", "agent-more");
+  const sum = document.createElement("summary");
+  sum.textContent = "更多";
+  wrap.append(sum);
+  const panel = el("div", "agent-more-panel");
+  buttons.forEach(b => panel.append(b));
+  wrap.append(panel);
+  // Close sibling menus; outside-click handled once globally below.
+  wrap.addEventListener("toggle", () => {
+    if (!wrap.open) return;
+    document.querySelectorAll("details.agent-more[open]").forEach(d => {
+      if (d !== wrap) d.open = false;
+    });
+  });
+  return wrap;
+}
+if (!window.__homerMoreMenuCloser) {
+  window.__homerMoreMenuCloser = true;
+  document.addEventListener("click", (ev) => {
+    document.querySelectorAll("details.agent-more[open]").forEach(d => {
+      if (!d.contains(ev.target)) d.open = false;
+    });
+  });
+}
 /* §3: bump .hero-enter after paint so CSS can cross-fade new content */
 function requestHeroEnter(hero) {
   requestAnimationFrame(() => {
@@ -1030,9 +1119,18 @@ function renderHero() {
     numbers.textContent = conflicts + " 项冲突 · 存储 第 " + c.generation + " 代";
     const seg = heroSegMeter(push, pull, conflicts);
     const note = el("div", "hero-note");
-    note.append(el("div", null, "某台机器和中心改了同一处。到那台机器所在行选择保留哪一边。"));
-    if (seg) hero.append(concl, numbers, seg, note);
-    else hero.append(concl, numbers, note);
+    note.append(el("div", null, "某台机器和中心改了同一处。先处理冲突，再谈收取或下发。"));
+    const ctas = el("div", "hero-ctas");
+    const go = el("button", "primary", "处理冲突 →");
+    go.type = "button";
+    go.addEventListener("click", scrollToFirstConflictMachine);
+    ctas.append(go);
+    const viewBtn = el("button", "small-btn", "查看存储内容");
+    viewBtn.type = "button";
+    viewBtn.addEventListener("click", openStorageView);
+    ctas.append(viewBtn);
+    if (seg) hero.append(concl, numbers, seg, note, ctas);
+    else hero.append(concl, numbers, note, ctas);
     requestHeroEnter(hero);
     return;
   }
@@ -1045,11 +1143,17 @@ function renderHero() {
     numbers.textContent = parts.join(" · ") + " · 存储 第 " + c.generation + " 代 · 在线 " + online + "/" + all;
     const seg = heroSegMeter(push, pull, conflicts);
     const note = el("p", "muted small", "到机器列表里点「收取」或「下发」，勾选要动的适配器。");
+    const ctas = el("div", "hero-ctas");
+    const go = el("button", "primary", "去同步 →");
+    go.type = "button";
+    go.addEventListener("click", scrollToFirstDriftMachine);
+    ctas.append(go);
     const viewBtn = el("button", "small-btn", "查看存储内容");
     viewBtn.type = "button";
     viewBtn.addEventListener("click", openStorageView);
-    if (seg) hero.append(concl, numbers, seg, note, viewBtn);
-    else hero.append(concl, numbers, note, viewBtn);
+    ctas.append(viewBtn);
+    if (seg) hero.append(concl, numbers, seg, note, ctas);
+    else hero.append(concl, numbers, note, ctas);
     requestHeroEnter(hero);
     return;
   }
@@ -1258,6 +1362,7 @@ function renderAgents(agents, disabledFeature) {
   });
   agents.forEach(a => {
     const card = el("div", "agent-card" + (a.stale ? " stale" : ""));
+    card.setAttribute("data-agent-id", a.agentId || "");
     const head = el("div", "agent-head");
     head.append(el("span", "dot " + (a.stale ? "off" : "ok")));
     head.append(el("span", "hostname", a.hostname || a.agentId));
@@ -1265,9 +1370,10 @@ function renderAgents(agents, disabledFeature) {
     if (ip) head.append(el("span", "ip", ip));
     head.append(el("span", "aid", a.agentId));
     // 该机器相对存储的漂移（它自己每次心跳上报）
+    const waitingFirst = isWaitingFirstDispatch(a);
     if (a.drift) {
       const d = a.drift;
-      if (d.error && d.error.indexOf("homer") >= 0 && d.error.indexOf("init") >= 0) {
+      if (waitingFirst) {
         // 全新机器还没有自己的配置——不是故障，是等待第一次下发
         head.append(el("span", "counts c-clean", "新机器 · 等待下发"));
       } else if (d.error) {
@@ -1291,13 +1397,7 @@ function renderAgents(agents, disabledFeature) {
     const identity = el("div", "agent-summary", machineIdentity(a));
     const actions = el("div", "agent-actions");
 
-    const detailBtn = el("button", "small-btn", "详情");
-    detailBtn.type = "button";
-    detailBtn.title = "系统、资源、网卡";
-    detailBtn.addEventListener("click", () => openHostDetail(a));
-    actions.append(detailBtn);
-
-    // 查看：这台机器当前的配置实况（适配器/分类/漂移计数）
+    // 查看：只读入口，主行常驻
     const viewBtn = el("button", "small-btn", "查看");
     viewBtn.type = "button";
     viewBtn.title = "查看这台机器当前的配置情况";
@@ -1305,28 +1405,54 @@ function renderAgents(agents, disabledFeature) {
     viewBtn.addEventListener("click", () => openMachineView(a));
     actions.append(viewBtn);
 
-    // 收取：让这台机器把它的配置上传到中心存储
-    const collectBtn = el("button", "small-btn", "收取");
-    collectBtn.type = "button";
-    collectBtn.title = "选择要存入中心的适配器";
-    collectBtn.disabled = a.stale;
-    collectBtn.addEventListener("click", () => confirmCollect(a));
-    actions.append(collectBtn);
+    // #49 按状态渐进披露：冲突收走收取/下发；干净不显示；方向相关才露
+    const d = a.drift || {};
+    const pushN = d.push || 0;
+    const pullN = d.pull || 0;
+    const conflictN = d.conflicts || 0;
+    const hasConflict = conflictN > 0 && !a.stale;
 
-    // 下发：让这台机器应用中心存储的当前内容
-    const dispatchBtn = el("button", "small-btn", "下发");
-    dispatchBtn.type = "button";
-    dispatchBtn.title = "选择要下发到这台机器的适配器";
-    dispatchBtn.disabled = a.stale;
-    dispatchBtn.addEventListener("click", () => confirmDispatch(a));
-    actions.append(dispatchBtn);
+    if (hasConflict) {
+      const resolveBtn = el("button", "small-btn danger-btn", "处理冲突");
+      resolveBtn.type = "button";
+      resolveBtn.title = "先对照这台机器和中心的差别，再选保留哪一边";
+      resolveBtn.addEventListener("click", () => confirmResolve(a));
+      actions.append(resolveBtn);
+    } else if (!a.stale) {
+      const showCollect = pushN > 0;
+      const showDispatch = pullN > 0 || waitingFirst;
+      if (showCollect) {
+        const collectBtn = el("button", "small-btn", "收取");
+        collectBtn.type = "button";
+        collectBtn.title = "选择要存入中心的适配器";
+        collectBtn.addEventListener("click", () => confirmCollect(a));
+        actions.append(collectBtn);
+      }
+      if (showDispatch) {
+        const dispatchBtn = el("button", "small-btn", "下发");
+        dispatchBtn.type = "button";
+        dispatchBtn.title = waitingFirst
+          ? "新机器等待第一次下发"
+          : "选择要下发到这台机器的适配器";
+        dispatchBtn.addEventListener("click", () => confirmDispatch(a));
+        actions.append(dispatchBtn);
+      }
+    }
+
+    // 次要运维收入「更多」（详情 / 密钥 / 更新程序 / 登录公钥 / 吊销 / 移除）
+    const moreBtns = [];
+    const detailBtn = el("button", "small-btn", "详情");
+    detailBtn.type = "button";
+    detailBtn.title = "系统、资源、网卡";
+    detailBtn.addEventListener("click", () => openHostDetail(a));
+    moreBtns.push(detailBtn);
 
     const secretBtn = el("button", "small-btn", "密钥");
     secretBtn.type = "button";
     secretBtn.title = "在这台机器上生成公钥、写入密钥配置、加密提交或归位";
     secretBtn.disabled = a.stale;
     secretBtn.addEventListener("click", () => openMachineKeys(a));
-    actions.append(secretBtn);
+    moreBtns.push(secretBtn);
 
     if (a.outdated) {
       const upgradeBtn = el("button", "small-btn", "更新程序");
@@ -1334,7 +1460,7 @@ function renderAgents(agents, disabledFeature) {
       upgradeBtn.title = "这台机器的程序比中心旧。换成中心现在这份，然后自动重启 agent";
       upgradeBtn.disabled = a.stale;
       upgradeBtn.addEventListener("click", () => upgradeAgent(a));
-      actions.append(upgradeBtn);
+      moreBtns.push(upgradeBtn);
     }
 
     const keyBtn = el("button", "small-btn", "登录公钥");
@@ -1342,18 +1468,8 @@ function renderAgents(agents, disabledFeature) {
     keyBtn.title = "把指定 GitHub 用户的公钥写到这台机器，之后可以免密登录";
     keyBtn.disabled = a.stale;
     keyBtn.addEventListener("click", () => confirmSSHKey(a));
-    actions.append(keyBtn);
+    moreBtns.push(keyBtn);
 
-    // 冲突裁决：先看两边差在哪，再在弹窗里选保留哪一边
-    if (a.drift && a.drift.conflicts > 0 && !a.stale) {
-      const resolveBtn = el("button", "small-btn danger-btn", "处理冲突");
-      resolveBtn.type = "button";
-      resolveBtn.title = "先对照这台机器和中心的差别，再选保留哪一边";
-      resolveBtn.addEventListener("click", () => confirmResolve(a));
-      actions.append(resolveBtn);
-    }
-
-    // 吊销：Tailscale 式单机踢除（凭证失效，行保留观察）。
     const revoke = el("button", "small-btn danger-btn", "吊销");
     revoke.type = "button";
     revoke.title = "吊销该机器的接入凭证（立即失效；不影响其他机器）";
@@ -1365,7 +1481,8 @@ function renderAgents(agents, disabledFeature) {
         await refresh();
       } catch (e) { toast("吊销失败：" + e.message); }
     });
-    // 移除：吊销凭证 + 从列表彻底删除（离线机器清理路径）。
+    moreBtns.push(revoke);
+
     const removeBtn = el("button", "small-btn", "移除");
     removeBtn.type = "button";
     removeBtn.title = "从列表移除该机器（吊销其凭证并删除记录）";
@@ -1377,7 +1494,9 @@ function renderAgents(agents, disabledFeature) {
         await refresh();
       } catch (e) { toast("移除失败：" + e.message); }
     });
-    actions.append(revoke, removeBtn);
+    moreBtns.push(removeBtn);
+
+    actions.append(makeAgentMoreMenu(moreBtns));
     const toolChips = renderToolChips(a);
     if (toolChips) card.append(head, summary, identity, toolChips, actions);
     else card.append(head, summary, identity, actions);
