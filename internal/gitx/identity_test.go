@@ -72,9 +72,16 @@ func TestEnsureLocalIdentityFillsOnlyTheMissingKey(t *testing.T) {
 	if err := os.WriteFile(global, []byte("[user]\n\tname = Kept Global\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	// EMAIL stands in for CI auto-detect (username@hostname): HasCommitIdentity
+	// can already succeed with only user.name set, but the missing config key
+	// must still be pinned locally.
+	t.Setenv("EMAIL", "autodetect@example.invalid")
 	home := t.TempDir()
 	if err := EnsureGitRepo(home); err != nil {
 		t.Fatal(err)
+	}
+	if !HasCommitIdentity(home) {
+		t.Fatal("precondition: name+EMAIL should already satisfy git identity")
 	}
 	wrote, err := EnsureLocalIdentity(home)
 	if err != nil || !wrote {

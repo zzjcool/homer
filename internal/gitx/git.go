@@ -260,13 +260,15 @@ func configPresent(home, key string) bool {
 }
 
 // EnsureLocalIdentity writes user.name and/or user.email into this repository
-// only when git cannot already determine a commit identity. Existing values
-// are left untouched, and global or system config is never modified.
+// when either key is missing from git config (local/global/system). Existing
+// values are left untouched, and global or system config is never modified.
 // wrote reports whether this call changed local config.
+//
+// Do not early-out on HasCommitIdentity alone: git may invent an email from
+// username@hostname when user.email is unset (common on CI runners). That
+// auto-detected identity is fragile, so Homer still pins the missing keys
+// locally for a deterministic baseline commit.
 func EnsureLocalIdentity(home string) (wrote bool, err error) {
-	if HasCommitIdentity(home) {
-		return false, nil
-	}
 	if !IsGitRepo(home) {
 		return false, fmt.Errorf("%s 不是 git 仓库，无法写入本地身份", home)
 	}
