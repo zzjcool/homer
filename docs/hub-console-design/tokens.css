@@ -1,0 +1,80 @@
+/* homer hub console — visual tokens (Kim). Source of truth: VISUAL.md */
+:root {
+  color-scheme: light;
+  --ink: #141414;
+  --ink-dim: #6b6b6b;
+  --line: #e4e4e4;
+  --bg: #ffffff;
+  --bg-sink: #f4f4f4;
+  --bg-elev: #ffffff;
+  --accent: #0a7d4f;
+  --accent-d: #086840;
+  --accent-soft: #0a7d4f18;
+  --warn: #9a6700;
+  --warn-soft: #9a67001a;
+  --danger: #b3261e;
+  --danger-soft: #b3261e14;
+  --ok: #0a7d4f;
+  --offline: #9a9a9a;
+  --fs-hero: 1.5rem;
+  --fs-title: 1.05rem;
+  --fs-body: 0.9375rem;
+  --fs-small: 0.8125rem;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-sheet: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-1: 120ms;
+  --dur-2: 180ms;
+  --dur-3: 220ms;
+  --dur-4: 320ms;
+  --radius: 4px;
+  --page-max: 880px;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e8e8e8;
+  --ink-dim: #9a9a9a;
+  --line: #2e2e2e;
+  --bg: #121212;
+  --bg-sink: #1c1c1c;
+  --bg-elev: #1f1f1f;
+  --accent: #3dba7e;
+  --accent-d: #2f9a66;
+  --accent-soft: #3dba7e22;
+  --warn: #e3b341;
+  --warn-soft: #e3b34122;
+  --danger: #f07178;
+  --danger-soft: #f0717822;
+  --ok: #3dba7e;
+  --offline: #6b6b6b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ink: #e8e8e8;
+    --ink-dim: #9a9a9a;
+    --line: #2e2e2e;
+    --bg: #121212;
+    --bg-sink: #1c1c1c;
+    --bg-elev: #1f1f1f;
+    --accent: #3dba7e;
+    --accent-d: #2f9a66;
+    --accent-soft: #3dba7e22;
+    --warn: #e3b341;
+    --warn-soft: #e3b34122;
+    --danger: #f07178;
+    --danger-soft: #f0717822;
+    --ok: #3dba7e;
+    --offline: #6b6b6b;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
