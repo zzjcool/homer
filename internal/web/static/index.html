@@ -399,6 +399,9 @@ pre .ln-meta { color: var(--ink-dim); display: block; }
   transition: background-color var(--dur-3) var(--ease-out), outline-color var(--dur-3) var(--ease-out);
 }
 .agent-more { position: relative; display: inline-block; }
+/* Open card stacks above neighbors so the menu paints on top; empty panel
+   chrome lets clicks fall through so the next row stays clickable (#74). */
+.agent-card:has(.agent-more[open]) { position: relative; z-index: 25; }
 .agent-more > summary {
   list-style: none; cursor: pointer;
   min-height: 32px; padding: 0 10px; font-size: var(--fs-small);
@@ -411,13 +414,18 @@ pre .ln-meta { color: var(--ink-dim); display: block; }
 .agent-more > summary:hover { border-color: var(--ink); }
 .agent-more[open] > summary { border-color: var(--ink); }
 .agent-more-panel {
-  position: absolute; z-index: 30; top: calc(100% + 4px); left: 0;
-  min-width: 9em; display: flex; flex-direction: column; gap: 4px;
+  position: absolute; z-index: 30; top: calc(100% + 4px); right: 0; left: auto;
+  min-width: 9em; max-width: min(16em, calc(100vw - 32px));
+  display: flex; flex-direction: column; gap: 4px;
   padding: 8px; background: var(--bg); border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: 0 8px 28px color-mix(in srgb, var(--ink) 14%, transparent);
+  pointer-events: none;
 }
-.agent-more-panel button { width: 100%; justify-content: flex-start; text-align: left; }
+.agent-more-panel button {
+  width: 100%; justify-content: flex-start; text-align: left;
+  pointer-events: auto;
+}
 .secret-row { display: flex; gap: 8px; align-items: center; margin: 6px 0; flex-wrap: wrap; }
 .secret-row input { flex: 1; min-width: 140px; }
 .secret-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
@@ -1130,7 +1138,11 @@ function makeAgentMoreMenu(buttons) {
   sum.textContent = "更多";
   wrap.append(sum);
   const panel = el("div", "agent-more-panel");
-  buttons.forEach(b => panel.append(b));
+  buttons.forEach(b => {
+    // Choosing an item must collapse the menu (#74).
+    b.addEventListener("click", () => { wrap.open = false; });
+    panel.append(b);
+  });
   wrap.append(panel);
   // Close sibling menus; outside-click handled once globally below.
   wrap.addEventListener("toggle", () => {
@@ -1143,11 +1155,13 @@ function makeAgentMoreMenu(buttons) {
 }
 if (!window.__homerMoreMenuCloser) {
   window.__homerMoreMenuCloser = true;
-  document.addEventListener("click", (ev) => {
+  // Capture so a click on a neighbor card closes us before the panel
+  // (when it still receives the event) can swallow the intent.
+  document.addEventListener("pointerdown", (ev) => {
     document.querySelectorAll("details.agent-more[open]").forEach(d => {
       if (!d.contains(ev.target)) d.open = false;
     });
-  });
+  }, true);
 }
 /* §3: bump .hero-enter after paint so CSS can cross-fade new content */
 function requestHeroEnter(hero) {
