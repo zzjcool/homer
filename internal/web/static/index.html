@@ -180,6 +180,98 @@ section > h2 { font-size: var(--fs-small); text-transform: uppercase; letter-spa
 #sec-adapters .adapter-line .involve { font-family: var(--mono); font-size: var(--fs-small); color: var(--ink-dim); }
 #sec-adapters .adapter-line .counts.c-drift { color: var(--warn); font-weight: 650; }
 #sec-adapters .adapter-line .counts.c-conflict { color: var(--danger); font-weight: 700; }
+
+/* ============ fleet map (#85 light topology) ============ */
+#sec-fleet-map .fleet-map {
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  padding: 4px 0 2px;
+}
+#sec-fleet-map .fleet-hub {
+  width: 52px; height: 52px; border-radius: 10px;
+  border: 1.5px solid var(--ink); background: var(--bg-elev);
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--fs-small); font-weight: 650; color: var(--ink);
+  flex-shrink: 0; z-index: 1;
+}
+#sec-fleet-map .fleet-map-body {
+  position: relative; width: 100%; max-width: 720px;
+}
+#sec-fleet-map .fleet-map-svg {
+  position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+  pointer-events: none; overflow: visible;
+}
+#sec-fleet-map .fleet-map-svg line {
+  stroke-width: 1; fill: none;
+}
+#sec-fleet-map .fleet-map-svg line.is-clean { stroke: var(--line); }
+#sec-fleet-map .fleet-map-svg line.is-drift { stroke: var(--warn); opacity: .7; }
+#sec-fleet-map .fleet-map-svg line.is-conflict { stroke: var(--danger); opacity: .7; }
+#sec-fleet-map .fleet-map-svg line.is-offline { stroke: var(--offline); opacity: .55; }
+#sec-fleet-map .fleet-sats {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 12px 18px; padding-top: 28px; position: relative; z-index: 1;
+}
+#sec-fleet-map .fleet-sat {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  min-width: 56px; max-width: 96px; padding: 4px 2px;
+  background: none; border: none; color: inherit; font: inherit;
+  cursor: pointer; border-radius: var(--radius);
+}
+#sec-fleet-map .fleet-sat:hover { background: var(--bg-sink); }
+#sec-fleet-map .fleet-sat:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+#sec-fleet-map .fleet-sat .node {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid var(--ok); background: var(--bg-elev);
+  box-sizing: border-box; flex-shrink: 0;
+}
+#sec-fleet-map .fleet-sat.is-drift .node { border-color: var(--warn); }
+#sec-fleet-map .fleet-sat.is-conflict .node { border-color: var(--danger); }
+#sec-fleet-map .fleet-sat.is-offline .node { border-color: var(--offline); }
+#sec-fleet-map .fleet-sat.is-offline { opacity: .72; }
+#sec-fleet-map .fleet-sat .labels {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-width: 0; max-width: 100%;
+}
+#sec-fleet-map .fleet-sat .host {
+  font-size: var(--fs-small); font-weight: 600; color: var(--ink);
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  text-align: center;
+}
+#sec-fleet-map .fleet-sat .aid {
+  font-family: var(--mono); font-size: 0.7rem; color: var(--ink-dim);
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  text-align: center;
+}
+
+/* ~375 narrow: vertical list, left color bar instead of edges */
+@media (max-width: 480px) {
+  #sec-fleet-map .fleet-map { align-items: stretch; }
+  #sec-fleet-map .fleet-hub { align-self: center; margin-bottom: 8px; }
+  #sec-fleet-map .fleet-map-body { max-width: none; }
+  #sec-fleet-map .fleet-map-svg { display: none; }
+  #sec-fleet-map .fleet-sats {
+    flex-direction: column; align-items: stretch;
+    gap: 0; padding-top: 0;
+  }
+  #sec-fleet-map .fleet-sat {
+    flex-direction: row; align-items: center; gap: 10px;
+    max-width: none; min-width: 0; width: 100%;
+    padding: 8px 10px; border-radius: 0;
+    border-left: 3px solid var(--ok);
+    box-sizing: border-box;
+  }
+  #sec-fleet-map .fleet-sat.is-drift { border-left-color: var(--warn); }
+  #sec-fleet-map .fleet-sat.is-conflict { border-left-color: var(--danger); }
+  #sec-fleet-map .fleet-sat.is-offline { border-left-color: var(--offline); }
+  #sec-fleet-map .fleet-sat .node { display: none; }
+  #sec-fleet-map .fleet-sat .host,
+  #sec-fleet-map .fleet-sat .aid { text-align: left; white-space: nowrap; }
+  #sec-fleet-map .fleet-sat .labels {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; flex: 1;
+  }
+}
 #sec-keys details.keys-fold { margin: 0; }
 #sec-keys details.keys-fold > summary.keys-fold-sum {
   list-style: none; cursor: pointer; display: flex; align-items: baseline; gap: 10px;
@@ -710,6 +802,12 @@ dialog menu { display: flex; gap: 8px; justify-content: flex-end; padding: 0; ma
     <!-- page-level alert (secrets rejected / failures) -->
     <div id="alert-slot"></div>
 
+    <!-- ①½ light fleet topology (#85 / #44 slice ⑤) -->
+    <section id="sec-fleet-map" class="hidden" aria-label="舰队拓扑">
+      <h2>拓扑</h2>
+      <div id="fleet-map"></div>
+    </section>
+
     <!-- ② fleet adapter overview (between hero and machines; #51) -->
     <section id="sec-adapters" class="hidden" aria-label="适配器明细">
       <h2>适配器明细</h2>
@@ -1093,6 +1191,121 @@ function fmtDrift(d) {
   if (d.pull) parts.push("↓" + d.pull + " 项待下发");
   if (d.conflicts) parts.push(d.conflicts + " 项冲突");
   return parts.join(" · ");
+}
+
+/* ---------- ①½ light fleet topology (#85) ---------- */
+function machineMapStatus(m) {
+  if (!m || m.stale) return "offline";
+  const d = m.drift;
+  if (!d || d.error) return "clean";
+  if ((d.conflicts || 0) > 0) return "conflict";
+  if ((d.push || 0) + (d.pull || 0) > 0) return "drift";
+  return "clean";
+}
+function truncateHost(name, max) {
+  const s = name || "—";
+  const n = max || 14;
+  if (s.length <= n) return s;
+  return s.slice(0, Math.max(1, n - 1)) + "…";
+}
+function fleetEdgeColor(status) {
+  if (status === "conflict") return "is-conflict";
+  if (status === "drift") return "is-drift";
+  if (status === "offline") return "is-offline";
+  return "is-clean";
+}
+function layoutFleetMapEdges(body, svg, hub, sats) {
+  if (!body || !svg || !hub || !sats || !sats.length) return;
+  // Skip when narrow list layout hides the SVG.
+  if (getComputedStyle(svg).display === "none") {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    return;
+  }
+  const br = body.getBoundingClientRect();
+  if (br.width < 4 || br.height < 4) return;
+  const hr = hub.getBoundingClientRect();
+  const x0 = hr.left + hr.width / 2 - br.left;
+  const y0 = hr.bottom - br.top;
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  svg.setAttribute("viewBox", "0 0 " + br.width + " " + br.height);
+  svg.setAttribute("width", String(br.width));
+  svg.setAttribute("height", String(br.height));
+  sats.forEach(btn => {
+    const node = btn.querySelector(".node");
+    if (!node) return;
+    const nr = node.getBoundingClientRect();
+    const x1 = nr.left + nr.width / 2 - br.left;
+    const y1 = nr.top - br.top;
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", String(x0));
+    line.setAttribute("y1", String(y0));
+    line.setAttribute("x2", String(x1));
+    line.setAttribute("y2", String(y1));
+    line.setAttribute("class", fleetEdgeColor(btn.dataset.status || "clean"));
+    svg.appendChild(line);
+  });
+}
+function renderFleetMap() {
+  const sec = $("sec-fleet-map");
+  const box = $("fleet-map");
+  if (!sec || !box) return;
+  clear(box);
+  const c = app.console;
+  // Hide when empty / unpublished — don't steal #40 empty hero.
+  if (!c || !c.published || !(c.machines || []).length) {
+    sec.classList.add("hidden");
+    return;
+  }
+  sec.classList.remove("hidden");
+  const wrap = el("div", "fleet-map");
+  const hub = el("div", "fleet-hub", "存储");
+  hub.setAttribute("title", "中心存储");
+  wrap.append(hub);
+
+  const body = el("div", "fleet-map-body");
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "fleet-map-svg");
+  svg.setAttribute("aria-hidden", "true");
+  body.append(svg);
+
+  const sats = el("div", "fleet-sats");
+  const satBtns = [];
+  (c.machines || []).forEach(m => {
+    const status = machineMapStatus(m);
+    const btn = el("button", "fleet-sat is-" + status);
+    btn.type = "button";
+    btn.dataset.status = status;
+    btn.dataset.agentId = m.agentId || "";
+    const hostFull = m.hostname || m.agentId || "—";
+    btn.title = hostFull + (m.agentId ? " · " + m.agentId : "");
+    btn.setAttribute("aria-label", "跳到机器 " + hostFull);
+    btn.append(el("span", "node"));
+    const labels = el("span", "labels");
+    labels.append(el("span", "host", truncateHost(hostFull, 14)));
+    if (m.agentId) labels.append(el("span", "aid", m.agentId));
+    btn.append(labels);
+    btn.addEventListener("click", () => {
+      if (m.agentId) scrollToMachineById(m.agentId);
+    });
+    sats.append(btn);
+    satBtns.push(btn);
+  });
+  body.append(sats);
+  wrap.append(body);
+  box.append(wrap);
+
+  const paint = () => layoutFleetMapEdges(body, svg, hub, satBtns);
+  requestAnimationFrame(() => { requestAnimationFrame(paint); });
+  if (!sec._fleetMapResize) {
+    sec._fleetMapResize = () => {
+      const svgEl = box.querySelector(".fleet-map-svg");
+      const bodyEl = box.querySelector(".fleet-map-body");
+      const hubEl = box.querySelector(".fleet-hub");
+      const btns = box.querySelectorAll(".fleet-sat");
+      if (svgEl && bodyEl && hubEl) layoutFleetMapEdges(bodyEl, svgEl, hubEl, Array.from(btns));
+    };
+    window.addEventListener("resize", sec._fleetMapResize);
+  }
 }
 
 /* ---------- ② fleet adapter overview (#51) ---------- */
@@ -4751,6 +4964,7 @@ async function refresh() {
     app.agents = agents.agents || [];
     app.plugins = plugins;
     renderHero();
+    renderFleetMap();
     renderAdaptersOverview();
     renderPlugins();
     loadAgentsRender(app.agents, false);
