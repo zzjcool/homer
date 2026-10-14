@@ -299,7 +299,7 @@ html { scroll-behavior: smooth; }
 <!-- ============ header ============ -->
 <header class="topbar">
   <h1>homer</h1>
-  <span class="muted small" id="ver">v1.3.0</span>
+  <span class="muted small" id="ver"></span>
   <span class="spacer"></span>
   <button class="text" id="btn-plugins" type="button" aria-haspopup="dialog">插件</button>
   <button class="text" id="btn-join-top" type="button">接入命令</button>
@@ -3970,11 +3970,30 @@ async function routeUnauthed(loginNote) {
   if (loginNote) showGate("login", loginNote);
   return "ok";
 }
+// Fill the header version from /api/health so it always matches
+// `homer version` / the hub binary instead of a hardcoded release string.
+async function loadHeaderVersion() {
+  const node = $("ver");
+  if (!node) return;
+  try {
+    const data = await api("/api/health");
+    const raw = data && data.version != null ? String(data.version).trim() : "";
+    if (!raw) return;
+    node.textContent = (raw === "dev" || raw.charAt(0) === "v") ? raw : ("v" + raw);
+  } catch (_) {
+    // Health is public; leave the span empty if it somehow fails.
+  }
+}
 async function boot() {
-  if ((await routeUnauthed()) !== "ok") return;
+  // Health needs no auth — show the real hub version on login/setup too.
+  const versionP = loadHeaderVersion();
+  if ((await routeUnauthed()) !== "ok") {
+    await versionP;
+    return;
+  }
   // configured: probe with a status call — 401 routes to login, success
   // renders the workspace directly (no separate "authed" flag on the server).
-  await refresh();
+  await Promise.all([versionP, refresh()]);
 }
 boot();
 
