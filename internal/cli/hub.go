@@ -38,7 +38,17 @@ func hubTokenFromEnv(flagToken string) string {
 // rule from plan §2.1; the CLI layer surfaces its error and exits 1.
 func runServe(options CommandOptions, out, errOut io.Writer) int {
 	paths := ResolveHomerPaths(options.Home)
-	listener, err := net.Listen("tcp", defaultAddr(options.Addr))
+	addr := defaultAddr(options.Addr)
+
+	// --show-join prints the copy-paste agent bootstrap command and exits
+	// without serving. The token is long-lived, so it must be fetchable
+	// without scraping startup logs (Tailscale's "print once" follow-up),
+	// and without binding: the hub is usually already listening here.
+	if options.ShowJoin {
+		return showJoinCommand(paths, addr, options, out, errOut)
+	}
+
+	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		writeLine(errOut, fmt.Sprintf("homer serve: 监听失败: %s", err.Error()))
 		return 1
@@ -47,14 +57,6 @@ func runServe(options CommandOptions, out, errOut io.Writer) int {
 	// what both the loopback check and the startup message must use.
 	boundAddr := listener.Addr().String()
 	loopback := isLoopbackBound(boundAddr)
-
-	// --show-join prints the copy-paste agent bootstrap command and exits
-	// without serving: the token is long-lived, so it must be fetchable
-	// without scraping startup logs (Tailscale's "print once" follow-up).
-	if options.ShowJoin {
-		_ = listener.Close()
-		return showJoinCommand(paths, boundAddr, options, out, errOut)
-	}
 
 	// Token lifecycle (advisor ruling): --token persists (deliberate
 	// rotation), HOMER_HUB_TOKEN overrides this process only, then
