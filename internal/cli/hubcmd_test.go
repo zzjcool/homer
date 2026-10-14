@@ -32,7 +32,7 @@ func TestPSTalksToTheHubFromHOMERHOST(t *testing.T) {
 		t.Fatalf("token = %q", gotToken)
 	}
 	text := out.String()
-	if !strings.Contains(text, "box") || !strings.Contains(text, "在线") || !strings.Contains(text, "v1.2.0") {
+	if !strings.Contains(text, "box") || !strings.Contains(text, "box-1") || !strings.Contains(text, "在线") || !strings.Contains(text, "v1.2.0") {
 		t.Fatalf("ps output = %q", text)
 	}
 }
@@ -62,22 +62,52 @@ func TestPSListsApplicationVersions(t *testing.T) {
 	if len(lines) != 4 {
 		t.Fatalf("ps printed %d lines, want a header and three machines:\n%s", len(lines), out.String())
 	}
-	if cells := strings.Split(lines[0], "\t"); len(cells) != 5 || cells[0] != "机器" || cells[4] != "应用" {
+	if cells := strings.Split(lines[0], "\t"); len(cells) != 6 || cells[0] != "机器" || cells[1] != "ID" || cells[5] != "应用" {
 		t.Fatalf("header = %q", lines[0])
 	}
-	want := map[string]string{
+	wantApps := map[string]string{
 		"old":  "pi 0.80.0（落后，最新 0.90.2）, herdr 0.9.1, opencode 版本未知",
 		"new":  "vscode 1.100.0",
 		"bare": "—",
 	}
+	wantID := map[string]string{
+		"old":  "old-1",
+		"new":  "new-1",
+		"bare": "bare-1",
+	}
 	for _, line := range lines[1:] {
 		cells := strings.Split(line, "\t")
-		if len(cells) != 5 {
-			t.Fatalf("row %q has %d cells, want 5", line, len(cells))
+		if len(cells) != 6 {
+			t.Fatalf("row %q has %d cells, want 6", line, len(cells))
 		}
-		if cells[4] != want[cells[0]] {
-			t.Errorf("%s applications = %q, want %q", cells[0], cells[4], want[cells[0]])
+		if cells[1] != wantID[cells[0]] {
+			t.Errorf("%s id = %q, want %q", cells[0], cells[1], wantID[cells[0]])
 		}
+		if cells[5] != wantApps[cells[0]] {
+			t.Errorf("%s applications = %q, want %q", cells[0], cells[5], wantApps[cells[0]])
+		}
+	}
+}
+
+func TestPSShowsAgentIDWhenHostnameMissing(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ok":true,"agents":[{"agentId":"only-id","hostname":"","version":"v1","stale":true}]}`))
+	}))
+	defer server.Close()
+	t.Setenv("HOMER_HOST", server.URL)
+	t.Setenv("HOMER_HUB_TOKEN", "cli-token")
+	var out, errOut bytes.Buffer
+	if code := runWithIO([]string{"ps"}, &out, &errOut); code != 0 {
+		t.Fatalf("ps exit %d stderr %s", code, errOut.String())
+	}
+	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("ps printed %d lines:\n%s", len(lines), out.String())
+	}
+	cells := strings.Split(lines[1], "\t")
+	if len(cells) != 6 || cells[0] != "—" || cells[1] != "only-id" || cells[2] != "离线" {
+		t.Fatalf("row = %#v", cells)
 	}
 }
 
