@@ -4,6 +4,8 @@
 
 ## 发布纪律
 
+合并到 `master` 前 CI 应全绿；打 `v*` tag 才跑 goreleaser 发布工作流。见 [ci.md](ci.md)。
+
 1. **Release 资产只能由 goreleaser CI 产出**。本地交叉编译的二进制（即使 Mach-O 逐字段一致）
    不进正式 Release——构建环境差异（公证/quarantine 上下文）无法靠 diff 排除。
    事故案例：2026-10-10 本地编译的 darwin/arm64 进 Release，Mac 上 exec format error。
