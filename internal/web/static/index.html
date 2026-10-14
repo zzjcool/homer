@@ -472,6 +472,7 @@ pre .ln-meta { color: var(--ink-dim); display: block; }
   font-size: var(--fs-small); color: var(--ink-dim);
   border: 1px solid var(--line); border-radius: 99px;
   padding: 2px 10px; background: var(--bg-sink);
+  cursor: pointer;
 }
 .fleet-badge .n {
   font-family: var(--mono); font-variant-numeric: tabular-nums;
@@ -482,6 +483,8 @@ pre .ln-meta { color: var(--ink-dim); display: block; }
 .fleet-badge.offline .dot { background: var(--offline); }
 .fleet-badge.drift .dot { background: var(--warn); }
 .fleet-badge.drift.has-drift .n { color: var(--warn); font-weight: 650; }
+.fleet-badge.conflict .dot { background: var(--danger); }
+.fleet-badge.conflict.has-conflict .n { color: var(--danger); font-weight: 650; }
 
 .agent-sys { font-size: var(--fs-small); color: var(--ink-dim); }
 .agent-nets { display: grid; gap: 2px; }
@@ -1162,25 +1165,55 @@ function adapterDriftShare(adapter) {
   return { share: 1, conflict: false, drifted: drifted };
 }
 function fleetBadge(kind, label, n, hot) {
-  const b = el("span", "fleet-badge " + kind + (hot ? " has-drift" : ""));
+  let hotCls = "";
+  if (hot) {
+    if (kind === "conflict") hotCls = " has-conflict";
+    else if (kind === "drift") hotCls = " has-drift";
+  }
+  const b = el("span", "fleet-badge " + kind + hotCls);
+  b.setAttribute("role", "button");
+  b.tabIndex = 0;
+  b.title = "跳到首台" + label + "机器";
   b.append(el("span", "dot"), el("span", null, label + " "), el("span", "n", String(n)));
+  const go = () => scrollToFirstBadgeMatch(kind);
+  b.addEventListener("click", go);
+  b.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); go(); }
+  });
   return b;
 }
+function scrollToFirstBadgeMatch(kind) {
+  const agents = app.agents || [];
+  let match = null;
+  if (kind === "online") match = agents.find(a => !a.stale);
+  else if (kind === "offline") match = agents.find(a => !!a.stale);
+  else if (kind === "drift") match = agents.find(a => machineMapStatus(a) === "drift");
+  else if (kind === "conflict") match = agents.find(a => machineMapStatus(a) === "conflict");
+  if (match && match.agentId) scrollToMachineById(match.agentId);
+}
+function agentDotClass(a) {
+  const s = machineMapStatus(a);
+  if (s === "offline") return "off";
+  if (s === "conflict") return "conflict";
+  if (s === "drift") return "drift";
+  return "ok";
+}
 function renderFleetBadges(agents) {
-  let online = 0, offline = 0, driftN = 0;
+  let online = 0, offline = 0, driftN = 0, conflictN = 0;
   (agents || []).forEach(a => {
-    if (a.stale) offline++;
-    else online++;
-    const d = a.drift;
-    if (!d || d.error) return;
-    if ((d.push || 0) + (d.pull || 0) + (d.conflicts || 0) > 0) driftN++;
+    if (a.stale) { offline++; return; }
+    online++;
+    const status = machineMapStatus(a);
+    if (status === "conflict") conflictN++;
+    else if (status === "drift") driftN++;
   });
   const wrap = el("div", "fleet-badges");
   wrap.setAttribute("aria-label", "舰队摘要");
   wrap.append(
     fleetBadge("online", "在线", online, false),
     fleetBadge("offline", "离线", offline, false),
-    fleetBadge("drift", "漂移", driftN, driftN > 0)
+    fleetBadge("drift", "漂移", driftN, driftN > 0),
+    fleetBadge("conflict", "冲突", conflictN, conflictN > 0)
   );
   return wrap;
 }
@@ -1783,7 +1816,7 @@ function renderAgents(agents, disabledFeature) {
     list.append(box);
     return;
   }
-  // VISUAL §4: fleet badges above machine list (在线 / 离线 / 漂移).
+  // VISUAL §4: fleet badges above machine list (在线 / 离线 / 漂移 / 冲突).
   list.append(renderFleetBadges(agents));
   // Fleet max drift for relative per-machine delta bars.
   let fleetMaxDrift = 0;
@@ -1797,7 +1830,7 @@ function renderAgents(agents, disabledFeature) {
     const card = el("div", "agent-card" + (a.stale ? " stale" : ""));
     card.setAttribute("data-agent-id", a.agentId || "");
     const head = el("div", "agent-head");
-    head.append(el("span", "dot " + (a.stale ? "off" : "ok")));
+    head.append(el("span", "dot " + agentDotClass(a)));
     head.append(el("span", "hostname", a.hostname || a.agentId));
     const ip = primaryIP(a.host);
     if (ip) head.append(el("span", "ip", ip));

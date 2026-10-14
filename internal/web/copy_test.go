@@ -70,6 +70,8 @@ func TestConsoleUserCopy(t *testing.T) {
 		"miniMeterSeg", "small-btn jump involve",
 		// 轻量舰队拓扑（#85）
 		`id="sec-fleet-map"`, "renderFleetMap", "machineMapStatus", "fleet-hub", "拓扑",
+		// 状态点 + 冲突舰队徽标（#87）
+		"has-conflict", `fleetBadge("conflict", "冲突"`, "scrollToFirstBadgeMatch", "agentDotClass",
 		// 配置查看（存储视角 / 机器视角）
 		"查看存储内容", "服务器存储 · 当前内容", "/api/storage",
 		"默认加密", "待加密", "转为加密",
