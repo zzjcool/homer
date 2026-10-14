@@ -63,9 +63,9 @@ func TestConsoleUserCopy(t *testing.T) {
 		"没有冲突的内容已经写到",
 		"配置目录，扫描时读不到",
 		"/api/console",
-		// 舰队适配器总览（#51；载荷无 per-adapter 时降级按机器看）
-		`id="sec-adapters"`, "renderAdaptersOverview", "适配器全部干净",
-		"当前控制台载荷仅有机器合计，按机器看", "keys-fold",
+		// 舰队适配器总览（#51 follow-up：per-adapter 聚合，machines[].adapters）
+		`id="sec-adapters"`, "renderAdaptersOverview", "aggregateFleetAdapters",
+		"适配器全部干净", "涉及 ", "machines[].adapters", "keys-fold",
 		// 配置查看（存储视角 / 机器视角）
 		"查看存储内容", "服务器存储 · 当前内容", "/api/storage",
 		"默认加密", "待加密", "转为加密",
