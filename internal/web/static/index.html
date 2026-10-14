@@ -176,9 +176,10 @@ section > h2 { font-size: var(--fs-small); text-transform: uppercase; letter-spa
 .adapter-line .row-actions { margin-left: auto; display: flex; gap: 8px; }
 .adapter-row.disabled-row { opacity: .55; }
 #sec-adapters .adapters-clean-line { margin: 0; padding: 2px 4px; }
-#sec-adapters .adapters-degraded-note { margin: 0 0 8px; padding: 0 4px; }
 #sec-adapters .adapter-line .jump { margin-left: auto; }
-#sec-adapters .adapter-line .aid-hint { font-family: var(--mono); font-size: var(--fs-small); color: var(--ink-dim); }
+#sec-adapters .adapter-line .involve { font-family: var(--mono); font-size: var(--fs-small); color: var(--ink-dim); }
+#sec-adapters .adapter-line .counts.c-drift { color: var(--warn); font-weight: 650; }
+#sec-adapters .adapter-line .counts.c-conflict { color: var(--danger); font-weight: 700; }
 #sec-keys details.keys-fold { margin: 0; }
 #sec-keys details.keys-fold > summary.keys-fold-sum {
   list-style: none; cursor: pointer; display: flex; align-items: baseline; gap: 10px;
@@ -815,8 +816,8 @@ const $ = id => document.getElementById(id);
  * POST /api/auth/logout
  * GET  /api/auth/join     {command}
  * GET  /api/health        {version}
- * GET  /api/console       {published, generation, machines:[{agentId,hostname,stale,drift:{push,pull,conflicts}}]}
- *                         (no per-adapter breakdown yet — #51 overview degrades to 按机器看)
+ * GET  /api/console       {published, generation, machines:[{agentId,hostname,stale,drift:{push,pull,conflicts},adapters:[{id,push,pull,conflicts}]}]}
+ *                         (adapters always present; [] when no per-adapter detail — #51 fleet overview aggregates by id)
  * GET  /api/status        {report:{...}} (机器视角的兼容端点)
  * GET  /api/diff?adapter&category  {empty, text}
  * GET  /api/sync/choices?direction=collect|dispatch|resolve&agent=<id>&stream=1 (collect NDJSON)
@@ -1027,15 +1028,8 @@ function fmtDrift(d) {
 }
 
 /* ---------- ② fleet adapter overview (#51) ---------- */
-/* Console payload today only has machines[].drift totals (no per-adapter
- * breakdown). Until Reed exposes per-machine per-adapter counts on
- * GET /api/console, this section runs in degraded「按机器看」mode. */
-function machineHasOverviewDrift(m) {
-  if (!m || m.stale) return false;
-  const d = m.drift;
-  if (!d || d.error) return false;
-  return ((d.push || 0) + (d.pull || 0) + (d.conflicts || 0)) > 0;
-}
+/* Aggregate machines[].adapters (always present; [] when unknown) by adapter
+ * id across the fleet. Machine-level degrade overview removed after #72/#78. */
 function fmtOverviewCounts(d) {
   const parts = [];
   if (d.push) parts.push("↑" + d.push);
@@ -1046,6 +1040,39 @@ function fmtOverviewCounts(d) {
 function scrollToMachineById(agentId) {
   const card = findAgentCard(a => a.agentId === agentId);
   flashScrollAgentCard(card || document.getElementById("agent-list"));
+}
+function aggregateFleetAdapters(machines) {
+  const byId = Object.create(null);
+  (machines || []).forEach(m => {
+    if (!m || m.stale) return;
+    (m.adapters || []).forEach(a => {
+      if (!a || !a.id) return;
+      const push = a.push || 0;
+      const pull = a.pull || 0;
+      const conflicts = a.conflicts || 0;
+      let row = byId[a.id];
+      if (!row) {
+        row = { id: a.id, push: 0, pull: 0, conflicts: 0, machines: [] };
+        byId[a.id] = row;
+      }
+      row.push += push;
+      row.pull += pull;
+      row.conflicts += conflicts;
+      // Machines that reported this adapter in their per-adapter breakdown.
+      if (!row.machines.some(x => x.agentId === m.agentId)) {
+        row.machines.push({ agentId: m.agentId, hostname: m.hostname || m.agentId || "—" });
+      }
+    });
+  });
+  return Object.keys(byId).map(k => byId[k]).filter(r =>
+    (r.push + r.pull + r.conflicts) > 0
+  ).sort((a, b) => {
+    if ((b.conflicts > 0) !== (a.conflicts > 0)) return b.conflicts > 0 ? 1 : -1;
+    const bt = b.push + b.pull + b.conflicts;
+    const at = a.push + a.pull + a.conflicts;
+    if (bt !== at) return bt - at;
+    return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
+  });
 }
 function renderAdaptersOverview() {
   const sec = $("sec-adapters");
@@ -1059,36 +1086,34 @@ function renderAdaptersOverview() {
     return;
   }
   sec.classList.remove("hidden");
-  const drifted = (c.machines || []).filter(machineHasOverviewDrift);
-  if (!drifted.length) {
+  const rows = aggregateFleetAdapters(c.machines);
+  if (!rows.length) {
     box.append(el("p", "muted small adapters-clean-line", "适配器全部干净"));
     return;
   }
-  // Degraded: console has only machine-level totals — list drifted machines.
-  box.append(el("p", "muted small adapters-degraded-note",
-    "当前控制台载荷仅有机器合计，按机器看"));
-  drifted.forEach(m => {
+  rows.forEach(r => {
     const row = el("div", "adapter-row");
     const line = el("div", "adapter-line");
-    line.append(el("span", "name", m.hostname || m.agentId || "—"));
-    if (m.agentId && m.hostname && m.agentId !== m.hostname) {
-      line.append(el("span", "aid-hint", m.agentId));
-    }
-    const d = m.drift || {};
-    const counts = el("span", "counts " + (d.conflicts ? "c-conflict" : "c-drift"),
-      fmtOverviewCounts(d));
+    line.append(el("span", "name", r.id));
+    const counts = el("span", "counts " + (r.conflicts ? "c-conflict" : "c-drift"),
+      fmtOverviewCounts(r));
     line.append(counts);
-    const jump = el("button", "small-btn jump", "查看机器");
-    jump.type = "button";
-    jump.title = "跳到这台机器卡";
-    jump.addEventListener("click", () => scrollToMachineById(m.agentId));
-    line.append(jump);
+    const n = r.machines.length;
+    const involve = el("button", "small-btn jump", "涉及 " + n + " 台");
+    involve.type = "button";
+    const labels = r.machines.map(m => m.hostname).join("、");
+    involve.title = n === 1 ? ("跳到 " + labels) : ("相关机器：" + labels + "（点此跳到第一台）");
+    const jumpFirst = () => {
+      const first = r.machines[0];
+      if (first) scrollToMachineById(first.agentId);
+    };
+    involve.addEventListener("click", jumpFirst);
+    line.append(involve);
     row.append(line);
-    // Whole row is also clickable (button stops propagation via its own handler).
     row.style.cursor = "pointer";
     row.addEventListener("click", (ev) => {
       if (ev.target && ev.target.closest && ev.target.closest("button")) return;
-      scrollToMachineById(m.agentId);
+      jumpFirst();
     });
     box.append(row);
   });
