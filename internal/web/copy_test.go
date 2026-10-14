@@ -17,7 +17,7 @@ func TestConsoleUserCopy(t *testing.T) {
 		"join-listen", "btn-copy-listen", "listenCommand", "loadCollectPrecheck", "precheckToken", "/api/sync/precheck",
 		"可推送", "可拉取", "确认推送", "确认拉取",
 		"allow-secrets", "commit", "bare", "仓库",
-		"/api/push", "/api/pull", "查看状态", "查看差异", "处理漂移", "推送", "拉取",
+		"/api/push", "/api/pull", "查看状态", "处理漂移", "推送", "拉取",
 		"同步到其他机器", "从中心同步", "以本机为准", "这台机器的改动",
 		"处理改动",
 	} {
@@ -39,6 +39,7 @@ func TestConsoleUserCopy(t *testing.T) {
 		"有尚未同步的改动",
 		"全部对齐",
 		"收取", "下发", "确认收取", "确认下发", "/api/sync?",
+		"查看差异", "无漂移", "读取差异…", "renderUnifiedDiff", "toggleScopeUnifiedDiff",
 		"/api/sync/choices", "勾选要动的适配器", "const body = { adapters: adapters }",
 		"全选", "反选", "全不选",
 		"密钥跟着这次一起",
