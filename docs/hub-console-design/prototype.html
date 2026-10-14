@@ -173,6 +173,7 @@ html { scroll-behavior: smooth; }
   <button data-sc="drift">有漂移</button>
   <button data-sc="conflict">有冲突</button>
   <button data-sc="agents-empty">无机器</button>
+  <button data-sc="agents-same-host">同 hostname 双 agent</button>
   <button data-sc="agents-off">多机未启用</button>
   <button data-sc="loadfail">状态加载失败</button>
 </div>
@@ -463,6 +464,13 @@ const MOCK = (() => {
         world.adapters[0].categories[1].conflicts = 1;
         break;
       case "agents-empty": world.agents = []; break;
+      case "agents-same-host":
+        world.agents = [
+          { agentId: "agt_ux_a01", hostname: "dev-box", mode: "connect", lastSeen: "1 分钟前", stale: false },
+          { agentId: "agt_ux_b02", hostname: "dev-box", mode: "connect", lastSeen: "刚刚", stale: false },
+          { agentId: "agt_77old", hostname: "old-box", mode: "listen", lastSeen: "3 天前", stale: true },
+        ];
+        break;
       case "agents-off": world.agentsEnabled = false; break;
       case "loadfail": world.statusFails = true; break;
     }
@@ -479,6 +487,8 @@ const MOCK = (() => {
 const $ = id => document.getElementById(id);
 const app = {
   report: null,           // 最近一次 /api/status 的 report
+  agents: null,           // 最近一次 /api/agents 列表（null=未加载；[]=无机器）
+  agentsDisabled: false,  // 501 agents-disabled
   pendingAction: null,    // push/pull 待确认
   openDiffs: new Set(),   // 展开的 diff 抽屉，key = adapter/category（轮询不重置）
   joining: null,
@@ -547,6 +557,19 @@ function renderHero() {
   const concl = el("p", "conclusion");
   const numbers = el("p", "numbers");
 
+  // 无 agent：hero 引导接入（对照 #40/#47），不展示处理漂移主 CTA
+  if (!app.agentsDisabled && Array.isArray(app.agents) && app.agents.length === 0) {
+    concl.append(el("span", "dot off"), document.createTextNode("还没有机器接入"));
+    numbers.textContent = "单机也请先接入本机 agent，才能在此看差异与推拉";
+    const btn = el("button", "primary", "接入命令 →");
+    btn.type = "button";
+    btn.addEventListener("click", openJoin);
+    const note = el("div", "hero-note info");
+    note.append(el("div", "small muted", "在新机器（或本机）终端运行接入命令；接入后出现在下方机器列表。"));
+    hero.append(concl, numbers, btn, note);
+    return;
+  }
+
   if (conflicts > 0) {
     hero.classList.add("warn");
     concl.append(el("span", "dot conflict"), document.createTextNode("有冲突，需要终端处理"));
@@ -595,6 +618,12 @@ function countCls(push, pull, conflicts) {
 function renderAdapters() {
   const list = $("adapter-list"); clear(list);
   const r = app.report;
+  if (!app.agentsDisabled && Array.isArray(app.agents) && app.agents.length === 0) {
+    const row = el("div", "adapter-line");
+    row.append(el("span", "name muted", "接入机器后显示适配器与差异"));
+    list.append(row);
+    return;
+  }
   const totalDrift = (r.adapters || []).reduce((s, a) => s + a.push + a.pull + a.conflicts, 0);
 
   if (totalDrift === 0 && !app._adaptersTouched) {
@@ -734,7 +763,9 @@ function renderAgents(agents, disabledFeature) {
     const line = el("div", "agent-line" + (a.stale ? " stale" : ""));
     line.append(el("span", "dot " + (a.stale ? "off" : "ok")));
     line.append(el("span", "hostname", a.hostname));
-    line.append(el("span", "aid", a.agentId));
+    const aid = el("span", "aid", a.agentId);
+    aid.title = a.agentId; // 截断时仍可悬停看全量；对照 #39/#46
+    line.append(aid);
     line.append(el("span", "meta",
       (a.mode === "listen" ? "直连" : "主动连接") + " · " + a.lastSeen + (a.stale ? " · 离线" : "")));
     if (a.stale) line.append(el("span", "small muted", "离线期间不产生同步"));
@@ -759,11 +790,18 @@ async function loadAgents() {
   try {
     const d = await api("/api/agents");
     btn.classList.remove("hidden");      // 功能可用 → 恢复入口（renderAgents 渲染前定下终态）
-    renderAgents(d.agents || [], false);
+    app.agents = d.agents || [];
+    app.agentsDisabled = false;
+    renderAgents(app.agents, false);
+    // agents 状态会影响 hero / 适配器空态（对照 #40/#47）
+    if (app.report) { renderHero(); renderAdapters(); }
   } catch (e) {
     if (e.code === "agents-disabled") {
       btn.classList.add("hidden");       // 功能没开 → 隐藏入口（与 renderAgents 分支一致）
+      app.agents = [];
+      app.agentsDisabled = true;
       renderAgents([], true);
+      if (app.report) { renderHero(); renderAdapters(); }
     }
     else if (e.status === 401) return;   // 401 由 refresh 统一处理
     else renderAgentsError(e.message);
