@@ -1142,8 +1142,9 @@ function renderHero() {
     if (pull) parts.push("↓" + pull + " 项待下发");
     numbers.textContent = parts.join(" · ") + " · 存储 第 " + c.generation + " 代 · 在线 " + online + "/" + all;
     const seg = heroSegMeter(push, pull, conflicts);
+    const note = el("p", "muted small", "到机器列表里点「收取」或「下发」，勾选要动的适配器。");
     const ctas = el("div", "hero-ctas");
-    const go = el("button", "primary", "处理漂移 →");
+    const go = el("button", "primary", "去同步 →");
     go.type = "button";
     go.addEventListener("click", scrollToFirstDriftMachine);
     ctas.append(go);
@@ -1151,8 +1152,8 @@ function renderHero() {
     viewBtn.type = "button";
     viewBtn.addEventListener("click", openStorageView);
     ctas.append(viewBtn);
-    if (seg) hero.append(concl, numbers, seg, ctas);
-    else hero.append(concl, numbers, ctas);
+    if (seg) hero.append(concl, numbers, seg, note, ctas);
+    else hero.append(concl, numbers, note, ctas);
     requestHeroEnter(hero);
     return;
   }
