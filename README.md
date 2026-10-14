@@ -515,7 +515,7 @@ go test ./...
 sh -n install.sh
 ```
 
-合并进 `master` 前，GitHub Actions（`.github/workflows/ci.yml`）应全绿：`go vet ./...` 与 `go test ./...`。推送 `v*` tag 会跑已有的 goreleaser 发布流程（`.github/workflows/release.yml`）。多容器验收 `bash e2e/hub-smoke.sh` 不在每次 PR 上跑。详见 [docs/ops/ci.md](docs/ops/ci.md)。
+合并进 `master` 前，GitHub Actions（`.github/workflows/ci.yml`）应全绿：`go build ./...`、`go vet ./...`、`gofmt -l .` 与 `go test ./...`。推送 `v*` tag 会跑已有的 goreleaser 发布流程（`.github/workflows/release.yml`）。多容器验收 `bash e2e/hub-smoke.sh` 不在每次 PR 上跑。详见 [docs/ops/ci.md](docs/ops/ci.md)。
 
 完整的 W11 验收记录、测试统计、发布矩阵与已知限制见
 [docs/go-rewrite-report.md](docs/go-rewrite-report.md)；设计和冻结语义见

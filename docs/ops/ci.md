@@ -2,8 +2,11 @@
 
 合并到 `master` 前，[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) 应全绿。它在指向 `master` 的 pull request，以及推送到 `master` 时运行：
 
+- `go build ./...`
 - `go vet ./...`
+- `gofmt -l .`（有输出则失败；排除路径名里含 `vendor` 的行，与 README 验收命令一致）
 - `go test ./... -count=1 -timeout 20m`
+- `sh -n install.sh`
 
 Go 版本跟 `go.mod`（`actions/setup-go` 的 `go-version-file`），与发版工作流一致。
 
