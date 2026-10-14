@@ -67,11 +67,15 @@ func runHubPS(options CommandOptions, out, errOut io.Writer) int {
 		writeLine(out, "中心上还没有机器。")
 		return 0
 	}
-	writeLine(out, "机器\t状态\t版本\t上次心跳\t应用")
+	writeLine(out, "机器\tID\t状态\t版本\t上次心跳\t应用")
 	for _, agent := range payload.Agents {
 		name := agent.Hostname
 		if name == "" {
-			name = agent.AgentID
+			name = "—"
+		}
+		id := agent.AgentID
+		if id == "" {
+			id = "—"
 		}
 		state := "在线"
 		if agent.Stale {
@@ -85,7 +89,7 @@ func runHubPS(options CommandOptions, out, errOut io.Writer) int {
 		if !agent.LastSeen.IsZero() {
 			seen = agent.LastSeen.Local().Format("01-02 15:04:05")
 		}
-		writeLine(out, strings.Join([]string{name, state, version, seen, psToolsText(agent.Tools)}, "\t"))
+		writeLine(out, strings.Join([]string{name, id, state, version, seen, psToolsText(agent.Tools)}, "\t"))
 	}
 	return 0
 }
