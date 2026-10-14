@@ -238,6 +238,7 @@ button.view-toggle { background: none; border: none; color: var(--ink); cursor: 
 }
 pre .ln-add { color: var(--accent); background: var(--accent-soft); display: block; }
 pre .ln-del { color: var(--danger); background: var(--danger-soft); display: block; }
+pre .ln-mod { color: var(--warn); background: var(--warn-soft); display: block; }
 .diff-drawer pre > span { display: block; white-space: pre; }
 .diff-drawer .diff-err { color: var(--danger); font-size: var(--fs-small); }
 .view-cat > button.small-btn { margin-left: 8px; flex-shrink: 0; }
@@ -3797,7 +3798,21 @@ function conflictFilePath(path, category) {
   return rel;
 }
 let scopeDiffSeq = 0;
-// #50：把 unified diff 文本渲成 +/-/上下文行（复用 .ln-add / .ln-del）。
+// #50/#69：unified +/- 行 + 字段摘要 `key: old → new` 语义着色（.ln-add/.ln-del/.ln-mod）。
+function classifyDiffLine(line) {
+  if (line.startsWith("+") && !line.startsWith("+++")) return "ln-add";
+  if (line.startsWith("-") && !line.startsWith("---")) return "ln-del";
+  // 现网 diff 载荷：`    drift: (无) → DOGFOOD-50-LOCAL`（非 +/- unified）
+  const m = line.match(/^\s*[^:]+:\s*(.*?)\s*(?:→|->)\s*(.*?)\s*$/);
+  if (!m) return "";
+  const oldV = String(m[1] || "").trim();
+  const newV = String(m[2] || "").trim();
+  const missing = v => v === "" || v === "(无)";
+  if (missing(oldV) && !missing(newV)) return "ln-add";
+  if (!missing(oldV) && missing(newV)) return "ln-del";
+  if (!missing(oldV) && !missing(newV) && oldV !== newV) return "ln-mod";
+  return "";
+}
 function renderUnifiedDiff(text) {
   const pre = el("pre");
   const raw = String(text == null ? "" : text);
@@ -3808,9 +3823,7 @@ function renderUnifiedDiff(text) {
     return pre;
   }
   lines.forEach(line => {
-    let cls = "";
-    if (line.startsWith("+") && !line.startsWith("+++")) cls = "ln-add";
-    else if (line.startsWith("-") && !line.startsWith("---")) cls = "ln-del";
+    const cls = classifyDiffLine(line);
     pre.append(el("span", cls || null, line.length ? line : " "));
   });
   return pre;

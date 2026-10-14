@@ -39,7 +39,7 @@ func TestConsoleUserCopy(t *testing.T) {
 		"有尚未同步的改动",
 		"全部对齐",
 		"收取", "下发", "确认收取", "确认下发", "/api/sync?",
-		"查看差异", "无漂移", "读取差异…", "renderUnifiedDiff", "toggleScopeUnifiedDiff",
+		"查看差异", "无漂移", "读取差异…", "renderUnifiedDiff", "toggleScopeUnifiedDiff", "classifyDiffLine", "ln-mod",
 		"/api/sync/choices", "勾选要动的适配器", "const body = { adapters: adapters }",
 		"全选", "反选", "全不选",
 		"密钥跟着这次一起",
