@@ -238,9 +238,77 @@ pre .ln-meta { color: var(--ink-dim); display: block; }
 .meter { display: flex; align-items: center; gap: 6px; font-size: var(--fs-small); min-width: 210px; flex: 1 1 220px; max-width: 340px; }
 .meter .label { width: 2.75em; color: var(--ink-dim); flex: none; }
 .meter .bar { flex: 1; height: 6px; background: var(--bg-sink); border: 1px solid var(--line); border-radius: 99px; overflow: hidden; min-width: 48px; }
-.meter .bar i { display: block; height: 100%; background: var(--accent); width: 0; }
+.meter .bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width var(--dur-3) var(--ease-out); }
 .meter .bar i.hot { background: var(--danger); }
 .meter .val { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* §4 visualization: hero segmented meter + mini / delta bars + fleet badges */
+.meter-seg {
+  display: flex; align-items: center; gap: 12px;
+  margin: 8px 0 4px; max-width: 420px;
+}
+.meter-seg .track {
+  flex: 1; display: flex; height: 8px;
+  background: var(--bg-sink); border: 1px solid var(--line);
+  border-radius: 99px; overflow: hidden; min-width: 120px;
+}
+.meter-seg .track > i {
+  display: block; height: 100%; width: 0;
+  transition: width var(--dur-3) var(--ease-out);
+}
+.meter-seg .track > i.push { background: var(--warn); }
+.meter-seg .track > i.pull { background: var(--accent); }
+.meter-seg .track > i.conflict { background: var(--danger); }
+.meter-seg .counts {
+  font-family: var(--mono); font-size: var(--fs-small);
+  font-variant-numeric: tabular-nums; font-weight: 500;
+  color: var(--ink-dim); white-space: nowrap; flex: none;
+}
+
+.mini-meter {
+  width: 72px; height: 6px; flex: none;
+  background: var(--bg-sink); border: 1px solid var(--line);
+  border-radius: 99px; overflow: hidden;
+  display: inline-block; vertical-align: middle;
+}
+.mini-meter > i {
+  display: block; height: 100%; width: 0;
+  background: var(--warn);
+  transition: width var(--dur-3) var(--ease-out);
+}
+.mini-meter.conflict > i { background: var(--danger); }
+
+.delta-bar {
+  width: 40px; height: 3px; flex: none;
+  background: var(--bg-sink); border-radius: 99px; overflow: hidden;
+  display: inline-block; vertical-align: middle; margin-left: 4px;
+}
+.delta-bar > i {
+  display: block; height: 100%; width: 0;
+  background: var(--warn);
+  transition: width var(--dur-3) var(--ease-out);
+}
+.delta-bar.conflict > i { background: var(--danger); }
+
+.fleet-badges {
+  display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px;
+}
+.fleet-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--fs-small); color: var(--ink-dim);
+  border: 1px solid var(--line); border-radius: 99px;
+  padding: 2px 10px; background: var(--bg-sink);
+}
+.fleet-badge .n {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-weight: 500; color: var(--ink);
+}
+.fleet-badge .dot { width: 8px; height: 8px; }
+.fleet-badge.online .dot { background: var(--ok); }
+.fleet-badge.offline .dot { background: var(--offline); }
+.fleet-badge.drift .dot { background: var(--warn); }
+.fleet-badge.drift.has-drift .n { color: var(--warn); font-weight: 650; }
+
 .agent-sys { font-size: var(--fs-small); color: var(--ink-dim); }
 .agent-nets { display: grid; gap: 2px; }
 .agent-net { font-family: var(--mono); font-size: 0.75rem; display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
@@ -680,6 +748,98 @@ function showWorkspace() {
 }
 
 /* ---------- ① hero: the server's storage view ---------- */
+/* §4 viz helpers — hero segmented meter, mini/delta bars */
+function setMeterWidth(el, pct) {
+  const apply = () => { el.style.width = Math.max(0, Math.min(100, pct)) + "%"; };
+  if (typeof requestAnimationFrame === "function") requestAnimationFrame(apply);
+  else apply();
+}
+function heroSegMeter(push, pull, conflicts) {
+  push = push || 0; pull = pull || 0; conflicts = conflicts || 0;
+  const total = push + pull + conflicts;
+  if (total <= 0) return null;
+  const wrap = el("div", "meter-seg");
+  wrap.setAttribute("role", "img");
+  wrap.setAttribute("aria-label",
+    "差异摘要：未收取 " + push + "，待下发 " + pull + "，冲突 " + conflicts);
+  const track = el("div", "track");
+  function addSeg(cls, n) {
+    if (!n) return;
+    const i = document.createElement("i");
+    i.className = cls;
+    track.append(i);
+    setMeterWidth(i, (n / total) * 100);
+  }
+  addSeg("push", push);
+  addSeg("pull", pull);
+  addSeg("conflict", conflicts);
+  const counts = el("span", "counts");
+  const parts = [];
+  if (push) parts.push("↑" + push);
+  if (pull) parts.push("↓" + pull);
+  if (conflicts) parts.push("!" + conflicts);
+  counts.textContent = parts.join(" · ");
+  wrap.append(track, counts);
+  return wrap;
+}
+function miniMeterBar(share, hasConflict) {
+  const bar = el("span", "mini-meter" + (hasConflict ? " conflict" : ""));
+  bar.title = hasConflict ? "冲突" : "漂移占比";
+  const i = document.createElement("i");
+  bar.append(i);
+  setMeterWidth(i, hasConflict ? 100 : Math.max(0, Math.min(100, (share || 0) * 100)));
+  return bar;
+}
+function deltaMeterBar(share, hasConflict) {
+  const bar = el("span", "delta-bar" + (hasConflict ? " conflict" : ""));
+  bar.title = hasConflict ? "相对中心有冲突" : "相对中心有漂移";
+  const i = document.createElement("i");
+  bar.append(i);
+  setMeterWidth(i, hasConflict ? 100 : Math.max(0, Math.min(100, (share || 0) * 100)));
+  return bar;
+}
+function adapterDriftShare(adapter) {
+  const push = adapter.push || 0;
+  const pull = adapter.pull || 0;
+  const conflicts = adapter.conflicts || 0;
+  const drifted = push + pull + conflicts;
+  if (conflicts > 0) return { share: 1, conflict: true, drifted: drifted };
+  if (drifted <= 0) return { share: 0, conflict: false, drifted: 0 };
+  let files = 0;
+  (adapter.categories || []).forEach(cat => {
+    (cat.files || []).forEach(f => {
+      if (String(f.path || "").endsWith(".manifest.txt")) return;
+      files++;
+    });
+  });
+  if (files > 0) return { share: Math.min(1, drifted / files), conflict: false, drifted: drifted };
+  // No file list — treat reported drift counts as the whole known set.
+  return { share: 1, conflict: false, drifted: drifted };
+}
+function fleetBadge(kind, label, n, hot) {
+  const b = el("span", "fleet-badge " + kind + (hot ? " has-drift" : ""));
+  b.append(el("span", "dot"), el("span", null, label + " "), el("span", "n", String(n)));
+  return b;
+}
+function renderFleetBadges(agents) {
+  let online = 0, offline = 0, driftN = 0;
+  (agents || []).forEach(a => {
+    if (a.stale) offline++;
+    else online++;
+    const d = a.drift;
+    if (!d || d.error) return;
+    if ((d.push || 0) + (d.pull || 0) + (d.conflicts || 0) > 0) driftN++;
+  });
+  const wrap = el("div", "fleet-badges");
+  wrap.setAttribute("aria-label", "舰队摘要");
+  wrap.append(
+    fleetBadge("online", "在线", online, false),
+    fleetBadge("offline", "离线", offline, false),
+    fleetBadge("drift", "漂移", driftN, driftN > 0)
+  );
+  return wrap;
+}
+
 function fmtDrift(d) {
   const parts = [];
   if (d.push) parts.push("↑" + d.push + " 项未收取");
@@ -750,9 +910,11 @@ function renderHero() {
     hero.classList.add("warn");
     concl.append(el("span", "dot conflict"), document.createTextNode("有冲突，需要选择保留哪一边"));
     numbers.textContent = conflicts + " 项冲突 · 存储 第 " + c.generation + " 代";
+    const seg = heroSegMeter(push, pull, conflicts);
     const note = el("div", "hero-note");
     note.append(el("div", null, "某台机器和中心改了同一处。到那台机器所在行选择保留哪一边。"));
-    hero.append(concl, numbers, note);
+    if (seg) hero.append(concl, numbers, seg, note);
+    else hero.append(concl, numbers, note);
     return;
   }
   if (push + pull > 0) {
@@ -762,11 +924,13 @@ function renderHero() {
     if (push) parts.push("↑" + push + " 项未收取");
     if (pull) parts.push("↓" + pull + " 项待下发");
     numbers.textContent = parts.join(" · ") + " · 存储 第 " + c.generation + " 代 · 在线 " + online + "/" + all;
+    const seg = heroSegMeter(push, pull, conflicts);
     const note = el("p", "muted small", "到机器列表里点「收取」或「下发」，勾选要动的适配器。");
     const viewBtn = el("button", "small-btn", "查看存储内容");
     viewBtn.type = "button";
     viewBtn.addEventListener("click", openStorageView);
-    hero.append(concl, numbers, note, viewBtn);
+    if (seg) hero.append(concl, numbers, seg, note, viewBtn);
+    else hero.append(concl, numbers, note, viewBtn);
     return;
   }
   hero.classList.add("clean");
@@ -959,6 +1123,16 @@ function renderAgents(agents, disabledFeature) {
     list.append(box);
     return;
   }
+  // VISUAL §4: fleet badges above machine list (在线 / 离线 / 漂移).
+  list.append(renderFleetBadges(agents));
+  // Fleet max drift for relative per-machine delta bars.
+  let fleetMaxDrift = 0;
+  agents.forEach(a => {
+    const d = a.drift;
+    if (!d || d.error) return;
+    const n = (d.push || 0) + (d.pull || 0) + (d.conflicts || 0);
+    if (n > fleetMaxDrift) fleetMaxDrift = n;
+  });
   agents.forEach(a => {
     const card = el("div", "agent-card" + (a.stale ? " stale" : ""));
     const head = el("div", "agent-head");
@@ -977,6 +1151,10 @@ function renderAgents(agents, disabledFeature) {
         head.append(el("span", "small muted", "状态上报失败"));
       } else if (d.push + d.pull + d.conflicts > 0) {
         head.append(el("span", "counts " + (d.conflicts ? "c-conflict" : "c-drift"), fmtDrift(d)));
+        // VISUAL §4: optional thin per-machine delta bar (relative to fleet max).
+        const n = (d.push || 0) + (d.pull || 0) + (d.conflicts || 0);
+        const share = fleetMaxDrift > 0 ? n / fleetMaxDrift : 1;
+        head.append(deltaMeterBar(share, !!d.conflicts));
       } else {
         head.append(el("span", "counts c-clean", "已对齐"));
       }
@@ -3588,9 +3766,11 @@ async function openMachineView(a) {
       if (adapter.push) bits.push("↑" + adapter.push + " 未收取");
       if (adapter.pull) bits.push("↓" + adapter.pull + " 待下发");
       if (adapter.conflicts) bits.push(adapter.conflicts + " 项冲突");
-      const meta = bits.length ? bits.join(" · ") : (override && override.disabled ? "" : reported ? "已对齐" : "未报告状态");
+      // VISUAL §4: clean rows keep grey「干净」only — no mini bar.
+      const meta = bits.length ? bits.join(" · ") : (override && override.disabled ? "" : reported ? "干净" : "未报告状态");
       const node = makeCollapsible(displayName, meta, true);
       node.block.dataset.adapterId = adapter.id;
+      node.block.classList.add("adapter-row");
       node.setFill(kids => {
         const categories = Array.isArray(adapter.categories) ? adapter.categories : [];
         if (categories.length) {
@@ -3601,6 +3781,10 @@ async function openMachineView(a) {
             : "这台机器还没有报告该适配器的配置。"));
         }
       });
+      const shareInfo = adapterDriftShare(adapter);
+      if (shareInfo.drifted > 0) {
+        node.row.append(miniMeterBar(shareInfo.share, shareInfo.conflict));
+      }
       if (override && (override.installed || override.disabled) && adapter.id !== "keyring" && adapter.id !== "ssh-key") {
         // 已安装的 adapter 可停用；已停用的（含插件已卸载的陈旧条目）
         // 可启用；仅机器上报但未安装的行不提供开关（POST 会被拒）。
