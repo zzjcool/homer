@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"net"
 	"strings"
 	"testing"
 
@@ -137,6 +138,57 @@ func TestUsageServeAndAgent(t *testing.T) {
 	if strings.Contains(usage, "--listen") || strings.Contains(usage, "--connect") {
 		t.Fatalf("agent usage still mentions removed modes: %q", usage)
 	}
+}
+
+// TestServeShowJoinDoesNotBind covers the case where the hub is already
+// listening on the default address: --show-join must print the join command
+// from the persisted token and exit. It must not Listen.
+func TestServeShowJoinDoesNotBind(t *testing.T) {
+	t.Setenv("HOMER_HUB_TOKEN", "")
+	listener, err := net.Listen("tcp", defaultServeAddr)
+	if err != nil {
+		t.Fatalf("occupy %s: %v", defaultServeAddr, err)
+	}
+	t.Cleanup(func() { _ = listener.Close() })
+
+	t.Run("persisted token", func(t *testing.T) {
+		home := t.TempDir()
+		const token = "persisted-hub-token"
+		if _, _, err := hub.EnsureHubToken(home, token); err != nil {
+			t.Fatal(err)
+		}
+		var out, errOut bytes.Buffer
+		code := runWithIO([]string{"homer", "serve", "--show-join", "--home", home}, &out, &errOut)
+		if code != 0 {
+			t.Fatalf("exit = %d stdout=%q stderr=%q", code, out.String(), errOut.String())
+		}
+		want := "HOMER_HUB_TOKEN=" + token + " homer agent --hub http://" + defaultServeAddr
+		if !strings.Contains(out.String(), want) {
+			t.Fatalf("stdout = %q, want substring %q", out.String(), want)
+		}
+		if strings.Contains(errOut.String(), "监听失败") || strings.Contains(errOut.String(), "address already in use") {
+			t.Fatalf("show-join tried to bind: stdout=%q stderr=%q", out.String(), errOut.String())
+		}
+		persisted, ok := hub.ReadHubToken(home)
+		if !ok || persisted != token {
+			t.Fatalf("persisted token = %q ok=%v", persisted, ok)
+		}
+	})
+
+	t.Run("missing token", func(t *testing.T) {
+		home := t.TempDir()
+		var out, errOut bytes.Buffer
+		code := runWithIO([]string{"homer", "serve", "--show-join", "--home", home}, &out, &errOut)
+		if code == 0 {
+			t.Fatalf("missing token should fail, stdout=%q", out.String())
+		}
+		if !strings.Contains(errOut.String(), "尚未配置 token") {
+			t.Fatalf("stderr = %q, want the missing-token hint", errOut.String())
+		}
+		if strings.Contains(errOut.String(), "监听失败") || strings.Contains(errOut.String(), "address already in use") {
+			t.Fatalf("show-join tried to bind: %q", errOut.String())
+		}
+	})
 }
 
 func TestServeShowJoinFlagParses(t *testing.T) {

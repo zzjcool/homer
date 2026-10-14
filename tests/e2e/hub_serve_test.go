@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -167,7 +168,13 @@ func TestServeNonLoopbackAutoToken(t *testing.T) {
 		t.Fatalf("second boot missing show-join hint: %q", output)
 	}
 
-	// --show-join re-renders the join command without serving.
+	// --show-join re-renders the join command without serving, including when
+	// that address is already taken (the hub is typically already up).
+	held, err := net.Listen("tcp", "0.0.0.0:17792")
+	if err != nil {
+		t.Fatalf("occupy show-join addr: %v", err)
+	}
+	t.Cleanup(func() { _ = held.Close() })
 	result := runProcess(t, home, global, nil, binary, "serve", "--show-join", "--addr", "0.0.0.0:17792", "--home", home)
 	if result.code != 0 || !strings.Contains(result.stdout, token) {
 		t.Fatalf("show-join = %d %q", result.code, result.stdout)
