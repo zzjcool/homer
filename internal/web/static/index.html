@@ -1422,11 +1422,19 @@ function hostSummary(a) {
   if (host.distro) return host.distro;
   return "已上报系统信息";
 }
+function agentLabel(a) {
+  if (!a) return "";
+  const host = (a.hostname || "").trim();
+  const id = (a.agentId || "").trim();
+  if (host && id && host !== id) return host + "（" + id + "）";
+  return host || id || "—";
+}
 function openHostDetail(a) {
   const dlg = $("dlg-view");
   const body = $("view-body");
   clear(body);
-  $("view-title").textContent = (a.hostname || a.agentId) + " · 机器详情";
+  $("view-title").textContent = agentLabel(a) + " · 机器详情";
+  if (a.agentId) body.append(el("div", "agent-sys", "agentId " + a.agentId));
   body.append(renderHostFacts(a));
   dlg.showModal();
 }
@@ -1591,10 +1599,10 @@ function renderAgents(agents, disabledFeature) {
     revoke.type = "button";
     revoke.title = "吊销该机器的接入凭证（立即失效；不影响其他机器）";
     revoke.addEventListener("click", async () => {
-      if (!confirm("吊销 " + (a.hostname || a.agentId) + "?\n该机器将立即失去接入权限（重新接入需生成新接入码）。")) return;
+      if (!confirm("吊销 " + agentLabel(a) + "?\n该机器将立即失去接入权限（重新接入需生成新接入码）。")) return;
       try {
         await api("/api/agents/revoke", { method: "POST", body: { agentId: a.agentId } });
-        toast("已吊销 " + (a.hostname || a.agentId));
+        toast("已吊销 " + agentLabel(a));
         await refresh();
       } catch (e) { toast("吊销失败：" + e.message); }
     });
@@ -1604,10 +1612,10 @@ function renderAgents(agents, disabledFeature) {
     removeBtn.type = "button";
     removeBtn.title = "从列表移除该机器（吊销其凭证并删除记录）";
     removeBtn.addEventListener("click", async () => {
-      if (!confirm("移除 " + (a.hostname || a.agentId) + "?\n吊销其接入凭证并从列表删除。")) return;
+      if (!confirm("移除 " + agentLabel(a) + "?\n吊销其接入凭证并从列表删除。")) return;
       try {
         await api("/api/agents/remove", { method: "POST", body: { agentId: a.agentId } });
-        toast("已移除 " + (a.hostname || a.agentId));
+        toast("已移除 " + agentLabel(a));
         await refresh();
       } catch (e) { toast("移除失败：" + e.message); }
     });
@@ -1645,7 +1653,7 @@ function upgradeFailure(e) {
   return (e && e.report && e.report.note) || (e && e.errors && e.errors[0]) || (e && e.message) || "没有完成";
 }
 async function upgradeAgent(agent) {
-  const name = agent.hostname || agent.agentId;
+  const name = agentLabel(agent);
   if (!confirm("把「" + name + "」的 homer 换成中心现在这份？换完后这台机器上的 agent 会自动重启。")) return;
   await upgradeAgents([agent]);
 }
@@ -1654,7 +1662,7 @@ async function upgradeAgents(list) {
   if (list.length > 1 && !confirm("更新 " + list.length + " 台在线机器？每台都会换成中心现在这份 homer，并自动重启 agent。")) return;
   const failed = [];
   for (const agent of list) {
-    const name = agent.hostname || agent.agentId;
+    const name = agentLabel(agent);
     setBusy("正在更新 " + name + "…");
     try {
       const d = await api("/api/agents/" + encodeURIComponent(agent.agentId) + "/upgrade", { method: "POST", body: {} });
@@ -1745,7 +1753,7 @@ function copyCommand(text) {
   }
 }
 async function upgradeTool(agent, tool, closeDialog) {
-  const name = agent.hostname || agent.agentId;
+  const name = agentLabel(agent);
   const now = tool.version ? "现在是 " + tool.version : "现在的版本读不出来";
   const latest = tool.outdated && tool.latest ? "，最新 " + tool.latest : "";
   if (!confirm("在「" + name + "」上升级 " + toolTitle(tool) + "？\n" + now + latest + "。\n升级在那台机器上进行，可能要几十秒到几分钟，请留在这个窗口。")) return;
@@ -1764,7 +1772,7 @@ async function upgradeTools(items) {
   let detail = [];
   let manual = "";
   for (const item of items) {
-    const name = item.agent.hostname || item.agent.agentId;
+    const name = agentLabel(item.agent);
     const title = toolTitle(item.tool);
     setBusy("正在升级 " + name + " 上的 " + title + "…（可能要几分钟）");
     try {
@@ -2649,7 +2657,7 @@ function openScopeDialog(opts) {
     });
 }
 function confirmCollect(agent) {
-  const name = agent.hostname || agent.agentId;
+  const name = agentLabel(agent);
   openScopeDialog({
     agent: agent,
     direction: "collect",
@@ -2659,7 +2667,7 @@ function confirmCollect(agent) {
   });
 }
 function confirmDispatch(agent) {
-  const name = agent.hostname || agent.agentId;
+  const name = agentLabel(agent);
   openScopeDialog({
     agent: agent,
     direction: "dispatch",
@@ -2669,7 +2677,7 @@ function confirmDispatch(agent) {
   });
 }
 function confirmSSHKey(agent) {
-  const name = agent.hostname || agent.agentId;
+  const name = agentLabel(agent);
   $("confirm-title").textContent = "登录公钥到 " + name;
   $("confirm-note").textContent = "只更新这个 GitHub 用户对应的一段公钥。";
   $("confirm-desc").textContent = "读取这个 GitHub 用户公开的公钥，写入 " + name + " 上 agent 运行用户的 ~/.ssh/authorized_keys。之后可以用对应私钥免密登录。同一用户再次下发会更新这段密钥，不会改动文件里的其他密钥。";
@@ -2694,7 +2702,7 @@ function confirmSSHKey(agent) {
   setTimeout(() => input.focus(), 0);
 }
 function confirmResolve(agent, preset, keepRecordSelections) {
-  const name = agent.hostname || agent.agentId;
+  const name = agentLabel(agent);
   openScopeDialog({
     agent: agent,
     direction: "resolve",
@@ -3366,8 +3374,8 @@ function openPluginAction(plugin) {
   select.append(placeholder);
   const online = app.agents.filter(agent => !agent.stale);
   online.forEach(agent => {
-    const name = agent.hostname || agent.agentId;
-    const option = el("option", null, name + "（" + agent.agentId + "）");
+    const name = agentLabel(agent);
+    const option = el("option", null, name);
     option.value = agent.agentId;
     select.append(option);
   });
@@ -4191,7 +4199,8 @@ async function saveAgentAdapterOverride(action) {
 }
 async function openMachineView(a) {
   const dlg = $("dlg-view"); const body = $("view-body"); clear(body);
-  $("view-title").textContent = "机器 " + (a.hostname || a.agentId) + " · 当前情况";
+  $("view-title").textContent = "机器 " + agentLabel(a) + " · 当前情况";
+  if (a.agentId) body.append(el("div", "muted small", "agentId " + a.agentId));
   body.append(el("div", "muted small", "正在向这台机器实时查询…"));
   if (!dlg.open) dlg.showModal();
   try {
@@ -4205,6 +4214,7 @@ async function openMachineView(a) {
       overrideViewFailed = true;
     }
     clear(body);
+    if (a.agentId) body.append(el("div", "muted small", "agentId " + a.agentId));
     const statusAdapters = (d && d.report && d.report.adapters) || d.adapters || [];
     const reportedAdapterIDs = new Set(statusAdapters.map(adapter => adapter.id));
     const overrideAdapters = Array.isArray(overrideView && overrideView.adapters) ? overrideView.adapters : [];
@@ -4287,6 +4297,7 @@ async function openMachineView(a) {
     body.append(note);
   } catch (e) {
     clear(body);
+    if (a.agentId) body.append(el("div", "muted small", "agentId " + a.agentId));
     body.append(el("div", "muted", "查询失败（机器可能刚离线）：" + e.message));
   }
 }
@@ -4534,7 +4545,7 @@ function pathField(agent) {
 }
 function openKeyForm(agent, action, key) {
   const titles = { create: "新建密钥", encrypt: "加密文件", unlock: "解开密钥", passwd: "更换口令" };
-  $("key-dlg-title").textContent = (agent ? (agent.hostname || agent.agentId) + " · " : "") + titles[action];
+  $("key-dlg-title").textContent = (agent ? agentLabel(agent) + " · " : "") + titles[action];
   const body = $("key-dlg-body");
   clear(body);
   $("key-dlg-err").textContent = "";
@@ -4595,7 +4606,7 @@ async function submitKeyForm(ev) {
   }
 }
 async function openMachineKeys(agent) {
-  $("key-dlg-title").textContent = (agent.hostname || agent.agentId) + " 的密钥";
+  $("key-dlg-title").textContent = agentLabel(agent) + " 的密钥";
   const body = $("key-dlg-body");
   clear(body);
   $("key-dlg-err").textContent = "";
