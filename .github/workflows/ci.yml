@@ -1,0 +1,44 @@
+name: ci
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Configure git identity
+        run: |
+          git config --global user.email "ci@homer-cli.local"
+          git config --global user.name "homer-ci"
+      - name: Build
+        run: go build ./...
+      - name: Vet
+        run: go vet ./...
+      - name: Format
+        run: |
+          unformatted=$(gofmt -l .)
+          unformatted=$(printf '%s\n' "$unformatted" | grep -v vendor || true)
+          if [ -n "$unformatted" ]; then
+            printf '%s\n' "$unformatted"
+            exit 1
+          fi
+      - name: Test
+        run: go test $(go list ./... | grep -v '/tests/e2e') -count=1 -timeout 20m
+      - name: Check install.sh
+        run: sh -n install.sh

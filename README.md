@@ -515,6 +515,8 @@ go test ./...
 sh -n install.sh
 ```
 
+合并进 `master` 前，GitHub Actions（`.github/workflows/ci.yml`）应全绿：`go build ./...`、`go vet ./...`、`gofmt -l .`，以及不含 `tests/e2e` 的 `go test`。`tests/e2e` 与多容器验收 `bash e2e/hub-smoke.sh` 不在这次 PR 门禁上。推送 `v*` tag 会跑已有的 goreleaser 发布流程（`.github/workflows/release.yml`）。详见 [docs/ops/ci.md](docs/ops/ci.md)。
+
 完整的 W11 验收记录、测试统计、发布矩阵与已知限制见
 [docs/go-rewrite-report.md](docs/go-rewrite-report.md)；设计和冻结语义见
 [DESIGN.md](DESIGN.md) 与 [docs/go-rewrite-plan.md](docs/go-rewrite-plan.md)。
