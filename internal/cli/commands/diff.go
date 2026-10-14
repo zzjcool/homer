@@ -506,7 +506,7 @@ func RunDiff(opts DiffOptions, injected ...DriftSources) (string, error) {
 	out := make([]string, 0)
 	errorMessages := append([]string(nil), sources.Errors...)
 	errorMessages = append(errorMessages, sources.ErrorMessages...)
-	errorMessages = append(errorMessages, sourceErrorMessages(sources.ScanErrors)...)
+	errorMessages = append(errorMessages, sourceErrorMessages(sources.ScanErrors, false)...)
 	for _, message := range errorMessages {
 		out = append(out, "⚠ "+message)
 	}
