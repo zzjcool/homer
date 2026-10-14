@@ -25,3 +25,17 @@ func TestAgentDriftZeroOmitsResolutions(t *testing.T) {
 		t.Fatalf("drift with resolutions serialized to %s", withRes)
 	}
 }
+
+func TestAgentDriftAdaptersSerialize(t *testing.T) {
+	data, err := json.Marshal(AgentDrift{
+		Push: 2, Pull: 1, Conflicts: 0,
+		Adapters: []AdapterDrift{{ID: "pi", Push: 1, Pull: 0, Conflicts: 0}, {ID: "herdr", Push: 1, Pull: 1, Conflicts: 0}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `{"push":2,"pull":1,"conflicts":0,"adapters":[{"id":"pi","push":1,"pull":0,"conflicts":0},{"id":"herdr","push":1,"pull":1,"conflicts":0}]}`
+	if string(data) != want {
+		t.Fatalf("got %s\nwant %s", data, want)
+	}
+}

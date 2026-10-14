@@ -276,10 +276,16 @@ func countEffectiveResolutions(report commands.StatusReport) int {
 
 func driftFromStatus(report commands.StatusReport) *hub.AgentDrift {
 	drift := &hub.AgentDrift{Resolutions: countEffectiveResolutions(report)}
+	if len(report.Adapters) > 0 {
+		drift.Adapters = make([]hub.AdapterDrift, 0, len(report.Adapters))
+	}
 	for _, adapter := range report.Adapters {
 		drift.Push += adapter.Push
 		drift.Pull += adapter.Pull
 		drift.Conflicts += adapter.Conflicts
+		drift.Adapters = append(drift.Adapters, hub.AdapterDrift{
+			ID: adapter.ID, Push: adapter.Push, Pull: adapter.Pull, Conflicts: adapter.Conflicts,
+		})
 	}
 	// Keep the fresh-machine marker used by the console's "新机器 · 等待下发" badge.
 	for _, message := range report.Errors {
@@ -325,6 +331,9 @@ func cloneDrift(drift *hub.AgentDrift) *hub.AgentDrift {
 		return nil
 	}
 	copy := *drift
+	if drift.Adapters != nil {
+		copy.Adapters = append([]hub.AdapterDrift(nil), drift.Adapters...)
+	}
 	return &copy
 }
 

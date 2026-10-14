@@ -30,6 +30,15 @@ type AgentInfo struct {
 	caps []string
 }
 
+// AdapterDrift is one adapter's push/pull/conflict counts inside a machine
+// drift summary (heartbeat → registry → GET /api/console machines[].adapters).
+type AdapterDrift struct {
+	ID        string `json:"id"`
+	Push      int    `json:"push"`
+	Pull      int    `json:"pull"`
+	Conflicts int    `json:"conflicts"`
+}
+
 type AgentDrift struct {
 	Push      int    `json:"push"`
 	Pull      int    `json:"pull"`
@@ -38,6 +47,9 @@ type AgentDrift struct {
 	// Resolutions counts adapters whose conflict currently has a recorded
 	// decision (staged-resolution plan, D8). 0 is omitted.
 	Resolutions int `json:"resolutions,omitempty"`
+	// Adapters is the per-adapter breakdown that sums to Push/Pull/Conflicts.
+	// Omitted when empty so the heartbeat wire contract stays stable.
+	Adapters []AdapterDrift `json:"adapters,omitempty"`
 }
 
 type Registry struct {
@@ -151,6 +163,7 @@ func (r *Registry) UpdateDrift(agentID string, drift AgentDrift) {
 	defer r.mu.Unlock()
 	if agent, ok := r.agents[agentID]; ok {
 		copy := drift
+		copy.Adapters = cloneAdapterDrift(drift.Adapters)
 		agent.info.Drift = &copy
 	}
 }
@@ -344,12 +357,20 @@ func sessionDone(session *stream.Session) bool {
 func cloneAgentInfo(info AgentInfo) AgentInfo {
 	if info.Drift != nil {
 		drift := *info.Drift
+		drift.Adapters = cloneAdapterDrift(drift.Adapters)
 		info.Drift = &drift
 	}
 	info.Host = normalizeHost(info.Host)
 	info.Tools = cloneTools(info.Tools)
 	info.caps = cloneStrings(info.caps)
 	return info
+}
+
+func cloneAdapterDrift(adapters []AdapterDrift) []AdapterDrift {
+	if adapters == nil {
+		return nil
+	}
+	return append([]AdapterDrift(nil), adapters...)
 }
 
 func cloneStrings(values []string) []string {
