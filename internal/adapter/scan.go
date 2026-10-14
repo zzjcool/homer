@@ -19,6 +19,10 @@ import (
 type ScanError struct {
 	Path    string
 	Message string
+	// Detail holds the full command diagnostic (e.g. multi-line stderr).
+	// Message stays a one-line summary for status/diff/errors; Detail is
+	// only surfaced with --verbose.
+	Detail string
 	// RootMissing marks "the adapter root does not exist yet" (a fresh
 	// machine waiting for its first dispatch) as distinct from permission
 	// or I/O failures, so the report layer can phrase it as a state
@@ -166,7 +170,11 @@ func isWithinRoot(child, root string) bool {
 }
 
 func addScanError(errors *[]ScanError, path, message string) {
-	*errors = append(*errors, ScanError{Path: path, Message: message})
+	addScanErrorDetail(errors, path, message, "")
+}
+
+func addScanErrorDetail(errors *[]ScanError, path, message, detail string) {
+	*errors = append(*errors, ScanError{Path: path, Message: message, Detail: detail})
 }
 
 // addRootScanError records an adapter-root problem, classifying a plain
@@ -320,7 +328,11 @@ func scanCategory(adapterID, root, rootReal string, category string, cfg core.Ca
 				}
 				continue
 			}
-			addScanError(errors, problem.Command, problem.Message)
+			// listCmd ran but failed (crash, non-zero exit, timeout): keep a
+			// one-line summary in Errors so status/diff stay readable. The
+			// full stderr/stack lives in Detail for --verbose.
+			summary, detail := summarizeManifestScanFailure(adapterID, category, problem)
+			addScanErrorDetail(errors, problem.Command, summary, detail)
 		}
 		return snapshot
 	}
@@ -488,6 +500,49 @@ func manifestCommandName(command string) string {
 		return base
 	}
 	return name
+}
+
+// summarizeManifestScanFailure turns a listCmd failure into a one-line
+// "扫描失败" summary plus the full diagnostic for --verbose. A missing
+// binary is handled separately (warning + empty list), so this path is
+// never phrased as「未安装」.
+func summarizeManifestScanFailure(adapterID, category string, problem manifest.ScanProblem) (summary, detail string) {
+	detail = strings.TrimSpace(problem.Message)
+	if detail == "" && problem.Err != nil {
+		detail = strings.TrimSpace(problem.Err.Error())
+	}
+	head := firstErrorLine(detail)
+	if head == "" {
+		head = "命令失败"
+	}
+	summary = fmt.Sprintf("扫描失败，无法列出 %s/%s：%s", adapterID, category, head)
+	if detail == "" || detail == head {
+		return summary, ""
+	}
+	return summary, detail
+}
+
+func firstErrorLine(text string) string {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return ""
+	}
+	if i := strings.IndexByte(text, '\n'); i >= 0 {
+		text = strings.TrimSpace(text[:i])
+	}
+	// run() glues stderr onto ExitError as "exit status N: <stderr>".
+	// Keep only the short status prefix so the stack stays in Detail.
+	if i := strings.Index(text, ": "); i > 0 {
+		head := text[:i]
+		if strings.HasPrefix(head, "exit status") || strings.HasPrefix(head, "command timed out") || strings.Contains(head, "signal:") {
+			text = head
+		}
+	}
+	const max = 200
+	if len(text) > max {
+		return text[:max] + "…"
+	}
+	return text
 }
 
 // isCommandMissing reports only an exec lookup failure. In particular, an
