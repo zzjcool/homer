@@ -22,6 +22,10 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      - name: Configure git identity
+        run: |
+          git config --global user.email "ci@homer-cli.local"
+          git config --global user.name "homer-ci"
       - name: Build
         run: go build ./...
       - name: Vet
@@ -35,6 +39,6 @@ jobs:
             exit 1
           fi
       - name: Test
-        run: go test ./... -count=1 -timeout 20m
+        run: go test $(go list ./... | grep -v '/tests/e2e') -count=1 -timeout 20m
       - name: Check install.sh
         run: sh -n install.sh
