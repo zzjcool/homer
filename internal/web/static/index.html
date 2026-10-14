@@ -347,13 +347,17 @@ pre .ln-meta { color: var(--ink-dim); display: block; }
   width: 72px; height: 6px; flex: none;
   background: var(--bg-sink); border: 1px solid var(--line);
   border-radius: 99px; overflow: hidden;
-  display: inline-block; vertical-align: middle;
+  display: inline-flex; vertical-align: middle;
+  pointer-events: none;
 }
 .mini-meter > i {
-  display: block; height: 100%; width: 0;
+  display: block; height: 100%; width: 0; flex: none;
   background: var(--warn);
   transition: width var(--dur-3) var(--ease-out);
 }
+.mini-meter > i.push { background: var(--warn); }
+.mini-meter > i.pull { background: var(--accent); }
+.mini-meter > i.conflict { background: var(--danger); }
 .mini-meter.conflict > i { background: var(--danger); }
 
 .delta-bar {
@@ -1004,6 +1008,35 @@ function miniMeterBar(share, hasConflict) {
   setMeterWidth(i, hasConflict ? 100 : Math.max(0, Math.min(100, (share || 0) * 100)));
   return bar;
 }
+/* Fleet adapter overview (#82): within-row segmented 72×6 mini meter. */
+function miniMeterSeg(push, pull, conflicts) {
+  push = push || 0; pull = pull || 0; conflicts = conflicts || 0;
+  const total = push + pull + conflicts;
+  if (total <= 0) return null;
+  // Conflicts-only (no push/pull) → full-width danger.
+  if (conflicts > 0 && push === 0 && pull === 0) {
+    return miniMeterBar(1, true);
+  }
+  const bar = el("span", "mini-meter");
+  bar.setAttribute("role", "img");
+  const parts = [];
+  if (push) parts.push("↑" + push);
+  if (pull) parts.push("↓" + pull);
+  if (conflicts) parts.push("⚡" + conflicts);
+  bar.title = parts.join(" ");
+  bar.setAttribute("aria-label", "差异占比：" + parts.join(" · "));
+  function addSeg(cls, n) {
+    if (!n) return;
+    const i = document.createElement("i");
+    i.className = cls;
+    bar.append(i);
+    setMeterWidth(i, (n / total) * 100);
+  }
+  addSeg("push", push);
+  addSeg("pull", pull);
+  addSeg("conflict", conflicts);
+  return bar;
+}
 function deltaMeterBar(share, hasConflict) {
   const bar = el("span", "delta-bar" + (hasConflict ? " conflict" : ""));
   bar.title = hasConflict ? "相对中心有冲突" : "相对中心有漂移";
@@ -1133,6 +1166,8 @@ function renderAdaptersOverview() {
     const counts = el("span", "counts " + (r.conflicts ? "c-conflict" : "c-drift"),
       fmtOverviewCounts(r));
     line.append(counts);
+    const meter = miniMeterSeg(r.push, r.pull, r.conflicts);
+    if (meter) line.append(meter);
     const n = r.machines.length;
     const involve = el("button", "small-btn jump involve", "涉及 " + n + " 台");
     involve.type = "button";
