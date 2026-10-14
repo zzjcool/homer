@@ -14,4 +14,4 @@ Go 版本跟 `go.mod`（`actions/setup-go` 的 `go-version-file`），与发版�
 
 打 `v*` tag 才会跑已有的 [`.github/workflows/release.yml`](../../.github/workflows/release.yml)：goreleaser 产出 Release 资产，并对 `dist` 里的 `install.sh` 做一次冒烟。资产纪律见 [release-discipline.md](release-discipline.md)。
 
-本地需要时再跑：`go test ./tests/e2e/...`，以及 `bash e2e/hub-smoke.sh`（origin + hub + agent-a + agent-b）。
+本地需要时再跑：`go test ./tests/e2e/...`，以及 `bash e2e/hub-smoke.sh`（origin + hub + agent-a + agent-b；含鉴权负例、密钥环跨容器解开、按机器停用后的扇出跳过）。

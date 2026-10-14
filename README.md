@@ -96,8 +96,10 @@ systemctl --user start homer-agent.service
 系统级 unit 请对应使用 `systemctl daemon-reload` 和 `systemctl start homer-agent.service`。
 检查 agent 日志及控制台，确认机器重新上线。
 
-容器化验收：`bash e2e/hub-smoke.sh`（origin + hub + agent-a + agent-b 四容器，
-覆盖两个 WebSocket agent 的状态采集与配置跨机流转）。
+容器化验收：`bash e2e/hub-smoke.sh`（origin + hub + agent-a + agent-b 四容器）。
+除两个 WebSocket agent 的状态采集与配置跨机流转外，脚本还断言：无 token / 错
+token 得到 401（拓扑不拆）、agent-a 加密的密钥环经 hub 下发后能在 agent-b 解开、
+以及把 pi 停用在一台机器上之后扇出会跳过它。失败时脚本会打出 compose 日志再退出。
 
 ### 应用版本与一键升级
 
