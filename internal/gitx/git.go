@@ -233,6 +233,83 @@ func ensureGitignore(home string) error {
 	return nil
 }
 
+// LocalIdentityName and LocalIdentityEmail are the repo-local author used
+// when git cannot already resolve a name and email. They are written with
+// `git config --local` only.
+const (
+	LocalIdentityName  = "Homer"
+	LocalIdentityEmail = "homer@localhost"
+)
+
+// HasCommitIdentity reports whether git can already form both an author and
+// a committer identity for home. Environment, local, global, and system
+// config all count. home is the working directory even when it is not a
+// repository, so an unrelated repo on the process cwd cannot supply identity.
+func HasCommitIdentity(home string) bool {
+	return gitIdentOK(home, "GIT_AUTHOR_IDENT") && gitIdentOK(home, "GIT_COMMITTER_IDENT")
+}
+
+func gitIdentOK(home, variable string) bool {
+	result := Exec(home, []string{"var", variable}, 0)
+	return result.OK && strings.TrimSpace(result.Stdout) != ""
+}
+
+func configPresent(home, key string) bool {
+	result := Exec(home, []string{"config", "--get", key}, 0)
+	return result.OK && strings.TrimSpace(result.Stdout) != ""
+}
+
+// EnsureLocalIdentity writes user.name and/or user.email into this repository
+// only when git cannot already determine a commit identity. Existing values
+// are left untouched, and global or system config is never modified.
+// wrote reports whether this call changed local config.
+func EnsureLocalIdentity(home string) (wrote bool, err error) {
+	if HasCommitIdentity(home) {
+		return false, nil
+	}
+	if !IsGitRepo(home) {
+		return false, fmt.Errorf("%s 不是 git 仓库，无法写入本地身份", home)
+	}
+	if !configPresent(home, "user.name") {
+		if result := Exec(home, []string{"config", "--local", "user.name", LocalIdentityName}, 0); !result.OK {
+			return false, gitFailure("git config --local user.name", result)
+		}
+		wrote = true
+	}
+	if !configPresent(home, "user.email") {
+		if result := Exec(home, []string{"config", "--local", "user.email", LocalIdentityEmail}, 0); !result.OK {
+			return wrote, gitFailure("git config --local user.email", result)
+		}
+		wrote = true
+	}
+	if !HasCommitIdentity(home) {
+		return wrote, fmt.Errorf("git 仍无法确定 user.name / user.email")
+	}
+	return wrote, nil
+}
+
+// RemoveUnbornRepo deletes a repository's .git directory when it has no
+// commits. Callers use it to undo a git init that failed to establish a
+// baseline. A repository with history, a gitlink, or a symlinked .git is left
+// untouched.
+func RemoveUnbornRepo(home string) error {
+	gitDir := filepath.Join(home, ".git")
+	info, err := os.Lstat(gitDir)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		return err
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
+		return fmt.Errorf("refusing to remove %s", gitDir)
+	}
+	if IsGitRepo(home) && HeadCommit(home) != "" {
+		return fmt.Errorf("refusing to remove %s: baseline commit exists", gitDir)
+	}
+	return os.RemoveAll(gitDir)
+}
+
 // EnsureGitRepo initializes home when necessary and maintains the three
 // private/local-only .gitignore entries.  Existing user rules and bytes are
 // preserved; repeated calls are byte-for-byte idempotent.

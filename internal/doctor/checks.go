@@ -144,6 +144,14 @@ func checkRepo(paths core.HomerPaths) DoctorCheck {
 	if state.LastSyncAt != "" {
 		return DoctorCheck{ID: CheckRepoID, Status: CheckOK, Message: fmt.Sprintf("最近同步: %s（%s）", state.LastSyncAt, state.LastSyncCommand)}
 	}
+	if gitx.IsGitRepo(paths.Home) && gitx.HeadCommit(paths.Home) == "" {
+		return DoctorCheck{
+			ID:      CheckRepoID,
+			Status:  CheckWarn,
+			Message: "同步基线未建立（git 仓库还没有提交）",
+			Details: []string{"运行 `homer push --yes` 建立基线。"},
+		}
+	}
 	if _, err := os.Stat(filepath.Join(paths.StoreDir)); err == nil {
 		return DoctorCheck{ID: CheckRepoID, Status: CheckWarn, Message: "已有本地 store，但尚未与中心同步过", Details: []string{"在控制台执行「同步」，或运行 `homer pull`。"}}
 	}

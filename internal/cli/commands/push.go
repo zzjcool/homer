@@ -42,6 +42,7 @@ type GitPort struct {
 	IsAncestorOf           func(home, ancestor, descendant string) bool
 	MergeFFUpstream        func(home string) gitx.ExecResult
 	EnsureGitRepo          func(home string) error
+	EnsureLocalIdentity    func(home string) (bool, error)
 	CommitAllStore         func(home, message string) string
 	CommitStoreIfNeeded    func(paths core.HomerPaths, message string) string
 	RequireCleanStore      func(paths core.HomerPaths) error
@@ -219,6 +220,22 @@ func (p GitPort) ensureGitRepo(home string) error {
 		return p.EnsureGitRepo(home)
 	}
 	return gitx.EnsureGitRepo(home)
+}
+
+// usesInjectedCommit reports whether a test double owns the commit. Those
+// doubles do not have a real repository whose identity should be rewritten.
+func (p GitPort) usesInjectedCommit() bool {
+	return p.CommitAllStore != nil || p.CommitStoreIfNeeded != nil
+}
+
+func (p GitPort) ensureLocalIdentity(home string) (bool, error) {
+	if p.EnsureLocalIdentity != nil {
+		return p.EnsureLocalIdentity(home)
+	}
+	if p.usesInjectedCommit() {
+		return false, nil
+	}
+	return gitx.EnsureLocalIdentity(home)
 }
 
 func (p GitPort) commitStore(paths core.HomerPaths, message string) string {
@@ -466,6 +483,9 @@ const PUSH_USAGE = `用法: homer push [options]
   --json             输出机器可读 JSON（PushReport）
   -h, --help         显示本帮助
 
+缺少 git user.name / user.email 时，确认后的 push（含 --yes）只在本仓库写入
+本地身份 Homer <homer@localhost>，不修改全局配置。未能建立基线时退出码为 1。
+
 退出码: pushed / no-drift → 0；其余状态 → 1。`
 
 func newPushCommandReport(status PushStatus) PushReport {
@@ -654,33 +674,45 @@ func RunPush(options PushOptions, deps *PushDeps) (report PushReport) {
 		report.Warnings = warnings
 		return report
 	}
+	createdRepo := !git.isGitRepo(paths.Home)
 	if err := git.ensureGitRepo(paths.Home); err != nil {
-		report = newPushCommandReport(PushStatusError)
-		report.ChangedFiles = changedFiles
-		report.Warnings = warnings
-		report.Errors = errorLines(err)
-		return report
+		return pushBaselineFailure(paths.Home, git, createdRepo, changedFiles, warnings, errorLines(err)...)
+	}
+	wroteIdentity, identityErr := git.ensureLocalIdentity(paths.Home)
+	if identityErr != nil {
+		lines := []string{fmt.Sprintf("store 已写入但无法写入本仓库 git 身份: %s", identityErr.Error())}
+		// A repo this push just created is removed on failure, so a
+		// `git -C … config --local` line would not apply. The rollback
+		// message points at `homer push --yes` instead.
+		if !createdRepo {
+			lines = append(lines, localIdentityFixLine(paths.Home))
+		}
+		return pushBaselineFailure(paths.Home, git, createdRepo, changedFiles, warnings, lines...)
+	}
+	if wroteIdentity {
+		warnings = append(warnings, fmt.Sprintf(
+			"未检测到 git user.name / user.email，已仅在本仓库设置为 %s <%s>（不影响全局 git 配置）",
+			gitx.LocalIdentityName, gitx.LocalIdentityEmail,
+		))
 	}
 	commit := git.commitStore(paths, pushCommitMessage(len(changedFiles)))
 	if commit == "" && !git.isPushClean(paths.Home) {
-		report = newPushCommandReport(PushStatusError)
-		report.ChangedFiles = changedFiles
-		report.Warnings = warnings
-		report.Errors = []string{
+		lines := []string{
 			fmt.Sprintf("store 已写入但 git commit 失败: %s", paths.Home),
 			"请检查 git 是否可用与 user.name / user.email 配置，然后重试。",
 		}
-		return report
+		if !createdRepo && !wroteIdentity && !gitx.HasCommitIdentity(paths.Home) {
+			lines = append(lines, localIdentityFixLine(paths.Home))
+		}
+		return pushBaselineFailure(paths.Home, git, createdRepo, changedFiles, warnings, lines...)
 	}
 	if commit == "" {
 		commit = git.headCommit(paths.Home)
 	}
 	if commit == "" {
-		report = newPushCommandReport(PushStatusError)
-		report.ChangedFiles = changedFiles
-		report.Warnings = warnings
-		report.Errors = []string{fmt.Sprintf("无法确定 HEAD commit: %s（store 已写入）", paths.Home)}
-		return report
+		return pushBaselineFailure(paths.Home, git, createdRepo, changedFiles, warnings,
+			fmt.Sprintf("无法确定 HEAD commit: %s（store 已写入）", paths.Home),
+		)
 	}
 	if err := nowState(paths, commit, "push"); err != nil {
 		report = newPushCommandReport(PushStatusError)
@@ -773,6 +805,37 @@ func secretIgnorePaths(config *core.HomerConfig) []string {
 		return nil
 	}
 	return config.Secrets.IgnorePaths
+}
+
+// pushBaselineFailure is the exit-1 path for a push that did not create a
+// baseline commit. When this call created the repository and HEAD is still
+// unborn, .git is removed so the workspace is not left half-initialized.
+func pushBaselineFailure(home string, git GitPort, createdRepo bool, changedFiles []syncx.FileRef, warnings []string, lines ...string) PushReport {
+	abandoned := false
+	if createdRepo && git.headCommit(home) == "" {
+		if err := gitx.RemoveUnbornRepo(home); err == nil && !gitx.IsGitRepo(home) {
+			abandoned = true
+		}
+	}
+	report := newPushCommandReport(PushStatusError)
+	report.ChangedFiles = changedFiles
+	report.Warnings = warnings
+	report.Errors = append([]string{}, lines...)
+	report.Errors = append(report.Errors, "同步基线未建立。")
+	if abandoned {
+		report.Errors = append(report.Errors,
+			"已撤回本次 git init，避免留下没有提交的仓库。",
+			"一行修复：重新运行 `homer push --yes`（只在本仓库写入本地身份 "+gitx.LocalIdentityName+" <"+gitx.LocalIdentityEmail+">，不改全局配置）。",
+		)
+	}
+	return report
+}
+
+func localIdentityFixLine(home string) string {
+	return fmt.Sprintf(
+		"一行修复（仅本仓库）：git -C %s config --local user.name %q && git -C %s config --local user.email %q",
+		home, gitx.LocalIdentityName, home, gitx.LocalIdentityEmail,
+	)
 }
 
 func pushCommitMessage(changedCount int) string {
