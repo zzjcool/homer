@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # homer hub 容器化 E2E 冒烟。
 # 用法: bash e2e/hub-smoke.sh   （需要 docker compose 与 jq）
+# CI：.github/workflows/hub-smoke.yml（path-filter + workflow_dispatch）；
+#     失败时设 HUB_SMOKE_ARTIFACT_DIR 可在 teardown 前落盘 compose ps/logs。
 #
 # 步骤 1–7 是 plan §5 的快乐路径（健康检查、双 agent、资源快照、远程
 # status、漂移 push/pull）。其后追加三条仍走同一套 compose 拓扑的断言：
@@ -14,7 +16,7 @@
 # 未放进本脚本（issue #35，另案或成本不适合这条冒烟）：
 # - 应用升级：镜像只有 homer，没有 pi / herdr / opencode 本体
 # - 离线冲突：要中途停容器并制造三方冲突，不稳定且更慢
-# - 控制台 chromedp、真实公网 DERP、双机 homer pair、CI 接线（#34）
+# - 控制台 chromedp、真实公网 DERP、双机 homer pair（CI 接线见 #34 / hub-smoke.yml）
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -96,6 +98,12 @@ teardown() {
     echo "==> 失败 (exit $code)，compose 状态与日志：" >&2
     $COMPOSE ps >&2 || true
     $COMPOSE logs --tail=200 >&2 || true
+    # CI 可设 HUB_SMOKE_ARTIFACT_DIR：在 down -v 前落盘，便于 Actions 上传产物。
+    if [ -n "${HUB_SMOKE_ARTIFACT_DIR:-}" ]; then
+      mkdir -p "$HUB_SMOKE_ARTIFACT_DIR"
+      $COMPOSE ps > "$HUB_SMOKE_ARTIFACT_DIR/compose-ps.txt" 2>&1 || true
+      $COMPOSE logs --no-color > "$HUB_SMOKE_ARTIFACT_DIR/compose-logs.txt" 2>&1 || true
+    fi
   fi
   $COMPOSE down -v >/dev/null 2>&1 || true
 }
