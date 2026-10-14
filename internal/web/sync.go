@@ -819,6 +819,9 @@ func (s *Server) handleConsole(w http.ResponseWriter, _ *http.Request) {
 		Hostname string      `json:"hostname"`
 		Stale    bool        `json:"stale"`
 		Drift    *AgentDrift `json:"drift,omitempty"`
+		// Adapters is always present (empty array when unknown) so the
+		// fleet adapter overview can switch off the machine-level degrade.
+		Adapters []AdapterDrift `json:"adapters"`
 	}
 	layout := gens.New(s.opts.HomerHome)
 	head, published := layout.Read()
@@ -829,6 +832,7 @@ func (s *Server) handleConsole(w http.ResponseWriter, _ *http.Request) {
 				AgentID:  info.AgentID,
 				Hostname: info.Hostname,
 				Stale:    info.Stale,
+				Adapters: []AdapterDrift{},
 			}
 			if info.Drift != nil {
 				view.Drift = &AgentDrift{
@@ -837,6 +841,9 @@ func (s *Server) handleConsole(w http.ResponseWriter, _ *http.Request) {
 					Conflicts:   info.Drift.Conflicts,
 					Error:       info.Drift.Error,
 					Resolutions: info.Drift.Resolutions,
+				}
+				if len(info.Drift.Adapters) > 0 {
+					view.Adapters = append([]AdapterDrift(nil), info.Drift.Adapters...)
 				}
 			}
 			machines = append(machines, view)

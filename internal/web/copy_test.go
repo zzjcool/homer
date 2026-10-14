@@ -79,6 +79,8 @@ func TestConsoleUserCopy(t *testing.T) {
 		"要用这台机器的包管理器更新",
 		"记录决定", "记录并立即执行", "待执行决定", "条已解决的决定",
 		"/api/resolve/record", "/api/resolve/clear", "撤销决定", "已记录",
+		// 同 hostname 对话框标 agentId（#73）
+		"function agentLabel", `agentId " + a.agentId`,
 	} {
 		if !strings.Contains(html, required) {
 			t.Fatalf("console copy missing %q", required)

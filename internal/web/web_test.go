@@ -101,6 +101,67 @@ func TestAgentsAndConsoleCarryDriftResolutions(t *testing.T) {
 	}
 }
 
+// TestConsoleCarriesPerAdapterDrift freezes GET /api/console machines[].adapters
+// (Refs #51 / Fixes #72): sibling of aggregate drift, always an array.
+func TestConsoleCarriesPerAdapterDrift(t *testing.T) {
+	fixture := makeFixture(t, "base\n", "base\n")
+	source := &sourceStub{list: []AgentInfo{
+		{
+			AgentID: "box-a", Hostname: "box-a",
+			Drift: &AgentDrift{
+				Push: 2, Pull: 1, Conflicts: 0,
+				Adapters: []AdapterDrift{
+					{ID: "pi", Push: 1, Pull: 0, Conflicts: 0},
+					{ID: "herdr", Push: 1, Pull: 1, Conflicts: 0},
+				},
+			},
+		},
+		{AgentID: "box-b", Hostname: "box-b"}, // no drift → adapters []
+	}}
+	server := newWebServer(t, fixture, "test-token", source, nil)
+	response := request(t, server.Handler(), http.MethodGet, "/api/console")
+	if response.Code != http.StatusOK {
+		t.Fatalf("console = %d %s", response.Code, response.Body)
+	}
+	var payload struct {
+		Machines []struct {
+			AgentID  string         `json:"agentId"`
+			Drift    *AgentDrift    `json:"drift"`
+			Adapters []AdapterDrift `json:"adapters"`
+		} `json:"machines"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	var sawA, sawB bool
+	for _, machine := range payload.Machines {
+		switch machine.AgentID {
+		case "box-a":
+			sawA = true
+			if machine.Drift == nil || machine.Drift.Push != 2 || machine.Drift.Pull != 1 || machine.Drift.Conflicts != 0 {
+				t.Fatalf("box-a drift = %#v", machine.Drift)
+			}
+			if len(machine.Adapters) != 2 || machine.Adapters[0] != (AdapterDrift{ID: "pi", Push: 1}) || machine.Adapters[1] != (AdapterDrift{ID: "herdr", Push: 1, Pull: 1}) {
+				t.Fatalf("box-a adapters = %#v", machine.Adapters)
+			}
+			if machine.Drift.Adapters != nil {
+				t.Fatalf("console drift must not nest adapters: %#v", machine.Drift.Adapters)
+			}
+		case "box-b":
+			sawB = true
+			if machine.Adapters == nil {
+				t.Fatal("box-b adapters omitted; want []")
+			}
+			if len(machine.Adapters) != 0 {
+				t.Fatalf("box-b adapters = %#v, want []", machine.Adapters)
+			}
+		}
+	}
+	if !sawA || !sawB {
+		t.Fatalf("machines = %#v", payload.Machines)
+	}
+}
+
 func TestAgentListMarksOlderVersion(t *testing.T) {
 	old := Version
 	Version = "v1.4.0"

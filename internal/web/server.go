@@ -48,6 +48,15 @@ type AgentInfo struct {
 	Tools []AgentTool `json:"tools,omitempty"`
 }
 
+// AdapterDrift is one adapter's push/pull/conflict counts for a machine.
+// Exposed on GET /api/console as machines[].adapters (sibling of drift).
+type AdapterDrift struct {
+	ID        string `json:"id"`
+	Push      int    `json:"push"`
+	Pull      int    `json:"pull"`
+	Conflicts int    `json:"conflicts"`
+}
+
 // AgentDrift is the per-machine status summary the console renders.
 type AgentDrift struct {
 	Push      int    `json:"push"`
@@ -57,6 +66,9 @@ type AgentDrift struct {
 	// Resolutions counts adapters whose conflict currently has a recorded
 	// decision (staged-resolution plan, D8). 0 is omitted.
 	Resolutions int `json:"resolutions,omitempty"`
+	// Adapters is the per-adapter breakdown; omitted when empty on the
+	// heartbeat/agents wire. Console lifts it to machines[].adapters.
+	Adapters []AdapterDrift `json:"adapters,omitempty"`
 }
 
 // HostSnapshot is the resource report an agent uploads. Field names match
