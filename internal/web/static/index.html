@@ -28,12 +28,13 @@
   --fs-body: 0.9375rem;
   --fs-small: 0.8125rem;
   --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  /* VISUAL §3 motion tokens */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-sheet: cubic-bezier(0.22, 1, 0.36, 1);
-  --dur-1: 120ms;
-  --dur-2: 180ms;
-  --dur-3: 220ms;
-  --dur-4: 320ms;
+  --dur-1: 120ms;   /* hover / focus */
+  --dur-2: 180ms;   /* button opacity, drawer height */
+  --dur-3: 220ms;   /* hero switch, meter width */
+  --dur-4: 320ms;   /* dialog entrance only */
   --radius: 4px;
   --page-max: 880px;
   --control-border: color-mix(in srgb, var(--ink) 30%, var(--line));
@@ -83,7 +84,9 @@
 html { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: var(--fs-body); color: var(--ink); scroll-behavior: smooth; }
 body { margin: 0; background: var(--bg); color: var(--ink); line-height: 1.5; }
 button { font: inherit; cursor: pointer; min-height: 40px; padding: 0 14px;
-  background: var(--bg); color: var(--ink); border: 1px solid var(--control-border); border-radius: var(--radius); }
+  background: var(--bg); color: var(--ink); border: 1px solid var(--control-border); border-radius: var(--radius);
+  transition: background-color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out),
+    color var(--dur-1) var(--ease-out), filter var(--dur-1) var(--ease-out); }
 button:hover { border-color: var(--ink); }
 button:active { background: var(--bg-sink); }
 button:disabled { background: var(--bg-sink); color: var(--ink-dim); border-color: var(--line); cursor: not-allowed; }
@@ -122,6 +125,28 @@ footer.statusline .spacer { flex: 1; }
 .hero .conclusion { font-size: var(--fs-hero); font-weight: 650; line-height: 1.25;
   display: flex; align-items: center; gap: 10px; margin: 0 0 4px; color: var(--ink); }
 .hero .numbers { color: var(--ink-dim); margin: 0 0 14px; }
+/* §3 hero state switch: opacity + slight translateY over --dur-3 (no full-page flash) */
+.hero > .conclusion,
+.hero > .numbers,
+.hero > .meter-seg,
+.hero > .hero-note,
+.hero > .hero-ctas,
+.hero > .muted,
+.hero > button {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.hero.hero-enter > .conclusion,
+.hero.hero-enter > .numbers,
+.hero.hero-enter > .meter-seg,
+.hero.hero-enter > .hero-note,
+.hero.hero-enter > .hero-ctas,
+.hero.hero-enter > .muted,
+.hero.hero-enter > button {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity var(--dur-3) var(--ease-out), transform var(--dur-3) var(--ease-out);
+}
 .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex: none; }
 .dot.ok { background: var(--ok); }
 .dot.drift { background: var(--warn); }
@@ -165,7 +190,29 @@ button.danger-btn:hover { background: var(--danger); color: #fff; border-color: 
 .view-cat { margin: 4px 0 2px 10px; color: var(--ink-dim); display: flex; gap: 8px; align-items: baseline; }
 .view-folder > .view-cat { margin-left: 0; }
 button.view-toggle { background: none; border: none; color: var(--ink); cursor: pointer; padding: 2px 0; font: inherit; text-align: left; }
-.view-children { margin: 0 0 4px 10px; border-left: 2px solid var(--line); padding-left: 8px; }
+/* §3 row expand: grid-rows + opacity --dur-2 */
+.view-children {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  overflow: hidden;
+  margin: 0;
+  border-left-width: 0;
+  border-left-style: solid;
+  border-left-color: var(--line);
+  padding-left: 0;
+  transition: grid-template-rows var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out),
+    margin var(--dur-2) var(--ease-out), padding-left var(--dur-2) var(--ease-out),
+    border-left-width var(--dur-2) var(--ease-out);
+}
+.view-children.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin: 0 0 4px 10px;
+  border-left-width: 2px;
+  padding-left: 8px;
+}
+.view-children-inner { overflow: hidden; min-height: 0; }
 .view-file { margin: 0 0 0 24px; padding: 2px 0; display: flex; gap: 8px; align-items: baseline; }
 .view-children .view-file { margin-left: 0; }
 .view-file button { background: none; border: none; color: var(--ink); text-decoration: underline; cursor: pointer; padding: 0; font: inherit; }
@@ -181,6 +228,14 @@ button.view-toggle { background: none; border: none; color: var(--ink); cursor: 
 .diff-drawer pre { margin: 0; padding: 12px; background: var(--bg-sink); font-size: 12.5px;
   overflow-x: auto; white-space: pre; line-height: 1.45; }
 .diff-drawer .diff-actions { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+/* §3 drawer / preview open: opacity (+ slight rise) --dur-2 */
+@keyframes drawer-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+.diff-drawer, .conflict-diff, .view-content {
+  animation: drawer-in var(--dur-2) var(--ease-out);
+}
 pre .ln-add { color: var(--accent); background: var(--accent-soft); display: block; }
 pre .ln-del { color: var(--danger); background: var(--danger-soft); display: block; }
 .conflict-diff { margin: 4px 0 8px; }
@@ -339,11 +394,13 @@ pre .ln-meta { color: var(--ink-dim); display: block; }
 .inline-banner .close-x { float: right; }
 .inline-banner .alert-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 
-/* toast */
-#toast { position: fixed; bottom: 44px; left: 50%; transform: translateX(-50%);
+/* toast — §3 opacity + translateY --dur-2 */
+#toast { position: fixed; bottom: 44px; left: 50%; transform: translateX(-50%) translateY(8px);
   background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: var(--radius);
-  font-size: var(--fs-small); opacity: 0; transition: opacity var(--dur-2); pointer-events: none; z-index: 30; }
-#toast.show { opacity: 1; }
+  font-size: var(--fs-small); opacity: 0;
+  transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out);
+  pointer-events: none; z-index: 30; }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 #busy { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center;
   background: color-mix(in srgb, var(--bg) 78%, transparent); }
@@ -354,16 +411,35 @@ pre .ln-meta { color: var(--ink-dim); display: block; }
   animation: spin .7s linear infinite; flex: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* dialogs */
-dialog { border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; max-width: 460px;
-  width: calc(100% - 32px); background: var(--bg-elev); color: var(--ink); }
+/* dialogs — §3 entrance: opacity + scale(.98→1) --dur-4 / --ease-sheet */
+dialog {
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; max-width: 460px;
+  width: calc(100% - 32px); background: var(--bg-elev); color: var(--ink);
+  opacity: 0;
+  transform: scale(0.98);
+  transition:
+    opacity var(--dur-4) var(--ease-sheet),
+    transform var(--dur-4) var(--ease-sheet),
+    overlay var(--dur-4) var(--ease-sheet) allow-discrete,
+    display var(--dur-4) var(--ease-sheet) allow-discrete;
+}
+dialog[open] {
+  opacity: 1;
+  transform: scale(1);
+}
+@starting-style {
+  dialog[open] {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
 #dlg-confirm { max-width: 560px; }
 #dlg-view { max-width: 640px; }
 .choice-list { display: grid; gap: 8px; margin-top: 10px; max-height: 42vh; overflow: auto; }
 .cred-note { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; color: var(--danger); }
 .choice-block { border: 1px solid var(--line); border-radius: var(--radius); }
 .choice-block .choice-item { border: none; }
-.choice-block .view-children { margin: 0 8px 8px 28px; }
+.choice-block .view-children.is-open { margin: 0 8px 8px 28px; }
 .choice-item .view-cat { margin: 0; color: inherit; }
 .choice-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; }
 .choice-item input { width: auto; min-height: 0; margin-top: 3px; }
@@ -386,7 +462,15 @@ dialog { border: 1px solid var(--line); border-radius: var(--radius); padding: 2
 #confirm-err { color: var(--danger); margin: 10px 0 0; white-space: pre-line; }
 #confirm-err:empty { display: none; }
 #btn-confirm-back { margin-right: auto; }
-dialog::backdrop { background: #0007; }
+dialog::backdrop {
+  background: #0007;
+  opacity: 0;
+  transition: opacity var(--dur-4) var(--ease-sheet);
+}
+dialog[open]::backdrop { opacity: 1; }
+@starting-style {
+  dialog[open]::backdrop { opacity: 0; }
+}
 dialog h2 { margin: 0 0 8px; font-size: 1.1rem; }
 dialog menu { display: flex; gap: 8px; justify-content: flex-end; padding: 0; margin: 18px 0 0; }
 .join-cmd { display: flex; gap: 8px; margin: 12px 0; }
@@ -437,11 +521,37 @@ dialog menu { display: flex; gap: 8px; justify-content: flex-end; padding: 0; ma
   .hero .conclusion { font-size: 1.25rem; }
 }
 
+/* §3.3 — keep gate; new motion must not bypass */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
+  }
+  .hero > .conclusion,
+  .hero > .numbers,
+  .hero > .meter-seg,
+  .hero > .hero-note,
+  .hero > .hero-ctas,
+  .hero > .muted,
+  .hero > button {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  dialog, dialog[open] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  dialog::backdrop, dialog[open]::backdrop {
+    opacity: 1 !important;
+  }
+  .view-children:not(.is-open) {
+    display: none;
+  }
+  .view-children.is-open {
+    display: grid;
+    grid-template-rows: 1fr;
+    opacity: 1;
   }
 }
 </style>
@@ -847,9 +957,15 @@ function fmtDrift(d) {
   if (d.conflicts) parts.push(d.conflicts + " 项冲突");
   return parts.join(" · ");
 }
+/* §3: bump .hero-enter after paint so CSS can cross-fade new content */
+function requestHeroEnter(hero) {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { hero.classList.add("hero-enter"); });
+  });
+}
 function renderHero() {
   const hero = $("hero"); clear(hero);
-  hero.classList.remove("warn", "drift", "clean", "uninit");
+  hero.classList.remove("hero-enter", "warn", "drift", "clean", "uninit");
   const c = app.console;
   if (!c) return;
 
@@ -864,6 +980,7 @@ function renderHero() {
       ? "已接入 " + machines.length + " 台机器 · 从一台机器收取它的配置，存入中心"
       : "还没有机器接入 · 先接入一台机器，再从它收取配置");
     hero.append(concl, numbers);
+    requestHeroEnter(hero);
     return;
   }
 
@@ -888,6 +1005,7 @@ function renderHero() {
     viewBtn.addEventListener("click", openStorageView);
     ctas.append(viewBtn);
     hero.append(concl, numbers, note, ctas);
+    requestHeroEnter(hero);
     return;
   }
 
@@ -915,6 +1033,7 @@ function renderHero() {
     note.append(el("div", null, "某台机器和中心改了同一处。到那台机器所在行选择保留哪一边。"));
     if (seg) hero.append(concl, numbers, seg, note);
     else hero.append(concl, numbers, note);
+    requestHeroEnter(hero);
     return;
   }
   if (push + pull > 0) {
@@ -931,6 +1050,7 @@ function renderHero() {
     viewBtn.addEventListener("click", openStorageView);
     if (seg) hero.append(concl, numbers, seg, note, viewBtn);
     else hero.append(concl, numbers, note, viewBtn);
+    requestHeroEnter(hero);
     return;
   }
   hero.classList.add("clean");
@@ -940,13 +1060,16 @@ function renderHero() {
   viewBtn.type = "button";
   viewBtn.addEventListener("click", openStorageView);
   hero.append(concl, numbers, viewBtn);
+  requestHeroEnter(hero);
 }
 
 function renderHeroSkeleton() {
   const hero = $("hero"); clear(hero);
+  hero.classList.remove("hero-enter", "warn", "drift", "clean", "uninit");
   const concl = el("p", "conclusion skel", "加载中加载中");
   const numbers = el("p", "numbers skel", "加载中加载中加载中加载中");
   hero.append(concl, numbers);
+  requestHeroEnter(hero);
 }
 
 /* ---------- ③ agents ---------- */
@@ -3310,23 +3433,26 @@ function makeCollapsible(title, meta, top) {
   const row = el("div", "view-cat");
   const toggle = el("button", "view-toggle" + (top ? " view-adapter" : ""), "▸ " + title);
   toggle.type = "button";
-  const kids = el("div", "view-children hidden");
+  // §3: grid-rows expand — outer .view-children + inner overflow wrapper
+  const kids = el("div", "view-children");
+  const kidsInner = el("div", "view-children-inner");
+  kids.append(kidsInner);
   let built = false;
   let fill = () => {};
   function setOpen(open) {
     if (!open) {
-      kids.classList.add("hidden");
+      kids.classList.remove("is-open");
       toggle.textContent = "▸ " + title;
       return;
     }
-    if (!built) { fill(kids); built = true; }
-    kids.classList.remove("hidden");
+    if (!built) { fill(kidsInner); built = true; }
+    kids.classList.add("is-open");
     toggle.textContent = "▾ " + title;
   }
   toggle.addEventListener("click", ev => {
     ev.preventDefault();
     ev.stopPropagation();
-    setOpen(kids.classList.contains("hidden"));
+    setOpen(!kids.classList.contains("is-open"));
   });
   row.append(toggle);
   if (meta) row.append(el("span", "muted small", meta));
@@ -4193,7 +4319,7 @@ function loadAgentsRender(agents, disabledFeature) {
 }
 function renderHeroError(msg) {
   const hero = $("hero"); clear(hero);
-  hero.classList.remove("warn", "drift", "clean", "uninit");
+  hero.classList.remove("hero-enter", "warn", "drift", "clean", "uninit");
   hero.classList.add("warn");
   const concl = el("p", "conclusion");
   concl.append(el("span", "dot conflict"), document.createTextNode("状态加载失败"));
@@ -4201,6 +4327,7 @@ function renderHeroError(msg) {
   const retry = el("button", null, "重试");
   retry.type = "button"; retry.addEventListener("click", refresh);
   hero.append(retry);
+  requestHeroEnter(hero);
 }
 
 /* ---------- auth forms ---------- */
