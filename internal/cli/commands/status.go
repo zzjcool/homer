@@ -141,8 +141,9 @@ const STATUS_USAGE = `用法: homer status [options]
 const StatusUsage = STATUS_USAGE
 
 // sourceErrorMessages converts structured scan diagnostics into the additive
-// report channel used by both status and diff.
-func sourceErrorMessages(errors SnapshotSourceErrors) []string {
+// report channel used by both status and diff. Pass verbose to append the
+// multi-line Detail (e.g. listCmd stderr) after each one-line Message.
+func sourceErrorMessages(errors SnapshotSourceErrors, verbose bool) []string {
 	messages := make([]string, 0)
 	for _, entry := range errors {
 		prefix := "扫描告警"
@@ -150,7 +151,11 @@ func sourceErrorMessages(errors SnapshotSourceErrors) []string {
 			prefix = "adapter root 不可读"
 		}
 		for _, scanError := range entry.Errors {
-			messages = append(messages, fmt.Sprintf("%s: %s (%s: %s)", prefix, entry.AdapterID, scanError.Path, scanError.Message))
+			msg := fmt.Sprintf("%s: %s (%s: %s)", prefix, entry.AdapterID, scanError.Path, scanError.Message)
+			if verbose && strings.TrimSpace(scanError.Detail) != "" {
+				msg = msg + "\n" + strings.TrimSpace(scanError.Detail)
+			}
+			messages = append(messages, msg)
 		}
 	}
 	return messages
@@ -158,7 +163,67 @@ func sourceErrorMessages(errors SnapshotSourceErrors) []string {
 
 // SourceErrorMessages is the exported spelling used by renderers and tests.
 func SourceErrorMessages(errors SnapshotSourceErrors) []string {
-	return sourceErrorMessages(errors)
+	return sourceErrorMessages(errors, false)
+}
+
+// SourceErrorMessagesVerbose is like SourceErrorMessages but includes Detail.
+func SourceErrorMessagesVerbose(errors SnapshotSourceErrors) []string {
+	return sourceErrorMessages(errors, true)
+}
+
+// FilterSnapshotSourceErrors keeps diagnostics for the selected adapter ids.
+func FilterSnapshotSourceErrors(errors SnapshotSourceErrors, ids []string) SnapshotSourceErrors {
+	if len(ids) == 0 || len(errors) == 0 {
+		return errors
+	}
+	want := make(map[string]struct{}, len(ids))
+	for _, id := range ids {
+		want[id] = struct{}{}
+	}
+	out := make(SnapshotSourceErrors, 0, len(errors))
+	for _, entry := range errors {
+		if _, ok := want[entry.AdapterID]; ok {
+			out = append(out, entry)
+		}
+	}
+	return out
+}
+
+// FilterAdapterPrefixedLines keeps warning/error lines that belong to one
+// of the selected adapter ids. Recognizes:
+//   - "pi: …" missing-CLI warnings
+//   - "扫描告警: pi (…)" / "adapter root 不可读: pi (…)" scan rows
+//   - "未安装 …，无法下发适配器 pi。" toolcheck refusals
+func FilterAdapterPrefixedLines(lines []string, ids []string) []string {
+	if len(ids) == 0 || len(lines) == 0 {
+		return lines
+	}
+	out := make([]string, 0, len(lines))
+	for _, line := range lines {
+		for _, id := range ids {
+			if lineBelongsToAdapter(line, id) {
+				out = append(out, line)
+				break
+			}
+		}
+	}
+	return out
+}
+
+func lineBelongsToAdapter(line, id string) bool {
+	if id == "" {
+		return false
+	}
+	if strings.HasPrefix(line, id+":") || strings.HasPrefix(line, id+"：") {
+		return true
+	}
+	if strings.Contains(line, ": "+id+" (") {
+		return true
+	}
+	if strings.Contains(line, "适配器 "+id) {
+		return true
+	}
+	return false
 }
 
 // RootMissingMessages extracts the "adapter root does not exist yet" rows
@@ -621,7 +686,7 @@ func runStatusWithConfig(opts StatusOptions, paths core.HomerPaths, config *core
 	errorMessages = append(errorMessages, sources.ErrorMessages...)
 	warnings := append([]string(nil), sources.Warnings...)
 	warnings = append(warnings, RootMissingMessages(sources.ScanErrors)...)
-	errorMessages = append(errorMessages, sourceErrorMessages(withoutRootMissing(sources.ScanErrors))...)
+	errorMessages = append(errorMessages, sourceErrorMessages(withoutRootMissing(sources.ScanErrors), opts.Verbose)...)
 	report := BuildStatusReport(engine.ComputeDrift(sources.Base, sources.Local, sources.Remote), errorMessages, warnings)
 	report.Disabled = DisabledSummaries(*config)
 	// Manifest categories surface package names, never the virtual file.

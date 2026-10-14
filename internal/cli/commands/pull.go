@@ -473,6 +473,10 @@ func RunPull(options PullOptions, deps *PullDeps) (report PullReport) {
 		sources.Base = syncx.FilterSnapshots(sources.Base, ids)
 		sources.Local = syncx.FilterSnapshots(sources.Local, ids)
 		sources.Remote = syncx.FilterSnapshots(sources.Remote, ids)
+		// Scan diagnostics are collected for every enabled adapter; when the
+		// pull is scoped, drop unrelated adapter noise from the report.
+		sources.Warnings = FilterAdapterPrefixedLines(sources.Warnings, ids)
+		sources.Errors = FilterAdapterPrefixedLines(sources.Errors, ids)
 	}
 	warnings := append([]string{}, sources.Warnings...)
 	warnings = append(warnings, manifestCommandWarnings...)

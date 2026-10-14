@@ -566,8 +566,14 @@ func TestScanManifestFailureDoesNotBlockOtherCategories(t *testing.T) {
 			"extensions": {Kind: &kind, Mode: core.SyncModeMirror, ListCmd: "fake list"},
 		},
 	}, adapter.ScanDeps{Commands: port})
-	if len(outcome.Errors) != 1 || outcome.Errors[0].Path != "fake list" || outcome.Errors[0].Message != "context deadline exceeded" {
+	if len(outcome.Errors) != 1 || outcome.Errors[0].Path != "fake list" {
 		t.Fatalf("manifest failure errors = %#v", outcome.Errors)
+	}
+	if !strings.Contains(outcome.Errors[0].Message, "扫描失败，无法列出 fake/extensions") || !strings.Contains(outcome.Errors[0].Message, "context deadline exceeded") {
+		t.Fatalf("manifest failure summary = %#v", outcome.Errors[0])
+	}
+	if strings.Contains(outcome.Errors[0].Message, "\n") {
+		t.Fatalf("summary must be one line: %#v", outcome.Errors[0].Message)
 	}
 	if got := category(t, outcome.Snapshot, "extensions"); len(got.Files) != 0 {
 		t.Fatalf("failed manifest files = %#v", got.Files)
@@ -617,10 +623,41 @@ func TestScanManifestExitErrorIsNotMissingCLI(t *testing.T) {
 			"extensions": {Kind: manifestKind(), Mode: core.SyncModeMirror, ListCmd: "code --list-extensions"},
 		},
 	}, adapter.ScanDeps{Commands: port})
-	if len(outcome.Errors) != 1 || outcome.Errors[0].Message != "executable file not found" {
+	if len(outcome.Errors) != 1 || !strings.Contains(outcome.Errors[0].Message, "扫描失败，无法列出 vscode/extensions") || !strings.Contains(outcome.Errors[0].Message, "executable file not found") {
 		t.Fatalf("exit-like scan error = %#v", outcome.Errors)
+	}
+	if strings.Contains(outcome.Errors[0].Message, "未安装") {
+		t.Fatalf("exit-like error must not be phrased as missing install: %#v", outcome.Errors[0])
 	}
 	if len(outcome.Warnings) != 0 {
 		t.Fatalf("exit-like error was misclassified as missing CLI: %#v", outcome.Warnings)
+	}
+}
+
+func TestScanManifestCrashSummarizesStack(t *testing.T) {
+	root := t.TempDir()
+	stack := "exit status 1: Error: enableCompileCache\n    at Module._load (node:internal/modules/cjs/loader:1:1)\n    at node:internal/main/run_main_module:1:1"
+	port := &fakeManifestPort{outputErr: errors.New(stack)}
+	outcome := adapter.ScanAdapter("pi", core.AdapterConfig{
+		Root: root,
+		Categories: map[string]core.CategoryConfig{
+			"packages": {Kind: manifestKind(), Mode: core.SyncModeMirror, ListCmd: "pi list", ApplyCmd: "pi install"},
+		},
+	}, adapter.ScanDeps{Commands: port})
+	if len(outcome.Errors) != 1 {
+		t.Fatalf("errors = %#v", outcome.Errors)
+	}
+	err := outcome.Errors[0]
+	if !strings.Contains(err.Message, "扫描失败，无法列出 pi/packages") || !strings.Contains(err.Message, "exit status 1") {
+		t.Fatalf("summary = %q", err.Message)
+	}
+	if strings.Contains(err.Message, "enableCompileCache") || strings.Contains(err.Message, "\n") {
+		t.Fatalf("summary leaked stack: %q", err.Message)
+	}
+	if !strings.Contains(err.Detail, "enableCompileCache") || !strings.Contains(err.Detail, "run_main_module") {
+		t.Fatalf("detail missing stack: %q", err.Detail)
+	}
+	if strings.Contains(err.Message, "未安装") {
+		t.Fatalf("crash must not look like missing install: %q", err.Message)
 	}
 }

@@ -454,7 +454,7 @@ func buildInitReport(outcomes []adapter.ScanOutcome, snapshots []core.AdapterSna
 					RootUnreadable: rootUnreadable(outcome),
 					Errors:         append([]adapter.ScanError(nil), outcome.Errors...),
 				},
-			})...)
+			}, false)...)
 		}
 	}
 	filteredByID := make(map[string]core.AdapterSnapshot, len(snapshots))
