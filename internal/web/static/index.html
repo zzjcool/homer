@@ -238,6 +238,10 @@ button.view-toggle { background: none; border: none; color: var(--ink); cursor: 
 }
 pre .ln-add { color: var(--accent); background: var(--accent-soft); display: block; }
 pre .ln-del { color: var(--danger); background: var(--danger-soft); display: block; }
+.diff-drawer pre > span { display: block; white-space: pre; }
+.diff-drawer .diff-err { color: var(--danger); font-size: var(--fs-small); }
+.view-cat > button.small-btn { margin-left: 8px; flex-shrink: 0; }
+.scope-diff-host:empty { display: none; }
 .conflict-diff { margin: 4px 0 8px; }
 .conflict-grid {
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -2079,6 +2083,7 @@ function renderScopeChoices(data) {
       node.setFill(kids => renderOutlineCategories(kids, cats, {
         adapterId: item.id, drift: true, agentId: app.scopeAgent && app.scopeAgent.agentId,
         autoDiff: item.conflicts > 0 ? autoDiffBudget : null,
+        scopeDiff: app.scopeDirection === "collect" || app.scopeDirection === "dispatch",
       }));
       node.row.classList.add("choice-id");
       if (item.conflicts > 0) openAdapters.push(node);
@@ -2111,6 +2116,11 @@ function renderScopeChoices(data) {
     if (app.scopeDirection === "collect") { appendCredentialNotes(copy, item); appendSecretHits(copy, item); }
     label.append(input, copy);
     if (!cats.length) block.append(label);
+    // #50：收取/下发对话框内绑定「查看差异」→ 行内 unified diff 抽屉
+    if ((app.scopeDirection === "collect" || app.scopeDirection === "dispatch")
+        && app.scopeAgent && ((item.push || 0) > 0 || (item.pull || 0) > 0)) {
+      block.append(makeScopeDiffControls(app.scopeAgent.agentId, item.id, ""));
+    }
     if (app.scopeDirection === "dispatch" && item.configDrift) {
       const configPolicyRow = el("div", "resolution-choice-row");
       const configPolicyInitialChoice = app.configPolicySelections[item.id] || "center";
@@ -3594,6 +3604,14 @@ function renderOutlineCategories(container, categories, opts) {
       const tone = cat.conflicts ? "c-conflict" : "c-drift";
       node.row.append(el("span", "view-counts " + tone, bits.join(" · ")));
     }
+    if (opts.scopeDiff && opts.agentId && ((cat.push || 0) > 0 || (cat.pull || 0) > 0)) {
+      const controls = makeScopeDiffControls(opts.agentId, opts.adapterId, cat.name);
+      // 按钮放在分类行上，抽屉挂在分类块底部
+      const btn = controls.querySelector("button");
+      const host = controls.querySelector(".scope-diff-host");
+      if (btn) node.row.append(btn);
+      if (host) node.block.append(host);
+    }
     node.setFill(kids => {
       const view = Object.assign({}, opts, { category: cat.name });
       if (title === "插件") {
@@ -3777,6 +3795,91 @@ function conflictFilePath(path, category) {
     if (head.includes(".") || head.includes("/")) return head;
   }
   return rel;
+}
+let scopeDiffSeq = 0;
+// #50：把 unified diff 文本渲成 +/-/上下文行（复用 .ln-add / .ln-del）。
+function renderUnifiedDiff(text) {
+  const pre = el("pre");
+  const raw = String(text == null ? "" : text);
+  const lines = raw.split("\n");
+  if (lines.length && lines[lines.length - 1] === "") lines.pop();
+  if (!lines.length) {
+    pre.append(el("span", "muted", "无漂移"));
+    return pre;
+  }
+  lines.forEach(line => {
+    let cls = "";
+    if (line.startsWith("+") && !line.startsWith("+++")) cls = "ln-add";
+    else if (line.startsWith("-") && !line.startsWith("---")) cls = "ln-del";
+    pre.append(el("span", cls || null, line.length ? line : " "));
+  });
+  return pre;
+}
+function makeScopeDiffControls(agentId, adapterId, category) {
+  const wrap = el("div", "scope-diff-wrap");
+  const actions = el("div", "secret-actions");
+  const drawerId = "scope-diff-" + (++scopeDiffSeq);
+  const btn = el("button", "small-btn", "查看差异");
+  btn.type = "button";
+  btn.title = "先看漂成什么样，再确认收取或下发";
+  btn.setAttribute("aria-expanded", "false");
+  btn.setAttribute("aria-controls", drawerId);
+  const host = el("div", "scope-diff-host");
+  host.id = drawerId;
+  btn.addEventListener("click", ev => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    toggleScopeUnifiedDiff(btn, host, agentId, adapterId, category);
+  });
+  actions.append(btn);
+  wrap.append(actions, host);
+  return wrap;
+}
+function toggleScopeUnifiedDiff(btn, host, agentId, adapterId, category) {
+  const existing = host.querySelector(".diff-drawer");
+  if (existing) {
+    existing.remove();
+    btn.setAttribute("aria-expanded", "false");
+    return;
+  }
+  btn.setAttribute("aria-expanded", "true");
+  const drawer = el("div", "diff-drawer");
+  const loading = el("div", "muted small", "读取差异…");
+  drawer.append(loading);
+  host.replaceChildren(drawer);
+  loadScopeUnifiedDiff(drawer, agentId, adapterId, category);
+}
+function loadScopeUnifiedDiff(drawer, agentId, adapterId, category) {
+  const q = "adapter=" + encodeURIComponent(adapterId || "")
+    + "&category=" + encodeURIComponent(category || "");
+  api("/api/agents/" + encodeURIComponent(agentId) + "/diff?" + q, { method: "POST" })
+    .then(data => {
+      if (!drawer.isConnected) return;
+      clear(drawer);
+      const text = data && data.text != null ? String(data.text) : "";
+      if ((data && data.empty) || !text.trim()) {
+        drawer.append(el("div", "muted small", "无漂移"));
+        return;
+      }
+      drawer.append(renderUnifiedDiff(text));
+    })
+    .catch(err => {
+      if (!drawer.isConnected) return;
+      clear(drawer);
+      const actions = el("div", "diff-actions");
+      const msg = el("span", "diff-err", "读取失败：" + (err && err.message ? err.message : String(err)));
+      const retry = el("button", "small-btn", "重试");
+      retry.type = "button";
+      retry.addEventListener("click", ev => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        clear(drawer);
+        drawer.append(el("div", "muted small", "读取差异…"));
+        loadScopeUnifiedDiff(drawer, agentId, adapterId, category);
+      });
+      actions.append(msg, retry);
+      drawer.append(actions);
+    });
 }
 function toggleConflictDiff(row, agentId, adapterId, category, path, keepOthers) {
   const existing = row.nextElementSibling;
