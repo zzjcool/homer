@@ -225,11 +225,23 @@ func TestCountEffectiveResolutions(t *testing.T) {
 
 func TestDriftFromStatusIncludesResolutions(t *testing.T) {
 	drift := driftFromStatus(commands.StatusReport{
-		Adapters:    []commands.StatusAdapterReport{{ID: "pi", Push: 2, Pull: 1, Conflicts: 1}},
+		Adapters: []commands.StatusAdapterReport{
+			{ID: "pi", Push: 2, Pull: 1, Conflicts: 1},
+			{ID: "herdr", Push: 0, Pull: 3, Conflicts: 0},
+		},
 		Resolutions: []commands.StatusResolution{{Adapter: "pi"}},
 	})
-	if drift.Resolutions != 1 || drift.Push != 2 || drift.Pull != 1 || drift.Conflicts != 1 {
+	if drift.Resolutions != 1 || drift.Push != 2 || drift.Pull != 4 || drift.Conflicts != 1 {
 		t.Fatalf("driftFromStatus() = %+v", drift)
+	}
+	if len(drift.Adapters) != 2 {
+		t.Fatalf("adapters = %+v", drift.Adapters)
+	}
+	if drift.Adapters[0] != (hub.AdapterDrift{ID: "pi", Push: 2, Pull: 1, Conflicts: 1}) {
+		t.Fatalf("adapters[0] = %+v", drift.Adapters[0])
+	}
+	if drift.Adapters[1] != (hub.AdapterDrift{ID: "herdr", Push: 0, Pull: 3, Conflicts: 0}) {
+		t.Fatalf("adapters[1] = %+v", drift.Adapters[1])
 	}
 }
 
