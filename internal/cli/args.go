@@ -102,7 +102,7 @@ const USAGE = `homer — dotfiles for humans and their AI agents
   serve     启动中心：网页控制台和 API 一直在后台跑
   agent     把本机接入中心，并保持连接
   token     在中心机器上查看或生成中心令牌
-  ps        列出中心上的机器，以及每台机器上 pi、herdr 等应用的版本
+  ps        列出中心上的机器（含 agentId），以及每台机器上 pi、herdr 等应用的版本
   join      打印接入新机器的命令（对应控制台「接入新机器」）
   status    查看漂移。设置了 HOMER_HOST 或 --host 时向中心查询，否则检查本机
   diff      查看差异。设置了中心地址时向中心查询，否则检查本机
@@ -409,7 +409,7 @@ func commandUsage(command Command) string {
 	case CommandPull:
 		return "用法: homer pull [options]\n\n把中心的配置下发到这台机器。加上 --yes 才会执行。\n\n选项: --home <dir> --host <url> --id <agentId> --adapters <ids> --json --yes -h, --help"
 	case CommandPS:
-		return "用法: homer ps [options]\n\n列出中心上的机器，以及每台机器上 pi、herdr 等应用的版本；落后于其他机器的会标出最新版本。\n\n选项: --home <dir> --host <url> --json -h, --help"
+		return "用法: homer ps [options]\n\n列出中心上的机器（文本表含 ID=agentId，与 --json / 控制台对齐）；落后于其他机器的应用会标出最新版本。同 hostname 多 agent 时靠 ID 区分。\n\n选项: --home <dir> --host <url> --json -h, --help"
 	case CommandToken:
 		return "用法: homer token [options]\n\n在中心那台机器上查看中心令牌。文件不存在时会生成。--force 换成新的，正在运行的 homer serve 要重启后才使用新令牌。\n\n选项: --home <dir> --force -h, --help"
 	case CommandJoin:
