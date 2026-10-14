@@ -340,6 +340,9 @@ dialog menu { display: flex; gap: 8px; justify-content: flex-end; padding: 0; ma
 .plugin-role.role-carrier { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); }
 .plugin-role.role-action { color: #385a91; border-color: #a9bedf; }
 [data-theme="dark"] .plugin-role.role-action { color: #9db7e5; border-color: #3a4f73; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .plugin-role.role-action { color: #9db7e5; border-color: #3a4f73; }
+}
 .plugin-description { margin: 0; }
 .plugin-meta { display: flex; gap: 12px; flex-wrap: wrap; }
 .plugin-actions { display: flex; gap: 8px; flex-wrap: wrap; }
