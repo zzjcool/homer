@@ -475,7 +475,7 @@ func (c *consoleEnv) clickRow(hostname, label string) {
 	c.click("#btn-refresh")
 	time.Sleep(400 * time.Millisecond)
 	js := fmt.Sprintf(`(() => {
-		const row = [...document.querySelectorAll('.agent-line')].find(r => (r.querySelector('.hostname')||{}).textContent === %q);
+		const row = [...document.querySelectorAll('.agent-card')].find(r => (r.querySelector('.hostname')||{}).textContent === %q);
 		if (!row) return 'missing-row';
 		const btn = [...row.querySelectorAll('button')].find(b => b.textContent === %q);
 		if (!btn) return 'missing-button';
@@ -551,7 +551,7 @@ func (c *consoleEnv) waitRow(hostname, needle string, timeout time.Duration) {
 		c.click("#btn-refresh")
 		time.Sleep(500 * time.Millisecond)
 		last = c.eval(fmt.Sprintf(`(() => {
-			const row = [...document.querySelectorAll('.agent-line')].find(r => (r.querySelector('.hostname')||{}).textContent === %q);
+			const row = [...document.querySelectorAll('.agent-card')].find(r => (r.querySelector('.hostname')||{}).textContent === %q);
 			return row ? row.innerText : '';
 		})()`, hostname))
 		if strings.Contains(last, needle) {
@@ -569,7 +569,7 @@ func (c *consoleEnv) waitGone(hostname, needle string, timeout time.Duration) {
 		c.click("#btn-refresh")
 		time.Sleep(400 * time.Millisecond)
 		text := c.eval(fmt.Sprintf(`(() => {
-			const row = [...document.querySelectorAll('.agent-line')].find(r => (r.querySelector('.hostname')||{}).textContent === %q);
+			const row = [...document.querySelectorAll('.agent-card')].find(r => (r.querySelector('.hostname')||{}).textContent === %q);
 			return row ? row.innerText : '';
 		})()`, hostname))
 		if text != "" && !strings.Contains(text, needle) {
@@ -599,7 +599,7 @@ func (c *consoleEnv) rowButtonState(hostname string) string {
 	c.click("#btn-refresh")
 	time.Sleep(400 * time.Millisecond)
 	return c.eval(fmt.Sprintf(`(() => {
-		const row = [...document.querySelectorAll('.agent-line')].find(r => (r.querySelector('.hostname')||{}).textContent === %q);
+		const row = [...document.querySelectorAll('.agent-card')].find(r => (r.querySelector('.hostname')||{}).textContent === %q);
 		if (!row) return 'missing-row';
 		const labels = ['查看', '收取', '下发'];
 		const buttons = labels.map(label => [...row.querySelectorAll('button')].find(b => b.textContent === label));
@@ -610,7 +610,7 @@ func (c *consoleEnv) rowButtonState(hostname string) string {
 
 func rowEnabledJS(hostname string) string {
 	return fmt.Sprintf(`(() => {
-		const row = [...document.querySelectorAll('.agent-line')].find(r => (r.querySelector('.hostname')||{}).textContent === %q);
+		const row = [...document.querySelectorAll('.agent-card')].find(r => (r.querySelector('.hostname')||{}).textContent === %q);
 		if (!row) return false;
 		const btn = [...row.querySelectorAll('button')].find(b => b.textContent === '下发');
 		return !!(btn && !btn.disabled);
