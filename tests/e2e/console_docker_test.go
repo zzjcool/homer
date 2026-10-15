@@ -27,7 +27,7 @@ import (
 //  3. the page's install command brings up a new machine ("新机器 · 等待下发")
 //  4. the same code does not enroll a second machine
 //  5. 查看 on that machine is not a 502
-//  6. 下发 while the center is empty fails and leaves the machine uninitialized
+//  6. 下发 while the center is empty keeps confirm OK disabled (hint copy) and leaves the machine uninitialized
 //  7. 收取 uploads the machine's local files; 查看存储内容 lists them
 //  8. a second empty machine receives 下发; the first machine's file is unchanged
 //  9. restarting the agent keeps 下发 working
@@ -155,13 +155,19 @@ func TestConsoleDockerScenarios(t *testing.T) {
 	env.click(`#dlg-view button[value="ok"]`)
 
 	t.Log("dispatch before the center has anything")
-	env.confirmRow("box-a", "下发")
-	alert := env.waitOutcome(40 * time.Second)
-	if !strings.Contains(alert, "下发没有完成") {
-		t.Fatalf("empty-center dispatch = %s", alert)
+	// Product: empty center shows hint and disables OK; no toast 「下发没有完成」.
+	env.openConfirmRow("box-a", "下发")
+	env.waitJS(`document.querySelector('#dlg-confirm').open && document.querySelector('#confirm-desc').innerText.includes('中心还没有任何内容')`, 20*time.Second)
+	desc := env.eval(`document.querySelector('#confirm-desc').innerText`)
+	if !strings.Contains(desc, "中心还没有任何内容。先从一台机器收取。") {
+		t.Fatalf("empty-center dispatch desc = %q", desc)
 	}
+	if env.eval(`document.querySelector('#btn-confirm-ok').disabled ? '1' : '0'`) != "1" {
+		t.Fatalf("empty-center confirm OK should be disabled; desc=%q", desc)
+	}
+	env.closeConfirm()
 	if env.fileExists("box-a", "/root/.homer/homer.json") {
-		t.Fatal("failed dispatch still wrote homer.json")
+		t.Fatal("empty-center dispatch still wrote homer.json")
 	}
 
 	t.Log("collect box-a into the center")
@@ -515,11 +521,22 @@ func (c *consoleEnv) installLoginKey(hostname, user string) {
 	c.click("#btn-confirm-ok")
 }
 
-func (c *consoleEnv) confirmRow(hostname, label string) {
+func (c *consoleEnv) openConfirmRow(hostname, label string) {
 	c.t.Helper()
 	c.clearAlert()
 	c.clickRow(hostname, label)
 	c.waitJS(`document.querySelector('#dlg-confirm').open`, 10*time.Second)
+}
+
+func (c *consoleEnv) closeConfirm() {
+	c.t.Helper()
+	c.click("#btn-confirm-cancel")
+	c.waitJS(`!document.querySelector('#dlg-confirm').open`, 10*time.Second)
+}
+
+func (c *consoleEnv) confirmRow(hostname, label string) {
+	c.t.Helper()
+	c.openConfirmRow(hostname, label)
 	c.click("#btn-confirm-ok")
 }
 
