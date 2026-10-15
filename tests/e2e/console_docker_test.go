@@ -172,7 +172,7 @@ func TestConsoleDockerScenarios(t *testing.T) {
 
 	t.Log("collect box-a into the center")
 	env.confirmRow("box-a", "收取")
-	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已从 box-a") || !strings.Contains(outcome, "收取")) {
+	if outcome := env.waitOutcome(90 * time.Second); !strings.Contains(outcome, "已从 box-a") || !strings.Contains(outcome, "收取") {
 		t.Fatalf("collect = %s\n%s", outcome, env.agentLog("box-a"))
 	}
 	env.waitHero("查看存储内容", 20*time.Second)
@@ -198,7 +198,7 @@ func TestConsoleDockerScenarios(t *testing.T) {
 	}
 	env.waitRow("box-b", "新机器 · 等待下发", 60*time.Second)
 	env.confirmRow("box-b", "下发")
-	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已下发到") || !strings.Contains(outcome, "box-b")) {
+	if outcome := env.waitOutcome(90 * time.Second); !strings.Contains(outcome, "已下发到") || !strings.Contains(outcome, "box-b") {
 		t.Fatalf("dispatch box-b = %s\n%s", outcome, env.agentLog("box-b"))
 	}
 	// Drift is recomputed on the agent's own interval, so the badge can lag
@@ -236,7 +236,7 @@ func TestConsoleDockerScenarios(t *testing.T) {
 	}
 	env.click(`#dlg-view button[value="ok"]`)
 	env.confirmRow("box-listen", "下发")
-	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已下发到") || !strings.Contains(outcome, "box-listen")) {
+	if outcome := env.waitOutcome(90 * time.Second); !strings.Contains(outcome, "已下发到") || !strings.Contains(outcome, "box-listen") {
 		t.Fatalf("second agent dispatch = %s\n%s", outcome, env.agentLog("box-listen"))
 	}
 	if !env.fileExists("box-listen", "/root/.homer/homer.json") {
@@ -258,12 +258,12 @@ func TestConsoleDockerScenarios(t *testing.T) {
 	env.writeFile("box-a", "/root/.pi/agent/settings.json", "{\"marker\":\"from-box-a-restart\"}\n")
 	env.waitRow("box-a", "收取", 90*time.Second)
 	env.confirmRow("box-a", "收取")
-	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已从 box-a") || !strings.Contains(outcome, "收取")) {
+	if outcome := env.waitOutcome(90 * time.Second); !strings.Contains(outcome, "已从 box-a") || !strings.Contains(outcome, "收取") {
 		t.Fatalf("collect after restart = %s", outcome)
 	}
 	env.waitJS(rowEnabledJS("box-b"), 60*time.Second)
 	env.confirmRow("box-b", "下发")
-	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已下发到") || !strings.Contains(outcome, "box-b")) {
+	if outcome := env.waitOutcome(90 * time.Second); !strings.Contains(outcome, "已下发到") || !strings.Contains(outcome, "box-b") {
 		t.Fatalf("dispatch after restart = %s\n%s", outcome, env.agentLog("box-b"))
 	}
 
@@ -303,12 +303,12 @@ func TestConsoleDockerScenarios(t *testing.T) {
 	// Hero CTA is now 「去同步 →」 (scroll only). Drive collect/dispatch per machine.
 	env.waitRow("box-a", "收取", 90*time.Second)
 	env.confirmRow("box-a", "收取")
-	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已从 box-a") || !strings.Contains(outcome, "收取")) {
+	if outcome := env.waitOutcome(90 * time.Second); !strings.Contains(outcome, "已从 box-a") || !strings.Contains(outcome, "收取") {
 		t.Fatalf("collect while offline = %s", outcome)
 	}
 	env.waitJS(rowEnabledJS("box-c"), 60*time.Second)
 	env.confirmRow("box-c", "下发")
-	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已下发到") || !strings.Contains(outcome, "box-c")) {
+	if outcome := env.waitOutcome(90 * time.Second); !strings.Contains(outcome, "已下发到") || !strings.Contains(outcome, "box-c") {
 		t.Fatalf("dispatch box-c while offline = %s\n%s", outcome, env.agentLog("box-c"))
 	}
 	if listenDispatch := env.eval(`(() => {
@@ -318,7 +318,7 @@ func TestConsoleDockerScenarios(t *testing.T) {
 		return (btn && !btn.disabled) ? 'yes' : 'no';
 	})()`); listenDispatch == "yes" {
 		env.confirmRow("box-listen", "下发")
-		if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已下发到") || !strings.Contains(outcome, "box-listen")) {
+		if outcome := env.waitOutcome(90 * time.Second); !strings.Contains(outcome, "已下发到") || !strings.Contains(outcome, "box-listen") {
 			t.Fatalf("dispatch box-listen while offline = %s\n%s", outcome, env.agentLog("box-listen"))
 		}
 	}
@@ -345,7 +345,7 @@ func TestConsoleDockerScenarios(t *testing.T) {
 	env.writeFile("box-c", "/root/.pi/agent/settings.json", "{\"marker\":\"box-c-v1\"}\n")
 	env.waitRow("box-a", "收取", 90*time.Second)
 	env.confirmRow("box-a", "收取")
-	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已从 box-a") || !strings.Contains(outcome, "收取")) {
+	if outcome := env.waitOutcome(90 * time.Second); !strings.Contains(outcome, "已从 box-a") || !strings.Contains(outcome, "收取") {
 		t.Fatalf("collect for conflict = %s", outcome)
 	}
 	env.waitRow("box-c", "处理冲突", 70*time.Second)
@@ -364,7 +364,7 @@ func TestConsoleDockerScenarios(t *testing.T) {
 	env.writeFile("box-c", "/root/.pi/agent/settings.json", "{\"marker\":\"box-c-v2\"}\n")
 	env.waitRow("box-a", "收取", 90*time.Second)
 	env.confirmRow("box-a", "收取")
-	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已从 box-a") || !strings.Contains(outcome, "收取")) {
+	if outcome := env.waitOutcome(90 * time.Second); !strings.Contains(outcome, "已从 box-a") || !strings.Contains(outcome, "收取") {
 		t.Fatalf("second collect = %s", outcome)
 	}
 	env.waitRow("box-c", "处理冲突", 70*time.Second)
