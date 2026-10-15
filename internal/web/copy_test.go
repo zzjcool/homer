@@ -90,6 +90,8 @@ func TestConsoleUserCopy(t *testing.T) {
 		// 机器行 .aid 点击复制完整 agentId（#89）
 		"function copyAgentId", `toast("已复制")`, "点击复制完整 agentId",
 		`aidEl.dataset.agentId`, "copyAgentId(a.agentId, aidEl)",
+		// 「更多」菜单溢出向上翻（#93）
+		"function fitAgentMorePanel", "agent-more-panel.flip-up", "agentMoreSafeBottom",
 	} {
 		if !strings.Contains(html, required) {
 			t.Fatalf("console copy missing %q", required)

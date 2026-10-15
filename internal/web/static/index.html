@@ -536,6 +536,11 @@ pre .ln-meta { color: var(--ink-dim); display: block; }
   box-shadow: 0 8px 28px color-mix(in srgb, var(--ink) 14%, transparent);
   pointer-events: none;
 }
+/* #93: open upward when below (viewport / fixed statusline) would clip items */
+.agent-more-panel.flip-up {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
 .agent-more-panel button {
   width: 100%; justify-content: flex-start; text-align: left;
   pointer-events: auto;
@@ -1487,6 +1492,37 @@ function scrollToFirstDriftMachine() {
   });
   flashScrollAgentCard(card || document.getElementById("agent-list"));
 }
+function agentMoreSafeBottom() {
+  const footer = document.querySelector("footer.statusline");
+  return footer ? footer.getBoundingClientRect().top : window.innerHeight;
+}
+// Prefer downward (existing #74 layout); flip up when the panel would be
+// clipped by the viewport or fixed statusline. If neither side fits, scroll
+// the card into view and re-measure (#93).
+function fitAgentMorePanel(wrap, panel) {
+  const gap = 4;
+  panel.classList.remove("flip-up");
+  const panelH = panel.getBoundingClientRect().height;
+  if (!panelH) return;
+  const place = () => {
+    const trigger = wrap.getBoundingClientRect();
+    const safeBottom = agentMoreSafeBottom();
+    const spaceBelow = safeBottom - trigger.bottom - gap;
+    const spaceAbove = trigger.top - gap;
+    if (panelH > spaceBelow && spaceAbove > spaceBelow) {
+      panel.classList.add("flip-up");
+    } else {
+      panel.classList.remove("flip-up");
+    }
+    return panel.getBoundingClientRect();
+  };
+  let rect = place();
+  const safeBottom = agentMoreSafeBottom();
+  if (rect.bottom <= safeBottom + 1 && rect.top >= -1) return;
+  const card = wrap.closest(".agent-card") || wrap;
+  card.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" });
+  place();
+}
 function makeAgentMoreMenu(buttons) {
   const wrap = el("details", "agent-more");
   const sum = document.createElement("summary");
@@ -1501,10 +1537,15 @@ function makeAgentMoreMenu(buttons) {
   wrap.append(panel);
   // Close sibling menus; outside-click handled once globally below.
   wrap.addEventListener("toggle", () => {
-    if (!wrap.open) return;
+    if (!wrap.open) {
+      panel.classList.remove("flip-up");
+      return;
+    }
     document.querySelectorAll("details.agent-more[open]").forEach(d => {
       if (d !== wrap) d.open = false;
     });
+    // Wait a frame so details/[open] layout is settled before measuring (#93).
+    requestAnimationFrame(() => fitAgentMorePanel(wrap, panel));
   });
   return wrap;
 }
