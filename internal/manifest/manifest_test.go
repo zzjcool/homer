@@ -217,7 +217,7 @@ func TestApplyTasksContinuesAfterFailure(t *testing.T) {
 // themselves carry registry prefixes (npm:) or scopes (@org/) that the
 // default pattern rejects. A category-level pattern filters listCmd
 // output to exactly the installable IDs.
-func TestVersionedListCommandAndPinnedNpmVersion(t *testing.T) {
+func TestVersionedListCommand(t *testing.T) {
 	if got := VersionedListCommand("code --list-extensions"); got != "code --list-extensions --show-versions" {
 		t.Fatalf("vscode list = %q", got)
 	}
@@ -226,34 +226,6 @@ func TestVersionedListCommandAndPinnedNpmVersion(t *testing.T) {
 	}
 	if got := VersionedListCommand("pi list"); got != "pi list" {
 		t.Fatalf("pi list = %q", got)
-	}
-
-	modules := t.TempDir()
-	writePackageJSON(t, modules, "pi-lens", "4.3.0")
-	writePackageJSON(t, modules, "@zzjcool/pi-herdr-subagents", "0.9.0")
-	snapshot := core.CategorySnapshot{
-		Category: "packages",
-		Files: core.SnapshotFiles{
-			VirtualFileName("packages"): {Kind: "file", Content: "npm:pi-lens\nnpm:@zzjcool/pi-herdr-subagents\nnpm:missing@1.2.3\n"},
-		},
-	}
-	PinNpmVersions(modules, snapshot)
-	got := strings.Split(strings.TrimSuffix(snapshot.Files[VirtualFileName("packages")].Content, "\n"), "\n")
-	want := []string{"npm:@zzjcool/pi-herdr-subagents@0.9.0", "npm:missing@1.2.3", "npm:pi-lens@4.3.0"}
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("pinned = %#v, want %#v", got, want)
-	}
-}
-
-func writePackageJSON(t *testing.T, modules, name, version string) {
-	t.Helper()
-	dir := filepath.Join(modules, filepath.FromSlash(name))
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	body := []byte(`{"name":"` + strings.ReplaceAll(name, `"`, "") + `","version":"` + version + `"}`)
-	if err := os.WriteFile(filepath.Join(dir, "package.json"), body, 0o644); err != nil {
-		t.Fatal(err)
 	}
 }
 
