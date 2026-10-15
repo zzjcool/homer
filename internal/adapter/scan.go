@@ -311,9 +311,8 @@ func scanCategory(adapterID, root, rootReal string, category string, cfg core.Ca
 		}
 		cfg.ListCmd = manifest.VersionedListCommand(cfg.ListCmd)
 		snapshot, problems := manifest.ScanCategory(adapterID, category, cfg, port)
-		// pi list prints npm:name only. The installed version lives in
-		// node_modules; pin it so another machine installs the same build.
-		manifest.PinNpmVersions(filepath.Join(root, "npm", "node_modules"), snapshot)
+		// Bare npm:name ids stay unpinned: floating/latest installs must not
+		// be rewritten to package.json versions for remote machines (#101).
 		for _, problem := range problems {
 			// A tool CLI that is not installed (e.g. `code` missing on a
 			// fresh machine) is a normal machine state, not a scan failure:
