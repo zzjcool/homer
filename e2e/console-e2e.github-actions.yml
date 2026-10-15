@@ -1,0 +1,105 @@
+# Console chromedp 门禁：跑 tests/e2e 的 consolee2e 标签套件（TestConsole*）。
+# 触发策略 C：path-filter（web / console compose / e2e 测试与镜像构建入口）
+# + workflow_dispatch。失败时上传 compose ps/logs 与测试输出。
+name: console-e2e
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - "internal/web/**"
+      - "tests/e2e/**"
+      - "e2e/console/**"
+      - "e2e/Dockerfile"
+      - "e2e/keys-server/**"
+      - "cmd/homer/**"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/console-e2e.yml"
+  push:
+    branches:
+      - master
+    paths:
+      - "internal/web/**"
+      - "tests/e2e/**"
+      - "e2e/console/**"
+      - "e2e/Dockerfile"
+      - "e2e/keys-server/**"
+      - "cmd/homer/**"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/console-e2e.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  console-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Verify Docker / compose
+        run: |
+          docker version
+          docker compose version
+
+      - name: Install Chromium for chromedp
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends chromium-browser || \
+            sudo apt-get install -y --no-install-recommends chromium
+          if [ ! -x /usr/bin/chromium ]; then
+            if command -v chromium-browser >/dev/null 2>&1; then
+              sudo ln -sf "$(command -v chromium-browser)" /usr/bin/chromium
+            elif [ -x /snap/bin/chromium ]; then
+              sudo ln -sf /snap/bin/chromium /usr/bin/chromium
+            elif command -v google-chrome >/dev/null 2>&1; then
+              sudo ln -sf "$(command -v google-chrome)" /usr/bin/chromium
+            elif command -v google-chrome-stable >/dev/null 2>&1; then
+              sudo ln -sf "$(command -v google-chrome-stable)" /usr/bin/chromium
+            else
+              echo "no chromium binary found for /usr/bin/chromium (required by tests/e2e/console_docker_test.go)" >&2
+              exit 1
+            fi
+          fi
+          /usr/bin/chromium --version
+
+      - name: Configure git identity
+        run: |
+          git config --global user.email "ci@homer-cli.local"
+          git config --global user.name "homer-ci"
+
+      - name: Run console chromedp suite
+        run: |
+          set -o pipefail
+          mkdir -p console-e2e-artifacts
+          go test -tags consolee2e ./tests/e2e -run TestConsole -count=1 -timeout 40m \
+            2>&1 | tee console-e2e-artifacts/console-e2e-output.txt
+
+      - name: Capture compose diagnostics
+        if: failure()
+        working-directory: e2e/console
+        run: |
+          mkdir -p ../../console-e2e-artifacts
+          docker compose -f docker-compose.yml ps > ../../console-e2e-artifacts/compose-ps.txt 2>&1 || true
+          docker compose -f docker-compose.yml logs --no-color > ../../console-e2e-artifacts/compose-logs.txt 2>&1 || true
+
+      - name: Upload console-e2e artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: console-e2e-logs
+          path: console-e2e-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
