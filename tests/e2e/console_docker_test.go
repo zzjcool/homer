@@ -32,7 +32,7 @@ import (
 //  8. a second empty machine receives 下发; the first machine's file is unchanged
 //  9. restarting the agent keeps 下发 working
 //
-// 10. 处理改动 collects, dispatches to online machines, and skips an offline one
+// 10. While one agent is offline, collect/dispatch online machines and skip the offline one
 // 11. offline row disables 查看/收取/下发, and they enable again after restart
 // 12. 以中心为准 and 以这台机器为准
 // 13. 吊销 makes the next 下发 fail; a new code can join; 移除 drops the row
@@ -172,12 +172,22 @@ func TestConsoleDockerScenarios(t *testing.T) {
 
 	t.Log("collect box-a into the center")
 	env.confirmRow("box-a", "收取")
-	if outcome := env.waitOutcome(90 * time.Second); !strings.Contains(outcome, "已从 box-a 收取") {
+	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已从 box-a") || !strings.Contains(outcome, "收取")) {
 		t.Fatalf("collect = %s\n%s", outcome, env.agentLog("box-a"))
 	}
 	env.waitHero("查看存储内容", 20*time.Second)
 	env.clickHero("查看存储内容")
-	env.waitJS(`document.querySelector('#dlg-view').open && document.querySelector('#view-body').innerText.includes('settings.json')`, 20*time.Second)
+	env.waitJS(`document.querySelector('#dlg-view').open && !!document.querySelector('#view-body button.view-adapter')`, 20*time.Second)
+	// Storage tree is lazy-filled; expand adapters + nested categories so file names enter the DOM.
+	env.eval(`(() => {
+		for (let i = 0; i < 12; i++) {
+			const closed = [...document.querySelectorAll('#view-body button.view-toggle')].filter(b => (b.textContent || '').includes('▸'));
+			if (!closed.length) break;
+			closed.forEach(b => b.click());
+		}
+		return 'ok';
+	})()`)
+	env.waitJS(`document.querySelector('#view-body').innerText.includes('settings.json')`, 20*time.Second)
 	env.click(`#dlg-view button[value="ok"]`)
 
 	t.Log("second machine, dispatch only to it")
@@ -188,7 +198,7 @@ func TestConsoleDockerScenarios(t *testing.T) {
 	}
 	env.waitRow("box-b", "新机器 · 等待下发", 60*time.Second)
 	env.confirmRow("box-b", "下发")
-	if outcome := env.waitOutcome(90 * time.Second); !strings.Contains(outcome, "已下发到 box-b") {
+	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已下发到") || !strings.Contains(outcome, "box-b")) {
 		t.Fatalf("dispatch box-b = %s\n%s", outcome, env.agentLog("box-b"))
 	}
 	// Drift is recomputed on the agent's own interval, so the badge can lag
@@ -226,7 +236,7 @@ func TestConsoleDockerScenarios(t *testing.T) {
 	}
 	env.click(`#dlg-view button[value="ok"]`)
 	env.confirmRow("box-listen", "下发")
-	if outcome := env.waitOutcome(90 * time.Second); !strings.Contains(outcome, "已下发到 box-listen") {
+	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已下发到") || !strings.Contains(outcome, "box-listen")) {
 		t.Fatalf("second agent dispatch = %s\n%s", outcome, env.agentLog("box-listen"))
 	}
 	if !env.fileExists("box-listen", "/root/.homer/homer.json") {
@@ -243,13 +253,21 @@ func TestConsoleDockerScenarios(t *testing.T) {
 	t.Log("restart box-b agent and dispatch again")
 	env.killAgent("box-b")
 	env.startAgent("box-b")
-	env.waitRow("box-b", "机器上报", 60*time.Second)
+	// Host facts may already be cached, so "等待机器上报系统信息" can never appear.
+	// #49 hides 下发 when clean — nudge a pull so the button comes back.
+	env.writeFile("box-a", "/root/.pi/agent/settings.json", "{\"marker\":\"from-box-a-restart\"}\n")
+	env.waitRow("box-a", "收取", 90*time.Second)
+	env.confirmRow("box-a", "收取")
+	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已从 box-a") || !strings.Contains(outcome, "收取")) {
+		t.Fatalf("collect after restart = %s", outcome)
+	}
+	env.waitJS(rowEnabledJS("box-b"), 60*time.Second)
 	env.confirmRow("box-b", "下发")
-	if outcome := env.waitOutcome(90 * time.Second); !strings.Contains(outcome, "已下发到 box-b") {
+	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已下发到") || !strings.Contains(outcome, "box-b")) {
 		t.Fatalf("dispatch after restart = %s\n%s", outcome, env.agentLog("box-b"))
 	}
 
-	t.Log("offline buttons, then fleet sync skipping the offline machine")
+	t.Log("offline buttons, then sync online machines while skipping the offline one")
 	env.writeFile("box-a", "/root/.pi/agent/settings.json", "{\"marker\":\"box-a-drift\"}\n")
 	commandC := env.joinCommand()
 	if _, err := env.exec("box-c", commandC, 90*time.Second); err != nil {
@@ -257,15 +275,52 @@ func TestConsoleDockerScenarios(t *testing.T) {
 	}
 	env.waitRow("box-c", "新机器 · 等待下发", 60*time.Second)
 	env.killAgent("box-b")
-	env.waitRow("box-b", "离线", 150*time.Second)
-	if state := env.rowButtonState("box-b"); state != "disabled" {
-		t.Fatalf("offline buttons = %s", state)
+	// Card copy no longer always includes 「离线」 when cached drift remains (#49);
+	// Poll with refresh until the card is stale and 查看 is disabled.
+	{
+		deadline := time.Now().Add(150 * time.Second)
+		var last string
+		for {
+			env.click("#btn-refresh")
+			time.Sleep(500 * time.Millisecond)
+			last = env.eval(`(() => {
+				const row = [...document.querySelectorAll('.agent-card')].find(r => (r.querySelector('.hostname')||{}).textContent === 'box-b');
+				if (!row) return 'missing-row';
+				const view = [...row.querySelectorAll('button')].find(b => b.textContent === '查看');
+				if (!view) return 'missing-view';
+				if (row.classList.contains('stale') && view.disabled) return 'disabled';
+				return 'online';
+			})()`)
+			if last == "disabled" {
+				break
+			}
+			if time.Now().After(deadline) {
+				t.Fatalf("box-b never went stale (last %s)\n%s", last, env.pageText())
+			}
+			time.Sleep(500 * time.Millisecond)
+		}
 	}
-	env.waitHero("处理改动", 50*time.Second)
-	env.clickHero("处理改动")
-	env.click("#btn-confirm-ok")
-	if outcome := env.waitOutcome(120 * time.Second); strings.Contains(outcome, "没有全部完成") || strings.Contains(outcome, "502") {
-		t.Fatalf("fleet sync = %s", outcome)
+	// Hero CTA is now 「去同步 →」 (scroll only). Drive collect/dispatch per machine.
+	env.waitRow("box-a", "收取", 90*time.Second)
+	env.confirmRow("box-a", "收取")
+	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已从 box-a") || !strings.Contains(outcome, "收取")) {
+		t.Fatalf("collect while offline = %s", outcome)
+	}
+	env.waitJS(rowEnabledJS("box-c"), 60*time.Second)
+	env.confirmRow("box-c", "下发")
+	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已下发到") || !strings.Contains(outcome, "box-c")) {
+		t.Fatalf("dispatch box-c while offline = %s\n%s", outcome, env.agentLog("box-c"))
+	}
+	if listenDispatch := env.eval(`(() => {
+		const row = [...document.querySelectorAll('.agent-card')].find(r => (r.querySelector('.hostname')||{}).textContent === 'box-listen');
+		if (!row) return 'missing';
+		const btn = [...row.querySelectorAll('button')].find(b => b.textContent === '下发');
+		return (btn && !btn.disabled) ? 'yes' : 'no';
+	})()`); listenDispatch == "yes" {
+		env.confirmRow("box-listen", "下发")
+		if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已下发到") || !strings.Contains(outcome, "box-listen")) {
+			t.Fatalf("dispatch box-listen while offline = %s\n%s", outcome, env.agentLog("box-listen"))
+		}
 	}
 	deadline := time.Now().Add(60 * time.Second)
 	for {
@@ -282,18 +337,19 @@ func TestConsoleDockerScenarios(t *testing.T) {
 		t.Fatalf("offline box-b was updated: %q", boxB)
 	}
 	env.startAgent("box-b")
-	env.waitRow("box-b", "机器上报", 60*time.Second)
-	env.waitJS(rowEnabledJS("box-b"), 40*time.Second)
+	// Host facts may already be cached; wait until 下发 is available again (#49).
+	env.waitJS(rowEnabledJS("box-b"), 60*time.Second)
 
 	t.Log("resolve center, then local")
 	env.writeFile("box-a", "/root/.pi/agent/settings.json", "{\"marker\":\"box-a-v2\"}\n")
 	env.writeFile("box-c", "/root/.pi/agent/settings.json", "{\"marker\":\"box-c-v1\"}\n")
+	env.waitRow("box-a", "收取", 90*time.Second)
 	env.confirmRow("box-a", "收取")
-	if outcome := env.waitOutcome(90 * time.Second); !strings.Contains(outcome, "已从 box-a 收取") {
+	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已从 box-a") || !strings.Contains(outcome, "收取")) {
 		t.Fatalf("collect for conflict = %s", outcome)
 	}
 	env.waitRow("box-c", "处理冲突", 70*time.Second)
-	env.confirmRow("box-c", "处理冲突")
+	env.openConfirmRow("box-c", "处理冲突")
 	// Staged-resolution dialog: pick the center radio, then 记录并立即执行.
 	env.waitJS(`document.querySelector('#confirm-choices input[type=radio][data-resolution-adapter="pi"]') !== null`, 15*time.Second)
 	env.setValue(`#confirm-choices input[type=radio][data-resolution-adapter="pi"][value="center"]`, "center")
@@ -306,8 +362,9 @@ func TestConsoleDockerScenarios(t *testing.T) {
 
 	env.writeFile("box-a", "/root/.pi/agent/settings.json", "{\"marker\":\"box-a-v3\"}\n")
 	env.writeFile("box-c", "/root/.pi/agent/settings.json", "{\"marker\":\"box-c-v2\"}\n")
+	env.waitRow("box-a", "收取", 90*time.Second)
 	env.confirmRow("box-a", "收取")
-	if outcome := env.waitOutcome(90 * time.Second); !strings.Contains(outcome, "已从 box-a 收取") {
+	if outcome := env.waitOutcome(90 * time.Second); (!strings.Contains(outcome, "已从 box-a") || !strings.Contains(outcome, "收取")) {
 		t.Fatalf("second collect = %s", outcome)
 	}
 	env.waitRow("box-c", "处理冲突", 70*time.Second)
@@ -326,17 +383,28 @@ func TestConsoleDockerScenarios(t *testing.T) {
 	t.Log("revoke, rejoin, remove")
 	env.clickRow("box-c", "吊销")
 	env.waitText("#toast", "已吊销", 15*time.Second)
-	env.confirmRow("box-c", "下发")
-	// The revoked agent stops taking tasks, so the hub waits out its
-	// dispatch timeout before the console can show the failure.
-	if outcome := env.waitOutcome(80 * time.Second); !strings.Contains(outcome, "下发没有完成") {
-		t.Fatalf("dispatch after revoke = %s", outcome)
+	// After revoke the agent goes offline; confirmDispatch shows 「机器已离线」and keeps OK disabled
+	// (no toast 「下发没有完成」 — product blocks the attempt).
+	env.clearAlert()
+	if got := env.eval(`(() => {
+		const a = (app.agents || []).find(x => (x.hostname || "") === "box-c");
+		if (!a) return "missing-agent";
+		confirmDispatch(a);
+		return "ok";
+	})()`); got != "ok" {
+		t.Fatalf("open dispatch after revoke: %s", got)
 	}
+	env.waitJS(`document.querySelector('#dlg-confirm').open && document.querySelector('#confirm-desc') && document.querySelector('#confirm-desc').innerText.includes('离线')`, 30*time.Second)
+	if env.eval(`document.querySelector('#btn-confirm-ok').disabled ? '1' : '0'`) != "1" {
+		t.Fatalf("revoked/offline dispatch OK should stay disabled; desc=%q", env.eval(`document.querySelector('#confirm-desc').innerText`))
+	}
+	env.closeConfirm()
+
 	commandRe := env.joinCommand()
 	if _, err := env.exec("box-rejoin", commandRe, 90*time.Second); err != nil {
 		t.Fatalf("rejoin install: %v", err)
 	}
-	env.waitRow("box-rejoin", "机器上报", 60*time.Second)
+	env.waitRow("box-rejoin", "新机器 · 等待下发", 60*time.Second)
 
 	t.Log("login key onto the new machine")
 	const existingKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAlreadyThereKeyMaterial1234567890 laptop"
@@ -537,6 +605,18 @@ func (c *consoleEnv) closeConfirm() {
 func (c *consoleEnv) confirmRow(hostname, label string) {
 	c.t.Helper()
 	c.openConfirmRow(hostname, label)
+	// Wait for choices to finish loading (empty-center keeps openConfirmRow + disabled assert).
+	c.waitJS(`document.querySelector('#dlg-confirm').open && document.querySelector('#confirm-desc') && !document.querySelector('#confirm-desc').innerText.includes('正在读取')`, 30*time.Second)
+	// New-machine dispatch leaves adapters unchecked (Checked=false when Pull==0 / not-on-machine).
+	// Select all enabled adapters so OK can enable; skip if already enabled.
+	c.eval(`(() => {
+		const ok = document.querySelector('#btn-confirm-ok');
+		if (ok && !ok.disabled) return 'ready';
+		const allBtn = [...document.querySelectorAll('#confirm-choices button, #dlg-confirm button')].find(b => (b.textContent || '').trim() === '全选');
+		if (allBtn) allBtn.click();
+		return allBtn ? 'selected' : 'no-all';
+	})()`)
+	c.waitJS(`document.querySelector('#btn-confirm-ok') && !document.querySelector('#btn-confirm-ok').disabled`, 30*time.Second)
 	c.click("#btn-confirm-ok")
 }
 
@@ -546,13 +626,37 @@ func (c *consoleEnv) waitOutcome(timeout time.Duration) string {
 	for time.Now().Before(deadline) {
 		text := c.eval(`(() => {
 			const alert = document.querySelector('#alert-slot');
-			if (alert && alert.innerText.trim()) return alert.innerText;
+			if (alert && alert.innerText.trim()) return 'ALERT:' + alert.innerText;
 			const toast = document.querySelector('#toast.show');
-			if (toast && toast.innerText.trim()) return toast.innerText;
+			if (toast && toast.innerText.trim()) return 'TOAST:' + toast.innerText;
+			const dlg = document.querySelector('#dlg-confirm');
+			const ok = document.querySelector('#btn-confirm-ok');
+			const desc = document.querySelector('#confirm-desc');
+			const err = document.querySelector('#confirm-err');
+			if (dlg && dlg.open && err && err.innerText.trim()) {
+				return 'ERR:' + err.innerText;
+			}
+			if (dlg && dlg.open && ok && !ok.disabled && (ok.textContent || '').includes('完成') && desc && desc.innerText.trim()) {
+				return 'DONE:' + desc.innerText;
+			}
 			return '';
 		})()`)
 		if text != "" {
-			return text
+			kind, body, ok := strings.Cut(text, ":")
+			if !ok {
+				return text
+			}
+			if kind == "DONE" {
+				// Dispatch stay-in-dialog success: dismiss 「完成」 so the next step can click the page.
+				c.click("#btn-confirm-ok")
+				c.waitJS(`!document.querySelector('#dlg-confirm').open`, 10*time.Second)
+			}
+			if kind == "ERR" {
+				// Stay-in-dialog failure (e.g. revoked agent): close so later steps can proceed.
+				c.click("#btn-confirm-cancel")
+				c.waitJS(`!document.querySelector('#dlg-confirm').open`, 10*time.Second)
+			}
+			return body
 		}
 		time.Sleep(300 * time.Millisecond)
 	}
