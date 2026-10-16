@@ -503,11 +503,12 @@ func TestScanManifestWithInjectedPortAndLegacyCall(t *testing.T) {
 	}
 }
 
-func TestScanPiPackagesPinsInstalledVersion(t *testing.T) {
+func TestScanPiPackagesKeepsBareNpmIDs(t *testing.T) {
 	root := t.TempDir()
+	// package.json versions exist but must not be written into the manifest.
 	writeFixture(t, root, "npm/node_modules/pi-lens/package.json", "{\"name\":\"pi-lens\",\"version\":\"4.3.0\"}\n")
 	writeFixture(t, root, "npm/node_modules/@zzjcool/pi-herdr-subagents/package.json", "{\"name\":\"@zzjcool/pi-herdr-subagents\",\"version\":\"0.9.0\"}\n")
-	port := &fakeManifestPort{output: []byte("  npm:pi-lens\n    /tmp/pi-lens\n  npm:@zzjcool/pi-herdr-subagents\n")}
+	port := &fakeManifestPort{output: []byte("  npm:pi-lens\n    /tmp/pi-lens\n  npm:@zzjcool/pi-herdr-subagents\n  npm:pinned@1.2.3\n")}
 	outcome := adapter.ScanAdapter("pi", core.AdapterConfig{
 		Root: root,
 		Categories: map[string]core.CategoryConfig{
@@ -524,7 +525,7 @@ func TestScanPiPackagesPinsInstalledVersion(t *testing.T) {
 		t.Fatalf("errors = %#v", outcome.Errors)
 	}
 	got := category(t, outcome.Snapshot, "packages").Files[manifest.VirtualFileName("packages")].Content
-	want := "npm:@zzjcool/pi-herdr-subagents@0.9.0\nnpm:pi-lens@4.3.0\n"
+	want := "npm:@zzjcool/pi-herdr-subagents\nnpm:pi-lens\nnpm:pinned@1.2.3\n"
 	if got != want {
 		t.Fatalf("manifest = %q, want %q", got, want)
 	}
@@ -549,7 +550,7 @@ func TestScanPiPackagesIgnoresPlaceholderLettersWithoutIDPattern(t *testing.T) {
 		t.Fatalf("errors = %#v", outcome.Errors)
 	}
 	got := category(t, outcome.Snapshot, "packages").Files[manifest.VirtualFileName("packages")].Content
-	if got != "npm:pi-lens@4.3.0\n" {
+	if got != "npm:pi-lens\n" {
 		t.Fatalf("manifest = %q", got)
 	}
 }

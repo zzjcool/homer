@@ -63,9 +63,15 @@ func TestConsoleUserCopy(t *testing.T) {
 		"没有冲突的内容已经写到",
 		"配置目录，扫描时读不到",
 		"/api/console",
-		// 舰队适配器总览（#51；载荷无 per-adapter 时降级按机器看）
-		`id="sec-adapters"`, "renderAdaptersOverview", "适配器全部干净",
-		"当前控制台载荷仅有机器合计，按机器看", "keys-fold",
+		// 舰队适配器总览（#51 follow-up：per-adapter 聚合，machines[].adapters）
+		`id="sec-adapters"`, "renderAdaptersOverview", "aggregateFleetAdapters",
+		"适配器全部干净", "涉及 ", "machines[].adapters", "keys-fold",
+		// 舰队适配器总览迷你条（#82）+ involve 样式类
+		"miniMeterSeg", "small-btn jump involve",
+		// 轻量舰队拓扑（#85）
+		`id="sec-fleet-map"`, "renderFleetMap", "machineMapStatus", "fleet-hub", "拓扑",
+		// 状态点 + 冲突舰队徽标（#87）
+		"has-conflict", `fleetBadge("conflict", "冲突"`, "scrollToFirstBadgeMatch", "agentDotClass",
 		// 配置查看（存储视角 / 机器视角）
 		"查看存储内容", "服务器存储 · 当前内容", "/api/storage",
 		"默认加密", "待加密", "转为加密",
@@ -79,6 +85,13 @@ func TestConsoleUserCopy(t *testing.T) {
 		"要用这台机器的包管理器更新",
 		"记录决定", "记录并立即执行", "待执行决定", "条已解决的决定",
 		"/api/resolve/record", "/api/resolve/clear", "撤销决定", "已记录",
+		// 同 hostname 对话框标 agentId（#73）
+		"function agentLabel", `agentId " + a.agentId`,
+		// 机器行 .aid 点击复制完整 agentId（#89）
+		"function copyAgentId", `toast("已复制")`, "点击复制完整 agentId",
+		`aidEl.dataset.agentId`, "copyAgentId(a.agentId, aidEl)",
+		// 「更多」菜单溢出向上翻（#93）
+		"function fitAgentMorePanel", "agent-more-panel.flip-up", "agentMoreSafeBottom",
 	} {
 		if !strings.Contains(html, required) {
 			t.Fatalf("console copy missing %q", required)

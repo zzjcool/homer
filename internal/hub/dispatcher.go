@@ -54,6 +54,7 @@ func (d *Dispatcher) ListAgents() []web.AgentInfo {
 				Push: info.Drift.Push, Pull: info.Drift.Pull,
 				Conflicts: info.Drift.Conflicts, Error: info.Drift.Error,
 				Resolutions: info.Drift.Resolutions,
+				Adapters:    webAdapterDrift(info.Drift.Adapters),
 			}
 		}
 		agent.Host = webHost(info.Host)
@@ -61,6 +62,19 @@ func (d *Dispatcher) ListAgents() []web.AgentInfo {
 		agents = append(agents, agent)
 	}
 	return agents
+}
+
+func webAdapterDrift(adapters []AdapterDrift) []web.AdapterDrift {
+	if adapters == nil {
+		return nil
+	}
+	out := make([]web.AdapterDrift, 0, len(adapters))
+	for _, adapter := range adapters {
+		out = append(out, web.AdapterDrift{
+			ID: adapter.ID, Push: adapter.Push, Pull: adapter.Pull, Conflicts: adapter.Conflicts,
+		})
+	}
+	return out
 }
 
 func webTools(tools []toolctl.Status) []web.AgentTool {
