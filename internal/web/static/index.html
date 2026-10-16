@@ -388,6 +388,20 @@ pre .ln-meta { color: var(--ink-dim); display: block; }
 .agent-head .c-drift { color: var(--warn); font-weight: 650; }
 .agent-head .aid, .agent-head .ip { font-family: var(--mono); font-size: var(--fs-small); color: var(--ink-dim); }
 .agent-head .ip { color: var(--ink); }
+/* #89: 机器行 .aid 点击复制完整 agentId；截断展示仍复制完整串 */
+.agent-head .aid {
+  max-width: min(18em, 42vw);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  cursor: pointer; border-radius: 3px;
+}
+.agent-head .aid:hover, .agent-head .aid:focus-visible {
+  color: var(--accent); text-decoration: underline;
+  outline: none;
+}
+.agent-head .aid.copied { color: var(--ok); text-decoration: none; }
+@media (max-width: 480px) {
+  .agent-head .aid { max-width: min(14em, 56vw); }
+}
 .agent-facts { margin: 8px 0 0 22px; display: grid; gap: 4px; }
 .view-body .agent-facts { margin-left: 0; }
 .agent-summary { margin: 4px 0 0 22px; font-size: var(--fs-small); color: var(--ink-dim); }
@@ -521,6 +535,11 @@ pre .ln-meta { color: var(--ink-dim); display: block; }
   border-radius: var(--radius);
   box-shadow: 0 8px 28px color-mix(in srgb, var(--ink) 14%, transparent);
   pointer-events: none;
+}
+/* #93: open upward when below (viewport / fixed statusline) would clip items */
+.agent-more-panel.flip-up {
+  top: auto;
+  bottom: calc(100% + 4px);
 }
 .agent-more-panel button {
   width: 100%; justify-content: flex-start; text-align: left;
@@ -1473,6 +1492,37 @@ function scrollToFirstDriftMachine() {
   });
   flashScrollAgentCard(card || document.getElementById("agent-list"));
 }
+function agentMoreSafeBottom() {
+  const footer = document.querySelector("footer.statusline");
+  return footer ? footer.getBoundingClientRect().top : window.innerHeight;
+}
+// Prefer downward (existing #74 layout); flip up when the panel would be
+// clipped by the viewport or fixed statusline. If neither side fits, scroll
+// the card into view and re-measure (#93).
+function fitAgentMorePanel(wrap, panel) {
+  const gap = 4;
+  panel.classList.remove("flip-up");
+  const panelH = panel.getBoundingClientRect().height;
+  if (!panelH) return;
+  const place = () => {
+    const trigger = wrap.getBoundingClientRect();
+    const safeBottom = agentMoreSafeBottom();
+    const spaceBelow = safeBottom - trigger.bottom - gap;
+    const spaceAbove = trigger.top - gap;
+    if (panelH > spaceBelow && spaceAbove > spaceBelow) {
+      panel.classList.add("flip-up");
+    } else {
+      panel.classList.remove("flip-up");
+    }
+    return panel.getBoundingClientRect();
+  };
+  let rect = place();
+  const safeBottom = agentMoreSafeBottom();
+  if (rect.bottom <= safeBottom + 1 && rect.top >= -1) return;
+  const card = wrap.closest(".agent-card") || wrap;
+  card.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" });
+  place();
+}
 function makeAgentMoreMenu(buttons) {
   const wrap = el("details", "agent-more");
   const sum = document.createElement("summary");
@@ -1487,10 +1537,15 @@ function makeAgentMoreMenu(buttons) {
   wrap.append(panel);
   // Close sibling menus; outside-click handled once globally below.
   wrap.addEventListener("toggle", () => {
-    if (!wrap.open) return;
+    if (!wrap.open) {
+      panel.classList.remove("flip-up");
+      return;
+    }
     document.querySelectorAll("details.agent-more[open]").forEach(d => {
       if (d !== wrap) d.open = false;
     });
+    // Wait a frame so details/[open] layout is settled before measuring (#93).
+    requestAnimationFrame(() => fitAgentMorePanel(wrap, panel));
   });
   return wrap;
 }
@@ -1834,7 +1889,26 @@ function renderAgents(agents, disabledFeature) {
     head.append(el("span", "hostname", a.hostname || a.agentId));
     const ip = primaryIP(a.host);
     if (ip) head.append(el("span", "ip", ip));
-    head.append(el("span", "aid", a.agentId));
+    // #89: 点击 .aid 复制完整 agentId（截断展示时仍用完整串）
+    if (a.agentId) {
+      const aidEl = el("span", "aid", a.agentId);
+      aidEl.title = "点击复制完整 agentId";
+      aidEl.setAttribute("role", "button");
+      aidEl.tabIndex = 0;
+      aidEl.dataset.agentId = a.agentId;
+      aidEl.addEventListener("click", ev => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        copyAgentId(a.agentId, aidEl);
+      });
+      aidEl.addEventListener("keydown", ev => {
+        if (ev.key !== "Enter" && ev.key !== " ") return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        copyAgentId(a.agentId, aidEl);
+      });
+      head.append(aidEl);
+    }
     // 该机器相对存储的漂移（它自己每次心跳上报）
     const waitingFirst = isWaitingFirstDispatch(a);
     if (a.drift) {
@@ -2091,6 +2165,32 @@ function copyCommand(text) {
     navigator.clipboard.writeText(text).then(() => toast("已复制，到那台机器的终端里粘贴运行"), ask);
   } else {
     ask();
+  }
+}
+/** #89: 机器行 .aid 一键复制完整 agentId；成功 toast「已复制」，失败不静默 */
+function copyAgentId(id, aidEl) {
+  const text = (id || (aidEl && aidEl.dataset.agentId) || "").trim();
+  if (!text) { toast("没有可复制的 agentId"); return; }
+  const flashOk = () => {
+    toast("已复制");
+    if (!aidEl) return;
+    const prev = aidEl.textContent;
+    aidEl.textContent = "已复制";
+    aidEl.classList.add("copied");
+    clearTimeout(aidEl._copyTimer);
+    aidEl._copyTimer = setTimeout(() => {
+      aidEl.textContent = prev;
+      aidEl.classList.remove("copied");
+    }, 1200);
+  };
+  const fail = () => {
+    window.prompt("复制失败，请手动复制完整 agentId：", text);
+    toast("复制失败，请手动复制");
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(flashOk, fail);
+  } else {
+    fail();
   }
 }
 async function upgradeTool(agent, tool, closeDialog) {
