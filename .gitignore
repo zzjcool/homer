@@ -17,3 +17,6 @@ coverage/
 
 # vitest 缓存
 .vitest/
+
+# 崩溃转储（宿主进程 core dump，非仓库产物）
+core
