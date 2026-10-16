@@ -98,10 +98,14 @@ systemctl --user start homer-agent.service
 系统级 unit 请对应使用 `systemctl daemon-reload` 和 `systemctl start homer-agent.service`。
 检查 agent 日志及控制台，确认机器重新上线。
 
-容器化验收：`bash e2e/hub-smoke.sh`（origin + hub + agent-a + agent-b 四容器）。
+容器化验收：`bash e2e/hub-smoke.sh`（origin + hub + agent-a + agent-b 四容器；
+需要 Docker、`docker compose`、`curl`、`jq`）。
 除两个 WebSocket agent 的状态采集与配置跨机流转外，脚本还断言：无 token / 错
 token 得到 401（拓扑不拆）、agent-a 加密的密钥环经 hub 下发后能在 agent-b 解开、
 以及把 pi 停用在一台机器上之后扇出会跳过它。失败时脚本会打出 compose 日志再退出。
+GitHub Actions 在相关路径变更或手动 `workflow_dispatch` 时会跑同一脚本（见
+[`.github/workflows/hub-smoke.yml`](.github/workflows/hub-smoke.yml) /
+[docs/ops/ci.md](docs/ops/ci.md)）。
 
 ### 应用版本与一键升级
 
@@ -519,7 +523,7 @@ go test ./...
 sh -n install.sh
 ```
 
-合并进 `master` 前，GitHub Actions（`.github/workflows/ci.yml`）应全绿：`go build ./...`、`go vet ./...`、`gofmt -l .`，以及不含 `tests/e2e` 的 `go test`。多容器验收 `bash e2e/hub-smoke.sh` 与浏览器控制台套件（`go test -tags consolee2e ./tests/e2e -run TestConsole -count=1`，Docker + Chromium）均不进 `ci.yml`；后者由独立工作流 `.github/workflows/console-e2e.yml` 在 path-filter（`internal/web/**`、`tests/e2e/**`、`e2e/console/**`、镜像构建入口、`go.mod`/`go.sum`）命中或 `workflow_dispatch` 时跑（仓库内审阅副本：`e2e/console-e2e.github-actions.yml`）。推送 `v*` tag 会跑已有的 goreleaser 发布流程（`.github/workflows/release.yml`）。详见 [docs/ops/ci.md](docs/ops/ci.md)。
+合并进 `master` 前，GitHub Actions（`.github/workflows/ci.yml`）应全绿：`go build ./...`、`go vet ./...`、`gofmt -l .`，以及不含 `tests/e2e` 的 `go test`。多容器验收 `bash e2e/hub-smoke.sh` 由独立工作流 `.github/workflows/hub-smoke.yml` 在 path-filter（`e2e/**`、hub/agentd/stream/web、`cmd/homer`、`go.mod`/`go.sum`）命中或 `workflow_dispatch` 时跑（仓库内审阅副本：`e2e/hub-smoke.github-actions.yml`）；浏览器控制台套件（`go test -tags consolee2e ./tests/e2e -run TestConsole -count=1`，Docker + Chromium）由独立工作流 `.github/workflows/console-e2e.yml` 在 path-filter（`internal/web/**`、`tests/e2e/**`、`e2e/console/**`、镜像构建入口、`go.mod`/`go.sum`）命中或 `workflow_dispatch` 时跑（仓库内审阅副本：`e2e/console-e2e.github-actions.yml`）。二者均不进 `ci.yml`；其它 `tests/e2e`（本机 pi）仍不进 CI。推送 `v*` tag 会跑已有的 goreleaser 发布流程（`.github/workflows/release.yml`）。详见 [docs/ops/ci.md](docs/ops/ci.md)。
 
 完整的 W11 验收记录、测试统计、发布矩阵与已知限制见
 [docs/go-rewrite-report.md](docs/go-rewrite-report.md)；设计和冻结语义见

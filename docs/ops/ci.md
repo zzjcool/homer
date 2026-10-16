@@ -14,7 +14,7 @@ Go 版本跟 `go.mod`（`actions/setup-go` 的 `go-version-file`），与发版�
 
 ## Hub 容器化冒烟（`hub-smoke`）
 
-多容器拓扑验收脚本：
+多容器拓扑验收走独立工作流 [`.github/workflows/hub-smoke.yml`](../../.github/workflows/hub-smoke.yml)：
 
 ```sh
 bash e2e/hub-smoke.sh
@@ -22,7 +22,16 @@ bash e2e/hub-smoke.sh
 
 需要本机 / runner 上有 Docker、`docker compose`、`curl`、`jq`。脚本拉起 origin + hub + agent-a + agent-b，覆盖健康检查、双 agent、资源快照、跨容器 push/pull、鉴权负例、密钥环跨容器解开、按机器停用后的扇出跳过；结束（含失败）会 `compose down -v`。
 
-Actions 线见 issue #34 / PR #76（策略 C：path-filter + `workflow_dispatch`）。本页不替代该工作流的文档；边界见下文。
+**何时跑（策略 C）**：指向 `master` 的 PR、推到 `master`，且改动命中 path-filter 时；也可手动 `workflow_dispatch`。过滤路径：
+
+- `e2e/**`
+- `internal/hub/**`、`internal/agentd/**`、`internal/stream/**`、`internal/web/**`
+- `cmd/homer/**`、`go.mod`、`go.sum`（烟测镜像会重建二进制）
+- `.github/workflows/hub-smoke.yml` 自身
+
+失败时脚本会向 stderr 打出 `compose ps` / 近期日志；CI 另设 `HUB_SMOKE_ARTIFACT_DIR`，在 `down -v` 前落盘 `compose-ps.txt` / `compose-logs.txt`，并由 Actions 上传 artifact `hub-smoke-compose-logs`。
+
+仓库内另有一份与 workflow 内容相同的副本 `e2e/hub-smoke.github-actions.yml`（便于审阅）；Actions 只认 `.github/workflows/hub-smoke.yml`。
 
 ## Console chromedp 套件（`console-e2e`）
 
@@ -49,7 +58,7 @@ go test -tags consolee2e ./tests/e2e -run TestConsole -count=1 -timeout 40m
 
 仓库内另有一份与 workflow 内容相同的副本 `e2e/console-e2e.github-actions.yml`（便于审阅）；Actions 只认 `.github/workflows/console-e2e.yml`。若推送方无 `workflow` OAuth scope，需经 GitHub UI 或 `gh auth refresh -s workflow` 把副本晋升到该路径。
 
-### 与 `ci.yml` / `hub-smoke` 的边界
+### 与 `ci.yml` / `hub-smoke` / `console-e2e` 的边界
 
 | 门禁 | 覆盖 | 不覆盖 |
 | --- | --- | --- |
@@ -57,6 +66,6 @@ go test -tags consolee2e ./tests/e2e -run TestConsole -count=1 -timeout 40m
 | `hub-smoke` | `e2e/hub-smoke.sh` 四容器 API/拓扑冒烟 | 浏览器控制台 UI |
 | `console-e2e` | chromedp `TestConsole*` + `e2e/console` compose | hub-smoke 拓扑场景；其它非 consolee2e 的 e2e |
 
-三者互补，互不替代。
+三者互补，互不替代。本地需要时再跑：`go test ./tests/e2e/...`，以及上面的 `bash e2e/hub-smoke.sh` / console-e2e 命令。
 
 打 `v*` tag 才会跑已有的 [`.github/workflows/release.yml`](../../.github/workflows/release.yml)：goreleaser 产出 Release 资产，并对 `dist` 里的 `install.sh` 做一次冒烟。资产纪律见 [release-discipline.md](release-discipline.md)。

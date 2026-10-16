@@ -1,0 +1,77 @@
+# Hub 容器化拓扑门禁：跑 e2e/hub-smoke.sh（origin + hub + agent-a + agent-b）。
+# 触发策略 C：path-filter（e2e / hub / agentd / stream / web 及相关构建入口）
+# + workflow_dispatch。失败时上传 compose ps/logs 产物。
+name: hub-smoke
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - "e2e/**"
+      - "internal/hub/**"
+      - "internal/agentd/**"
+      - "internal/stream/**"
+      - "internal/web/**"
+      - "cmd/homer/**"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/hub-smoke.yml"
+  push:
+    branches:
+      - master
+    paths:
+      - "e2e/**"
+      - "internal/hub/**"
+      - "internal/agentd/**"
+      - "internal/stream/**"
+      - "internal/web/**"
+      - "cmd/homer/**"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/hub-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hub-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Verify Docker / compose / curl / jq
+        run: |
+          docker version
+          docker compose version
+          curl --version | head -1
+          jq --version
+
+      - name: Run hub-smoke
+        env:
+          # Script writes compose ps/logs here on failure, before `down -v`.
+          HUB_SMOKE_ARTIFACT_DIR: ${{ github.workspace }}/hub-smoke-artifacts
+        run: |
+          set -o pipefail
+          mkdir -p hub-smoke-artifacts
+          bash e2e/hub-smoke.sh 2>&1 | tee hub-smoke-artifacts/hub-smoke-output.txt
+
+      - name: Capture compose diagnostics
+        if: failure()
+        working-directory: e2e
+        run: |
+          mkdir -p ../hub-smoke-artifacts
+          docker compose -f docker-compose.yml ps > ../hub-smoke-artifacts/compose-ps-after.txt 2>&1 || true
+          docker compose -f docker-compose.yml logs --no-color > ../hub-smoke-artifacts/compose-logs-after.txt 2>&1 || true
+
+      - name: Upload compose logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hub-smoke-compose-logs
+          path: hub-smoke-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
