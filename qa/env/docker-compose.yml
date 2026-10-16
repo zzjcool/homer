@@ -1,0 +1,83 @@
+# homer-cli QA 网页环境（AI 操作浏览器界面测试 hub 控制台）
+#
+# 拓扑（复用 e2e/Dockerfile 的源码构建）：
+#   hub      - 源码构建的 homer 镜像，预置管理员密码 + 固定 hub token，
+#              监听 0.0.0.0:7760；宿主浏览器经 127.0.0.1:17760 访问。
+#   box-a/b/c - idle 容器（内置 pi stub）。QA 从网页复制接入命令后：
+#     docker compose -f qa/env/docker-compose.yml exec box-a sh -lc '<命令>'
+#   接入新机器（install.sh 会从 hub 下载 homer 二进制自举）。
+#
+# 密码预置说明：keys/hub-password 是 bcrypt 哈希（password.go savePassword
+# 格式），直接只读挂载进 hub 容器（qa/env/hub-password 文件）。管理员密码
+# 固定为 qa-admin-password（修改方法见 qa/README.md）。
+#
+# 浏览器：browserless/chromium 容器已内置在本 compose 里，AI QA 走 CDP
+# （ws://127.0.0.1:3000）操控页面；hub 地址用容器网络地址 http://hub:7760，
+# 与 agent 容器视角一致，从网页复制的接入命令可直接在 box 内执行。
+# make qa-up 一键启动。
+
+name: homer-qa
+
+x-homer-image: &homer-image
+  image: homer-qa
+  build:
+    context: ../..
+    dockerfile: e2e/Dockerfile
+
+services:
+  hub:
+    <<: *homer-image
+    init: true
+    container_name: homer-qa-hub
+    environment:
+      # 固定 token 方便 API 断言（curl -H 'Authorization: Bearer qa-hub-token'）
+      - HOMER_HUB_TOKEN=qa-hub-token
+    volumes:
+      # 预置管理员密码（bcrypt 哈希，qa-admin-password），绕过 one-shot
+      # 初始化门；hasPassword 只 stat 此文件，verifyPassword 直接
+      # bcrypt 比对（尾部换行无影响，已实测）。
+      - ./hub-password:/root/.homer/keys/hub-password:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        exec homer serve --addr 0.0.0.0:7760 --home /root/.homer \
+          --token qa-hub-token
+    ports:
+      - "127.0.0.1:17760:7760"
+
+  box-a:
+    <<: *homer-image
+    init: true
+    container_name: homer-qa-box-a
+    depends_on: [hub]
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["sleep infinity"]
+
+  box-b:
+    <<: *homer-image
+    init: true
+    container_name: homer-qa-box-b
+    depends_on: [hub]
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["sleep infinity"]
+
+  box-c:
+    <<: *homer-image
+    init: true
+    container_name: homer-qa-box-c
+    depends_on: [hub]
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["sleep infinity"]
+
+  browser:
+    image: ghcr.io/browserless/chromium:latest
+    init: true
+    container_name: homer-qa-browser
+    depends_on: [hub]
+    environment:
+      # AI QA 每步操作间隔可能较长，放宽连接/执行超时。
+      - CONNECTION_TIMEOUT=180000
+      - DEFAULT_STEALTH=true
+      - DEFAULT_LAUNCH_ARGS=["--no-sandbox","--disable-dev-shm-usage"]
+    ports:
+      - "127.0.0.1:3000:3000"
