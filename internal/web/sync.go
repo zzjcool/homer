@@ -110,8 +110,10 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	confirmed := confirmValue(r)
-	writeMutex.Lock()
-	defer writeMutex.Unlock()
+	if !lockWrite(w, r) {
+		return
+	}
+	defer unlockWrite()
 	if direction == string(syncFromCenter) {
 		s.syncFromCenter(w, confirmed)
 		return

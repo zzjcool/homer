@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -242,7 +243,40 @@ type Server struct {
 // writeMutex is intentionally package-global. Multiple Server values in one
 // process still operate on the same Homer workspace in the common embedding
 // and test scenarios, so push and pull must share one serialization point.
-var writeMutex sync.Mutex
+// The bounded wait is well below agent ping timeouts: a half-open agent must
+// not freeze writes from the rest of the fleet while its network call expires.
+const writeLockTimeout = 8 * time.Second
+
+var writeMutex = make(chan struct{}, 1)
+
+func lockWrite(w http.ResponseWriter, r *http.Request) bool {
+	if err := r.Context().Err(); err != nil {
+		return writeLockUnavailable(w, r, err)
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), writeLockTimeout)
+	defer cancel()
+	select {
+	case writeMutex <- struct{}{}:
+		if err := ctx.Err(); err != nil {
+			<-writeMutex
+			return writeLockUnavailable(w, r, err)
+		}
+		return true
+	case <-ctx.Done():
+		return writeLockUnavailable(w, r, ctx.Err())
+	}
+}
+
+func unlockWrite() {
+	<-writeMutex
+}
+
+func writeLockUnavailable(w http.ResponseWriter, r *http.Request, err error) bool {
+	log.Printf("web write lock unavailable: method=%s path=%s: %v", r.Method, r.URL.Path, err)
+	writeError(w, http.StatusServiceUnavailable, "write-busy", "中心正忙，请稍后重试", nil)
+	return false
+}
 
 func NewServer(opts ServeOptions) (*Server, error) {
 	if strings.TrimSpace(opts.Addr) == "" {

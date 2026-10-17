@@ -57,8 +57,10 @@ func (s *Server) handleResolve(w http.ResponseWriter, r *http.Request) {
 		s.resolveOnMachine(w, r, resolveChoice(choice), agentID)
 		return
 	}
-	writeMutex.Lock()
-	defer writeMutex.Unlock()
+	if !lockWrite(w, r) {
+		return
+	}
+	defer unlockWrite()
 
 	// No-git data plane: remote is the hub's current generation; a local
 	// resolution publishes back through the same generation machinery.
