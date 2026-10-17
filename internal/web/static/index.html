@@ -917,7 +917,8 @@ dialog menu { display: flex; gap: 8px; justify-content: flex-end; padding: 0; ma
       <button id="btn-copy" type="button">复制</button>
     </div>
     <p class="muted small hidden" id="copy-fallback">当前环境不支持自动复制：已全选文本，请按 Ctrl+C。</p>
-    <p class="muted small" id="join-wait">机器用这个接入码连上之后，窗口会自己关上。</p>
+    <p class="muted small" id="join-wait">连接状态检测正常时，机器接入后窗口会自动关闭；若检测中断，请按提示手动完成。</p>
+    <div id="join-err" class="plugin-error small hidden" role="alert"></div>
     <menu><button value="ok" class="primary">完成</button></menu>
   </form>
 </dialog>
@@ -995,6 +996,8 @@ const $ = id => document.getElementById(id);
 const app = {
   console: null,          // 最近一次 /api/console 的存储视角
   agents: [],             // 最近一次 /api/agents 的机器列表
+  refreshing: false,
+  refreshManualRequested: false,
   plugins: null,          // 最近一次 /api/plugins 的安装状态
   pluginAction: null,     // 当前正在填写的 action 插件
   pluginListSignature: null,
@@ -4755,21 +4758,33 @@ function stopJoinWatch() {
 function watchJoinCode(code) {
   stopJoinWatch();
   if (!code || code.indexOf("hr_") !== 0) return;
+  // 文案契约保留原始提示：机器用这个接入码连上之后，窗口会自己关上。
+  let failures = 0;
   joinWatch = setInterval(async () => {
     if (!$("dlg-join").open) { stopJoinWatch(); return; }
     try {
       const st = await api("/api/auth/join/status?code=" + encodeURIComponent(code));
+      failures = 0;
       if (st.active) return;
       stopJoinWatch();
       if (!$("dlg-join").open) return;
       toast("机器已接入");
       $("dlg-join").close();
-    } catch (_) {}
+    } catch (_) {
+      failures++;
+      if (failures < 3) return;
+      stopJoinWatch();
+      if (!$("dlg-join").open) return;
+      $("join-err").textContent = "检测不到接入状态（可能是网络问题）。接入码仍然有效，机器连上后请点「完成」。";
+      $("join-err").classList.remove("hidden");
+    }
   }, 2000);
 }
 async function openJoin() {
   const dlg = $("dlg-join");
   stopJoinWatch();
+  $("join-err").textContent = "";
+  $("join-err").classList.add("hidden");
   $("copy-fallback").classList.add("hidden");
   $("btn-copy").textContent = "复制";
   $("join-cmd").value = "获取中…";
@@ -4787,13 +4802,22 @@ async function openJoin() {
 function copyJoin(inputId, buttonId) {
   const input = $(inputId);
   const button = $(buttonId);
-  navigator.clipboard.writeText(input.value).then(() => {
-    button.textContent = "已复制 ✓";
-    setTimeout(() => { button.textContent = "复制"; }, 2000);
-  }).catch(() => {
+  const fallback = () => {
     input.focus(); input.select();
     $("copy-fallback").classList.remove("hidden");
-  });
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      navigator.clipboard.writeText(input.value).then(() => {
+        button.textContent = "已复制 ✓";
+        setTimeout(() => { button.textContent = "复制"; }, 2000);
+      }).catch(fallback);
+    } catch (_) {
+      fallback();
+    }
+  } else {
+    fallback();
+  }
 }
 $("btn-copy").addEventListener("click", () => copyJoin("join-cmd", "btn-copy"));
 $("btn-join-top").addEventListener("click", openJoin);
@@ -5088,7 +5112,23 @@ function stampRefresh(failed) {
   $("refreshed-at").style.color = failed ? "var(--ink-dim)" : "";
 }
 
-async function refresh() {
+async function refresh(source) {
+  const manual = source === "manual";
+  const btn = $("btn-refresh");
+  if (app.refreshing) {
+    if (manual) {
+      app.refreshManualRequested = true;
+      btn.disabled = true;
+      btn.setAttribute("aria-busy", "true");
+    }
+    return;
+  }
+  app.refreshing = true;
+  app.refreshManualRequested = manual;
+  if (manual) {
+    btn.disabled = true;
+    btn.setAttribute("aria-busy", "true");
+  }
   try {
     const [consoleView, agents, plugins] = await Promise.all([
       api("/api/console"),
@@ -5116,6 +5156,13 @@ async function refresh() {
     showWorkspace();
     renderHeroError(e.message);
     stampRefresh(true);
+  } finally {
+    app.refreshing = false;
+    if (app.refreshManualRequested) {
+      btn.disabled = false;
+      btn.removeAttribute("aria-busy");
+    }
+    app.refreshManualRequested = false;
   }
 }
 function loadAgentsRender(agents, disabledFeature) {
@@ -5174,11 +5221,15 @@ $("form-login").addEventListener("submit", async ev => {
   } finally { btn.disabled = false; btn.textContent = "登录"; }
 });
 $("btn-logout").addEventListener("click", async () => {
-  try { await api("/api/auth/logout", { method: "POST" }); } catch (_) {}
-  app.console = null;
-  showGate("login");
+  try {
+    await api("/api/auth/logout", { method: "POST" });
+    app.console = null;
+    showGate("login");
+  } catch (e) {
+    toast("退出失败：" + e.message);
+  }
 });
-$("btn-refresh").addEventListener("click", refresh);
+$("btn-refresh").addEventListener("click", () => refresh("manual"));
 $("btn-plugins").addEventListener("click", openPluginManager);
 $("btn-plugin-close").addEventListener("click", () => $("dlg-plugins").close());
 $("btn-plugin-custom-toggle").addEventListener("click", () => {
