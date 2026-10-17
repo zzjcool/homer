@@ -1,4 +1,9 @@
-# Hub API 参考：插件管理与适配器下发
+# Hub API 参考（部分）：插件管理与适配器下发
+
+> **范围说明**：本文**不是**完整的 Hub API 清单，只覆盖插件管理与按 adapter 范围下发这两组
+> 端点。hub 还实现了约 40 个 `/api/*` 路由（`/api/snapshot`、`/api/keys/*`、`/api/resolve/*`、
+> `/api/storage/*`、`/api/auth/*`、`/api/console`、`/api/config`、`/api/health` 等），
+> **尚未在本文记录**；对接前请以源码 `internal/web/handlers.go` 的路由表为准。
 
 本文记录插件 API 与按 adapter 范围下发的用法。除特别说明外，`/api/*` 端点需要 hub
 Bearer token；示例用 `HUB` 和 `HOMER_HUB_TOKEN` 代表 hub 地址与 token：
@@ -138,8 +143,16 @@ curl -sS -X POST "$HUB/api/plugins/install" \
   }'
 ```
 
-已知错误包括：schema 版本不支持时 HTTP 422、第三方 role 不是 adapter 时 HTTP 422、ID 与官方
-或已安装插件冲突时 HTTP 409。adapter/carrier 安装会发布新的中心配置世代；action 安装只
+已知错误包括：
+
+- HTTP 422：schema 版本不支持
+- HTTP 422：第三方 role 不是 adapter
+- HTTP 409：ID 与官方或已安装插件冲突
+- **HTTP 404，`code` 为 `plugin-not-found`**：`id` 在官方插件目录中不存在，且请求未提供
+  `manifest`。错误文案为「官方插件不存在；第三方插件请提供 manifest」。
+  ⚠️ 调用方注意：这一条是 404 而不是 422，**不要**把 `plugin-not-found` 当成网络错误去重试。
+
+adapter/carrier 安装会发布新的中心配置世代；action 安装只
 更新插件状态。
 
 ## `POST /api/plugins/uninstall`
@@ -198,6 +211,12 @@ adapter ID 无效或下发触发密钥守卫时，请先处理相应错误再重
 按钮复用此端点，不会新增 agent/stream 协议。
 
 ## `GET /api/agents/<id>/adapters`
+
+> **本端点不校验机器是否存在。** 未知 `agentId` 同样返回 200 与「中心已安装 adapter」列表
+> （此时「该机器最后上报的 adapter」集合为空，响应退化为纯中心列表），因此**不能**把它当作
+> 机器存在性探针。需要判断某台机器是否已接入，请用 `GET /api/agents`。
+> 这是与 `POST /api/agents/<id>/adapters/<adapterID>` 不对称的地方：POST 侧有幽灵机器防御，
+> 未知 agentId 返回 404 `agent-not-found`。
 
 某台机器视角的适配器列表（中心已安装 adapter ∪ 该机器最后上报的 adapter）。
 `keyring`/`ssh-key` 永不出现。每项：`{id, name, disabled, installed}`——
