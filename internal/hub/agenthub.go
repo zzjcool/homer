@@ -202,16 +202,30 @@ func (h *AgentHub) serveStream(w http.ResponseWriter, r *http.Request) {
 			h.throttle.Log("agent-enroll-disabled", fmt.Sprintf("hub: agent stream enrollment disabled remote=%q agent=%q", r.RemoteAddr, hello.AgentID))
 			return
 		}
+		rejectTakenAgent := func() {
+			h.rejectHello(conn, frame.ID, "agent-id-taken", "该机器已接入过，重新接入请先吊销现有凭证", stream.CloseRevoked)
+			h.throttle.Log("agent-id-taken", fmt.Sprintf("hub: enrollment code tried to take over an already-enrolled agent remote=%q agent=%q", r.RemoteAddr, hello.AgentID))
+		}
+		if h.enrollment.HasSecret(hello.AgentID) {
+			rejectTakenAgent()
+			return
+		}
+		// Recheck while holding the enrollment lock through code redemption and
+		// binding, so a concurrent enrollment cannot claim this ID in between.
+		var alreadyBound bool
 		var redeemErr error
-		agentSecret, redeemErr = h.enrollment.Redeem(principal.Code)
+		agentSecret, alreadyBound, redeemErr = h.enrollment.RedeemAndBindIfUnbound(hello.AgentID, principal.Code)
+		if alreadyBound {
+			rejectTakenAgent()
+			return
+		}
 		if redeemErr != nil {
 			h.rejectHello(conn, frame.ID, stream.CodeUnauthorized, redeemErr.Error(), stream.CloseRevoked)
 			h.throttle.Log("agent-enroll-rejected", fmt.Sprintf("hub: agent stream enrollment rejected remote=%q agent=%q: %v", r.RemoteAddr, hello.AgentID, redeemErr))
 			return
 		}
-		// Bind before welcome: if the agent immediately reconnects after
-		// receiving its secret, its next handshake must already verify.
-		h.enrollment.BindAgent(hello.AgentID, agentSecret)
+		// The secret is bound before welcome: if the agent immediately reconnects
+		// after receiving it, its next handshake must already verify.
 		connectionSecret = agentSecret
 	}
 

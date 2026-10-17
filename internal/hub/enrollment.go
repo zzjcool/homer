@@ -133,6 +133,53 @@ func (m *EnrollmentManager) BindAgent(agentID, secret string) {
 	_ = m.saveLocked()
 }
 
+// HasSecret reports whether agentID currently has a live secret binding.
+func (m *EnrollmentManager) HasSecret(agentID string) bool {
+	if m == nil || agentID == "" {
+		return false
+	}
+	m.mu.Lock()
+	_, ok := m.secrets[agentID]
+	m.mu.Unlock()
+	return ok
+}
+
+// RedeemAndBindIfUnbound atomically checks that agentID has no live binding,
+// consumes code, and binds the newly generated secret. The check happens before
+// the one-shot code is consumed, and the manager lock prevents a concurrent
+// enrollment from taking the same agentID between the check and bind.
+func (m *EnrollmentManager) RedeemAndBindIfUnbound(agentID, code string) (secret string, alreadyBound bool, err error) {
+	if m == nil {
+		return "", false, fmt.Errorf("接入码无效或已使用")
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if agentID == "" {
+		return "", false, fmt.Errorf("agent ID 不能为空")
+	}
+	if _, alreadyBound := m.secrets[agentID]; alreadyBound {
+		return "", true, nil
+	}
+	entry, ok := m.codes[code]
+	if ok {
+		delete(m.codes, code)
+	}
+	if !ok {
+		return "", false, fmt.Errorf("接入码无效或已使用")
+	}
+	if time.Now().After(entry.expiresAt) {
+		return "", false, fmt.Errorf("接入码已过期，请到控制台重新生成")
+	}
+	buf := make([]byte, 32)
+	if _, err := rand.Read(buf); err != nil {
+		return "", false, fmt.Errorf("生成 agent 密钥: %w", err)
+	}
+	secret = hex.EncodeToString(buf)
+	m.secrets[agentID] = sha256.Sum256([]byte(secret))
+	_ = m.saveLocked()
+	return secret, false, nil
+}
+
 // VerifySecret reports whether the presented secret matches the live
 // binding for agentID.
 func (m *EnrollmentManager) VerifySecret(agentID, secret string) bool {
