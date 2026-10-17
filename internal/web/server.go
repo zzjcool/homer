@@ -39,6 +39,9 @@ type AgentInfo struct {
 	// Stale is true when the hub has not heard from the agent for longer
 	// than hub.AgentStaleAfter; the UI renders it as an offline status dot.
 	Stale bool `json:"stale"`
+	// Enrolled reports whether this machine currently has a valid credential.
+	// It is omitted when this server has no enrollment-status provider.
+	Enrolled *bool `json:"enrolled,omitempty"`
 	// Drift is the machine's last self-reported status summary (uploaded
 	// with heartbeats): counts relative to the storage it last synced with.
 	Drift *AgentDrift `json:"drift,omitempty"`

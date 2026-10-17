@@ -152,6 +152,7 @@ footer.statusline .spacer { flex: 1; }
 .dot.drift { background: var(--warn); }
 .dot.conflict { background: var(--danger); }
 .dot.off { background: var(--offline); }
+.dot.revoked { background: var(--danger); }
 /* conflict: danger conclusion text */
 .hero.warn .conclusion { color: var(--danger); }
 .hero-note { background: var(--bg-sink); border-left: 3px solid var(--danger); padding: 12px 14px; margin-top: 12px; }
@@ -380,7 +381,9 @@ pre .ln-meta { color: var(--ink-dim); display: block; }
 .agent-card { padding: 12px 4px 14px; border-top: 1px solid var(--line); }
 .agent-card:first-of-type { border-top: none; }
 .agent-card.stale { opacity: .6; }
+.agent-card.revoked { border-left: 3px solid var(--danger); padding-left: 10px; background: var(--danger-soft); }
 .agent-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.agent-revoked-badge { color: var(--danger); border: 1px solid currentColor; border-radius: 99px; padding: 1px 7px; font-size: var(--fs-small); font-weight: 650; }
 .agent-head .hostname { font-weight: 600; }
 .agent-head .c-conflict { color: var(--danger); font-weight: 650; }
 .agent-head .c-resolved { color: var(--accent); font-weight: 650; }
@@ -984,7 +987,7 @@ const $ = id => document.getElementById(id);
  * POST /api/sync?direction=collect&agent=<id>&confirm=true   body {adapters}
  * POST /api/agents/<id>/pull?confirm=true                    body {adapters}
  * POST /api/resolve?choice=local|center&agent=<id>&confirm=true  在某台机器上裁决
- * GET  /api/agents        {agents:[{agentId,hostname,lastSeen,stale,version,outdated,drift,host}]}
+ * GET  /api/agents        {agents:[{agentId,hostname,lastSeen,stale,enrolled,version,outdated,drift,host}]}
  * GET  /api/keys
  * POST /api/keys                 {id, name, password}
  * POST /api/keys/encrypt         {id, file, path, password}
@@ -1214,6 +1217,7 @@ function scrollToFirstBadgeMatch(kind) {
   if (match && match.agentId) scrollToMachineById(match.agentId);
 }
 function agentDotClass(a) {
+  if (a.enrolled === false) return "revoked";
   const s = machineMapStatus(a);
   if (s === "offline") return "off";
   if (s === "conflict") return "conflict";
@@ -1885,11 +1889,12 @@ function renderAgents(agents, disabledFeature) {
     if (n > fleetMaxDrift) fleetMaxDrift = n;
   });
   agents.forEach(a => {
-    const card = el("div", "agent-card" + (a.stale ? " stale" : ""));
+    const card = el("div", "agent-card" + (a.stale ? " stale" : "") + (a.enrolled === false ? " revoked" : ""));
     card.setAttribute("data-agent-id", a.agentId || "");
     const head = el("div", "agent-head");
     head.append(el("span", "dot " + agentDotClass(a)));
     head.append(el("span", "hostname", a.hostname || a.agentId));
+    if (a.enrolled === false) head.append(el("span", "agent-revoked-badge", "已吊销"));
     const ip = primaryIP(a.host);
     if (ip) head.append(el("span", "ip", ip));
     // #89: 点击 .aid 复制完整 agentId（截断展示时仍用完整串）
@@ -2015,14 +2020,20 @@ function renderAgents(agents, disabledFeature) {
 
     const revoke = el("button", "small-btn danger-btn", "吊销");
     revoke.type = "button";
-    revoke.title = "吊销该机器的接入凭证（立即失效；不影响其他机器）";
+    revoke.disabled = a.enrolled === false;
+    revoke.title = a.enrolled !== false
+      ? "吊销该机器的接入凭证（立即失效；不影响其他机器）"
+      : "这台机器已经没有有效凭证";
     revoke.addEventListener("click", async () => {
       if (!confirm("吊销 " + agentLabel(a) + "?\n该机器将立即失去接入权限（重新接入需生成新接入码）。")) return;
       try {
         await api("/api/agents/revoke", { method: "POST", body: { agentId: a.agentId } });
         toast("已吊销 " + agentLabel(a));
         await refresh();
-      } catch (e) { toast("吊销失败：" + e.message); }
+      } catch (e) {
+        if (e.code === "not-enrolled") toast("这台机器已经没有凭证了（可能已吊销过）");
+        else toast("吊销失败：" + e.message);
+      }
     });
     moreBtns.push(revoke);
 
