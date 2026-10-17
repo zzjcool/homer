@@ -641,7 +641,7 @@ func (s *Server) handleSnapshotUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	generation, err := layout.Publish(store, []byte(payload.HomerJSON))
 	if err != nil {
-		writeErrorValue(w, err)
+		writeError(w, http.StatusBadRequest, "bad-request", "快照包含无效的 adapter 或文件路径", []string{err.Error()})
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "generation": generation})
