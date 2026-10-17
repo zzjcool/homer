@@ -194,8 +194,10 @@ func (s *Server) handlePluginInstall(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	writeMutex.Lock()
-	defer writeMutex.Unlock()
+	if !lockWrite(w, r) {
+		return
+	}
+	defer unlockWrite()
 	if s.opts.Plugins.IsInstalled(plugin.ID) {
 		writeError(w, http.StatusConflict, "plugin-installed", "插件已经安装", []string{plugin.ID})
 		return
@@ -248,8 +250,10 @@ func (s *Server) handlePluginUninstall(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeMutex.Lock()
-	defer writeMutex.Unlock()
+	if !lockWrite(w, r) {
+		return
+	}
+	defer unlockWrite()
 	plugin, ok := findInstalledPlugin(s.opts.Plugins.List(), id)
 	if !ok {
 		writeError(w, http.StatusNotFound, "plugin-not-installed", "插件尚未安装", []string{id})

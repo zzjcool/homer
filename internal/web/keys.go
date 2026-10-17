@@ -25,7 +25,7 @@ func (s *Server) handleKeys(w http.ResponseWriter, r *http.Request) {
 	case "/api/keys":
 		switch r.Method {
 		case http.MethodGet:
-			s.writeKey(w, keyring.Command{Action: "list"})
+			s.writeKey(w, r, keyring.Command{Action: "list"})
 		case http.MethodPost:
 			s.writeKeyCommand(w, r, "create")
 		default:
@@ -59,7 +59,7 @@ func (s *Server) handleKeys(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "bad-request", err.Error(), nil)
 			return
 		}
-		s.writeKey(w, cmd)
+		s.writeKey(w, r, cmd)
 	default:
 		writeError(w, http.StatusNotFound, "not-found", "请求的资源不存在", nil)
 	}
@@ -72,12 +72,14 @@ func (s *Server) writeKeyCommand(w http.ResponseWriter, r *http.Request, action 
 		return
 	}
 	cmd.Action = action
-	s.writeKey(w, cmd)
+	s.writeKey(w, r, cmd)
 }
 
-func (s *Server) writeKey(w http.ResponseWriter, cmd keyring.Command) {
-	writeMutex.Lock()
-	defer writeMutex.Unlock()
+func (s *Server) writeKey(w http.ResponseWriter, r *http.Request, cmd keyring.Command) {
+	if !lockWrite(w, r) {
+		return
+	}
+	defer unlockWrite()
 	if isKeyringWriteAction(cmd.Action) && !s.prepareKeyringWrite(w) {
 		return
 	}

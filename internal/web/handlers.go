@@ -326,8 +326,10 @@ func (s *Server) handlePush(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "bad-request", err.Error(), nil)
 		return
 	}
-	writeMutex.Lock()
-	defer writeMutex.Unlock()
+	if !lockWrite(w, r) {
+		return
+	}
+	defer unlockWrite()
 	var adapters []string
 	if scope.Explicit {
 		adapters = scope.Adapters
@@ -348,8 +350,13 @@ func (s *Server) handlePull(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "bad-request", err.Error(), nil)
 		return
 	}
-	writeMutex.Lock()
-	defer writeMutex.Unlock()
+	confirmed := confirmValue(r)
+	if confirmed {
+		if !lockWrite(w, r) {
+			return
+		}
+		defer unlockWrite()
+	}
 	var adapters []string
 	if scope.Explicit {
 		adapters = scope.Adapters
@@ -472,24 +479,26 @@ func (s *Server) handleAgentRoute(w http.ResponseWriter, r *http.Request) {
 			writeMethodNotAllowed(w)
 			return
 		}
-		writeMutex.Lock()
-		defer writeMutex.Unlock()
+		if !lockWrite(w, r) {
+			return
+		}
+		defer unlockWrite()
 		s.handleAgentPush(w, r, agentID)
 	case "pull":
 		if r.Method != http.MethodPost {
 			writeMethodNotAllowed(w)
 			return
 		}
-		writeMutex.Lock()
-		defer writeMutex.Unlock()
 		s.handleAgentPull(w, r, agentID)
 	case "ssh-key":
 		if r.Method != http.MethodPost {
 			writeMethodNotAllowed(w)
 			return
 		}
-		writeMutex.Lock()
-		defer writeMutex.Unlock()
+		if !lockWrite(w, r) {
+			return
+		}
+		defer unlockWrite()
 		s.handleAgentSSHKey(w, r, agentID)
 	case "keys":
 		if r.Method != http.MethodPost {
@@ -607,7 +616,8 @@ func (s *Server) handleAgentPull(w http.ResponseWriter, r *http.Request, agentID
 		scope.ApplyResolutions = true
 		scope.CenterGeneration = s.centerGeneration()
 	}
-	if confirmValue(r) {
+	confirmed := confirmValue(r)
+	if confirmed {
 		if s.refuseBoundKeyGap(w, scope) {
 			return
 		}
@@ -622,12 +632,18 @@ func (s *Server) handleAgentPull(w http.ResponseWriter, r *http.Request, agentID
 			return
 		}
 	}
-	raw, err := s.opts.Agents.AgentPull(r.Context(), agentID, confirmValue(r), scope)
+	if confirmed {
+		if !lockWrite(w, r) {
+			return
+		}
+		defer unlockWrite()
+	}
+	raw, err := s.opts.Agents.AgentPull(r.Context(), agentID, confirmed, scope)
 	if err != nil {
 		writeErrorValue(w, err)
 		return
 	}
-	if confirmValue(r) && pullWarrantsUnlock(raw) {
+	if confirmed && pullWarrantsUnlock(raw) {
 		if messages := s.unlockDispatched(r.Context(), agentID, scope); len(messages) > 0 {
 			details := pullUnlockFailureDetails(raw, messages)
 			writeError(w, http.StatusUnprocessableEntity, "unlock-failed", "内容已经下发，但没有解开。", details)
