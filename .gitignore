@@ -20,3 +20,6 @@ coverage/
 
 # 崩溃转储（宿主进程 core dump，非仓库产物）
 core
+
+# 本地 QA 狩猎产物（复现脚本、截图、日志）
+.qa-hunt/
