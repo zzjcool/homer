@@ -7,6 +7,7 @@
 package gens
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,6 +19,9 @@ import (
 type Layout struct {
 	home string
 }
+
+// ErrInvalidStorePath marks an adapter or file path that is not safe to publish.
+var ErrInvalidStorePath = errors.New("invalid snapshot store path")
 
 // New builds the layout for a homer home directory.
 func New(home string) *Layout {
@@ -38,27 +42,48 @@ type Head struct {
 // mid-write never becomes visible through HEAD.
 func (l *Layout) Publish(store map[string]map[string]string, meta []byte) (int, error) {
 	generationsDir := filepath.Join(l.home, "generations")
+	next := l.currentGeneration() + 1
+	target := filepath.Join(generationsDir, strconv.Itoa(next))
+	staging := filepath.Join(generationsDir, fmt.Sprintf(".staging-%d", next))
+	storeDir := filepath.Join(staging, "store")
+
+	// Validate every path before touching the filesystem so an invalid entry
+	// rejects the complete snapshot without partially publishing any files.
+	for adapter, files := range store {
+		adapterDir, err := safeStorePath(storeDir, adapter, "adapter")
+		if err != nil {
+			return 0, err
+		}
+		for name := range files {
+			if _, err := safeStorePath(adapterDir, name, "file"); err != nil {
+				return 0, err
+			}
+		}
+	}
+
 	if err := os.MkdirAll(generationsDir, 0o755); err != nil {
 		return 0, fmt.Errorf("创建 generations 目录: %w", err)
 	}
 
-	next := l.currentGeneration() + 1
-	target := filepath.Join(generationsDir, strconv.Itoa(next))
-	staging := filepath.Join(generationsDir, fmt.Sprintf(".staging-%d", next))
-
 	// Staging must not survive a previous crashed attempt.
 	_ = os.RemoveAll(staging)
-	if err := os.MkdirAll(filepath.Join(staging, "store"), 0o755); err != nil {
+	if err := os.MkdirAll(storeDir, 0o755); err != nil {
 		return 0, fmt.Errorf("创建 staging 目录: %w", err)
 	}
 
 	for adapter, files := range store {
-		adapterDir := filepath.Join(staging, "store", adapter)
+		adapterDir, err := safeStorePath(storeDir, adapter, "adapter")
+		if err != nil {
+			return 0, err
+		}
 		if err := os.MkdirAll(adapterDir, 0o755); err != nil {
 			return 0, fmt.Errorf("创建 adapter 目录: %w", err)
 		}
 		for name, content := range files {
-			path := filepath.Join(adapterDir, filepath.FromSlash(name))
+			path, err := safeStorePath(adapterDir, name, "file")
+			if err != nil {
+				return 0, err
+			}
 			if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 				return 0, fmt.Errorf("创建文件目录: %w", err)
 			}
@@ -90,6 +115,33 @@ func (l *Layout) Publish(store map[string]map[string]string, meta []byte) (int, 
 
 // Read returns the generation HEAD currently names. A missing or
 // malformed HEAD reports no generation.
+func safeStorePath(root, name, kind string) (string, error) {
+	invalid := func(reason string) (string, error) {
+		return "", fmt.Errorf("%w: %s %q: %s", ErrInvalidStorePath, kind, name, reason)
+	}
+	if name == "" {
+		return invalid("empty path")
+	}
+	if filepath.IsAbs(filepath.FromSlash(name)) {
+		return invalid("absolute path")
+	}
+	for _, segment := range strings.Split(name, "/") {
+		if segment == ".." {
+			return invalid("parent traversal segment")
+		}
+	}
+
+	path := filepath.Join(root, filepath.FromSlash(name))
+	rel, err := filepath.Rel(root, path)
+	if err != nil {
+		return invalid("cannot verify path is relative to its root")
+	}
+	if rel == "." || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) {
+		return invalid("path escapes its root or names the root itself")
+	}
+	return path, nil
+}
+
 func (l *Layout) Read() (Head, bool) {
 	data, err := os.ReadFile(filepath.Join(l.home, "HEAD"))
 	if err != nil {
