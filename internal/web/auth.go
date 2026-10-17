@@ -34,52 +34,90 @@ func isLoopbackAddr(addr string) bool {
 	return ip != nil && ip.IsLoopback()
 }
 
-func (s *Server) authorized(r *http.Request) bool {
-	// Dual channel (advisor ruling): humans carry an HMAC-signed session
-	// cookie minted by password login; agents and scripts keep the Bearer hub token.
+type requestPrincipalClass uint8
+
+const (
+	principalNone requestPrincipalClass = iota
+	principalAdmin
+	principalAgentSecret
+	principalEnrollCode
+)
+
+// principalClass identifies the strongest credential presented by a request.
+// Browser sessions and the shared hub token are administrators; machine and
+// one-time enrollment credentials stay in their narrower classes.
+func (s *Server) principalClass(r *http.Request) requestPrincipalClass {
 	if s.auth != nil {
 		if _, ok := s.auth.validSession(s.opts.HomerHome, r); ok {
-			return true
+			return principalAdmin
 		}
 	}
 	value := strings.TrimSpace(r.Header.Get("Authorization"))
 	const prefix = "Bearer "
 	if !strings.HasPrefix(value, prefix) {
-		return false
+		return principalNone
 	}
 	provided := strings.TrimSpace(strings.TrimPrefix(value, prefix))
 	if provided == "" {
-		return false
+		return principalNone
 	}
-	// The shared hub token authorizes everything.
 	if s.opts.Token != "" && provided == s.opts.Token {
-		return true
+		return principalAdmin
 	}
-	// A live one-time enrollment code authorizes the binary download
-	// (a fresh machine has nothing else). The code is only CHECKED
-	// here, never burned — redemption stays strictly one-shot in the
-	// authenticated agent stream hello.
+	// Enrollment codes are checked but never burned here. Redemption remains
+	// strictly one-shot in the authenticated agent stream hello.
 	if s.opts.Enrollment != nil && s.opts.Enrollment.ValidCode(provided) {
-		return true
+		return principalEnrollCode
 	}
-	// An enrolled machine's per-agent secret authorizes /api/snapshot and
-	// /dl/* for data-plane downloads and the agent's own upgrade path.
-	// Delegated to the agent endpoint's machine-credential authority.
 	if s.opts.AgentEndpointAuthorized != nil && s.opts.AgentEndpointAuthorized(r) {
-		return true
+		return principalAgentSecret
 	}
-	// Rule 6: no more implicit loopback trust. Without any credential
-	// configured the API stays locked (setup/login endpoints aside).
-	return false
+	return principalNone
 }
 
 func (s *Server) requireAuth(w http.ResponseWriter, r *http.Request) bool {
-	if s.authorized(r) {
+	principal := s.principalClass(r)
+	if principal == principalAdmin || s.principalAllowedForEndpoint(principal, r.Method, r.URL.Path) {
 		s.slideSession(w, r)
 		return true
 	}
 	writeError(w, http.StatusUnauthorized, "unauthorized", "未授权：请提供有效的 Bearer token", nil)
 	return false
+}
+
+// principalAllowedForEndpoint is a default-deny whitelist for non-admin
+// credentials. A recognized credential is not generally authorized for /api
+// or /dl data access: machine secrets get the agent data plane and listed
+// read-only APIs, while enrollment codes get only bootstrap downloads, snapshot
+// reads, and the stream handled by the agent protocol. Writes stay admin-only
+// except for the machine snapshot upload protocol.
+func (s *Server) principalAllowedForEndpoint(principal requestPrincipalClass, method, path string) bool {
+	if method == http.MethodGet && strings.HasPrefix(path, "/dl/") {
+		return principal == principalAgentSecret || principal == principalEnrollCode
+	}
+	if path == "/api/snapshot" {
+		switch method {
+		case http.MethodGet:
+			return principal == principalAgentSecret || principal == principalEnrollCode
+		case http.MethodPost:
+			return principal == principalAgentSecret
+		}
+		return false
+	}
+	if principal != principalAgentSecret || method != http.MethodGet {
+		return false
+	}
+	switch path {
+	case "/api/console", "/api/status", "/api/diff", "/api/sync/choices",
+		"/api/config", "/api/agents", "/api/storage", "/api/storage/file", "/api/keys":
+		return true
+	default:
+		if strings.HasPrefix(path, "/api/agents/") {
+			parts := strings.Split(strings.TrimPrefix(path, "/api/agents/"), "/")
+			return len(parts) == 2 && parts[0] != "" && parts[1] == "adapters"
+		}
+		return false
+	}
 }
 
 // slideSession extends an active browser session once less than half of the

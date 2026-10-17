@@ -370,13 +370,13 @@ func (s *Server) handleAuthAPI(w http.ResponseWriter, r *http.Request, path stri
 		http.SetCookie(w, clearSessionCookie())
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 	case path == "/api/auth/join" && r.Method == http.MethodGet:
-		// The join command embeds the hub token: authenticated callers only
-		// (session cookie or Bearer). Rule 5 — token never enters HTML or
-		// startup output uninvited.
-		if !s.authorized(r) {
+		// Minting an enrollment code is administrator-only: a machine or
+		// enrollment credential must not be able to create fresh credentials.
+		if s.principalClass(r) != principalAdmin {
 			writeError(w, http.StatusUnauthorized, "unauthorized", "未授权", nil)
 			return
 		}
+		s.slideSession(w, r)
 		command, code := s.joinCommandsForRequest(r)
 		writeJSON(w, http.StatusOK, map[string]any{
 			"ok":      true,
@@ -384,7 +384,7 @@ func (s *Server) handleAuthAPI(w http.ResponseWriter, r *http.Request, path stri
 			"code":    code,
 		})
 	case path == "/api/auth/join/status" && r.Method == http.MethodGet:
-		if !s.authorized(r) {
+		if s.principalClass(r) != principalAdmin {
 			writeError(w, http.StatusUnauthorized, "unauthorized", "未授权", nil)
 			return
 		}
