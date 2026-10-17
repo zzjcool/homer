@@ -1015,12 +1015,14 @@ const app = {
   scopeLoading: false,
   scopeStreamFailed: false,
   scopeStreamController: null,
+  dispatchController: null,
   openDiffs: new Set(),   // 展开的 diff 抽屉，key = adapter/category（轮询不重置）
 };
 
 async function api(path, opts = {}) {
   const init = { method: opts.method || "GET", credentials: "same-origin", headers: { "Accept": "application/json" } };
   if (opts.body !== undefined) { init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(opts.body); }
+  if (opts.signal !== undefined) init.signal = opts.signal;
   const res = await fetch(path, init);
   let data = null;
   try { data = await res.json(); } catch (_) { data = {}; }
@@ -1855,7 +1857,11 @@ function machineMeta(a) {
   return parts.join(" · ");
 }
 function renderAgents(agents, disabledFeature) {
-  const list = $("agent-list"); clear(list);
+  const list = $("agent-list");
+  const active = document.activeElement;
+  if (list.querySelector("details.agent-more[open]") ||
+      (active && list.contains(active) && active.closest(".agent-more"))) return;
+  clear(list);
   if (disabledFeature) {
     list.append(el("div", "muted small", "多机视图未启用（serve 未开 agent 模式）"));
     return;
@@ -3171,6 +3177,9 @@ $("dlg-confirm").addEventListener("close", () => {
   stopDispatchWait();
   if (app.scopeStreamController) app.scopeStreamController.abort();
   app.scopeStreamController = null;
+  if (app.dispatchController) app.dispatchController.abort();
+  app.dispatchController = null;
+  $("btn-confirm-back").disabled = false;
   app.scopeLoading = false;
   app.scopeStreamFailed = false;
   $("btn-confirm-alt").classList.add("hidden");
@@ -3401,7 +3410,8 @@ function dispatchDialogError(e) {
 }
 // 冲突：关掉下发窗口，当场给出“以哪边为准”的选择；其他失败留在窗口里，
 // 只显示人话（去掉 adapter root 之类的扫描诊断）。
-async function handleDispatchFailure(agentId, name, data) {
+async function handleDispatchFailure(agentId, name, data, controller) {
+  if (!dispatchDialogOwns(agentId, controller)) return;
   const view = writeFailureView(data);
   const resolutionFailures = resolutionOutcomeLines(data).failed;
   if (view.conflict) {
@@ -3486,8 +3496,6 @@ function beginDispatchWait(name, plugins, unlocking) {
   $("dispatch-unlocks").classList.add("hidden");
   $("btn-confirm-back").classList.add("hidden");
   $("confirm-err").textContent = "";
-  const cancel = $("btn-confirm-cancel");
-  if (cancel) cancel.disabled = true;
   const ok = $("btn-confirm-ok");
   ok.disabled = true;
   const started = Date.now();
@@ -3531,7 +3539,15 @@ function resolutionOutcomeLines(resolutionData) {
   });
   return resolutionLines;
 }
-function finishDispatchInDialog(name, paths, problems, resolutionData) {
+function dispatchDialogOwns(agentId, controller) {
+  return !!controller && app.dispatchController === controller && !controller.signal.aborted &&
+    $("dlg-confirm").open && app.scopeAgent && app.scopeAgent.agentId === agentId;
+}
+function finishDispatchInDialog(agentId, controller, name, paths, problems, resolutionData) {
+  if (!dispatchDialogOwns(agentId, controller)) {
+    toast("已下发到 " + name);
+    return;
+  }
   stopDispatchWait();
   app.scopeStep = "done";
   $("confirm-choices").classList.add("hidden");
@@ -3583,19 +3599,24 @@ async function executeDispatchOne(agentId, name, adapters, unlocks, stay) {
   if (unlocks && unlocks.length) body.unlocks = unlocks;
   const paths = boundPathsForSelection();
   if (stay) {
+    const controller = new AbortController();
+    app.dispatchController = controller;
     clearAlert();
     $("btn-confirm-back").disabled = true;
     beginDispatchWait(name, pluginsForSelection(adapters), unlocks && unlocks.length);
     try {
-      const d = await api("/api/agents/" + encodeURIComponent(agentId) + "/pull?confirm=true", { method: "POST", body: body });
+      const d = await api("/api/agents/" + encodeURIComponent(agentId) + "/pull?confirm=true", { method: "POST", body: body, signal: controller.signal });
       if (d.ok) {
-        finishDispatchInDialog(name, paths, installFailures(d), d);
+        finishDispatchInDialog(agentId, controller, name, paths, installFailures(d), d);
         try { await refresh(); } catch (_) {}
       } else {
-        await handleDispatchFailure(agentId, name, d);
+        await handleDispatchFailure(agentId, name, d, controller);
       }
     } catch (e) {
-      await handleDispatchFailure(agentId, name, e.report || { status: e.code, errors: e.errors && e.errors.length ? e.errors : [e.message] });
+      if (controller.signal.aborted || !dispatchDialogOwns(agentId, controller)) return;
+      await handleDispatchFailure(agentId, name, e.report || { status: e.code, errors: e.errors && e.errors.length ? e.errors : [e.message] }, controller);
+    } finally {
+      if (app.dispatchController === controller) app.dispatchController = null;
     }
     return;
   }
