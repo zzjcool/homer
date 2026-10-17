@@ -1067,10 +1067,8 @@ func (s *Server) handleStorageFile(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not-found", "服务器还没有存储内容", nil)
 		return
 	}
-	// path arrives as "<category>/<relpath>"; the store layout nests the
-	// adapter at the top. Refuse traversal before joining.
-	cleaned := filepath.Clean("/" + filePath)
-	if strings.Contains(cleaned, "..") {
+	full, valid := storageFilePath(head.StoreDir, adapterID, filePath)
+	if !valid {
 		writeError(w, http.StatusBadRequest, "bad-request", "非法路径", nil)
 		return
 	}
@@ -1078,7 +1076,6 @@ func (s *Server) handleStorageFile(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"binary": true, "content": ""})
 		return
 	}
-	full := filepath.Join(head.StoreDir, adapterID, strings.TrimPrefix(cleaned, string(filepath.Separator)))
 	data, err := os.ReadFile(full)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "not-found", "文件不存在: "+filePath, nil)
@@ -1096,18 +1093,17 @@ func (s *Server) handleStorageFile(w http.ResponseWriter, r *http.Request) {
 func (s *Server) storedFileText(adapterID, filePath string) (content string, ok bool, binary bool) {
 	adapterID = strings.TrimSpace(adapterID)
 	filePath = strings.TrimSpace(filePath)
-	if adapterID == "" || filePath == "" || strings.Contains(filePath, "..") || isAppleDoublePath(filePath) {
-		return "", false, isAppleDoublePath(filePath)
+	if isAppleDoublePath(filePath) {
+		return "", false, true
 	}
 	head, exists := gens.New(s.opts.HomerHome).Read()
 	if !exists {
 		return "", false, false
 	}
-	cleaned := filepath.Clean("/" + filePath)
-	if strings.Contains(cleaned, "..") {
+	full, valid := storageFilePath(head.StoreDir, adapterID, filePath)
+	if !valid {
 		return "", false, false
 	}
-	full := filepath.Join(head.StoreDir, adapterID, strings.TrimPrefix(cleaned, string(filepath.Separator)))
 	data, err := os.ReadFile(full)
 	if err != nil {
 		return "", false, false
@@ -1116,6 +1112,44 @@ func (s *Server) storedFileText(adapterID, filePath string) (content string, ok 
 		return "", true, true
 	}
 	return string(data), true, false
+}
+
+// storageFilePath validates both untrusted path components and verifies that
+// their joined result stays within the generation store. Inspect the raw
+// components before cleaning: cleaning a value prefixed with "/" would erase
+// leading ".." segments and silently turn traversal into an in-store path.
+func storageFilePath(storeDir, adapterID, filePath string) (string, bool) {
+	if storeDir == "" || hasStoragePathTraversal(adapterID) || hasStoragePathTraversal(filePath) {
+		return "", false
+	}
+
+	root, err := filepath.Abs(storeDir)
+	if err != nil {
+		return "", false
+	}
+	full, err := filepath.Abs(filepath.Join(root, filepath.Clean(adapterID), filepath.Clean(filePath)))
+	if err != nil {
+		return "", false
+	}
+	rel, err := filepath.Rel(root, full)
+	if err != nil || rel == ".." || filepath.IsAbs(rel) || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", false
+	}
+	return full, true
+}
+
+// hasStoragePathTraversal rejects empty and absolute inputs and checks the
+// original path segments before filepath.Clean can normalize them away.
+func hasStoragePathTraversal(value string) bool {
+	if value == "" || filepath.IsAbs(value) || filepath.VolumeName(value) != "" {
+		return true
+	}
+	for _, segment := range strings.Split(filepath.ToSlash(value), "/") {
+		if segment == ".." {
+			return true
+		}
+	}
+	return false
 }
 
 // isAppleDoublePath reports macOS sidecar names (._foo) at any depth.
