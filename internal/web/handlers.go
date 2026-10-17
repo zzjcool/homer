@@ -102,7 +102,7 @@ func (s *Server) serveHTTP(w http.ResponseWriter, r *http.Request) {
 			writeMethodNotAllowed(w)
 			return
 		}
-		s.handleConsole(w, r)
+		s.handleConsoleWithEnrollment(w, r)
 	case path == "/api/status":
 		if r.Method != http.MethodGet {
 			writeMethodNotAllowed(w)
@@ -415,6 +415,7 @@ func (s *Server) handleAgents(w http.ResponseWriter, _ *http.Request) {
 		agents = append(agents, s.opts.Agents.ListAgents()...)
 	}
 	for i := range agents {
+		agents[i].Enrolled = agentCredentialStatus(s.opts.Enrollment, agents[i].AgentID)
 		// An unparseable hub version ("dev" from a source build) must not
 		// silently disable the upgrade hint: treat it as newer than any
 		// parseable agent version so machines always get the「更新程序」
@@ -426,6 +427,84 @@ func (s *Server) handleAgents(w http.ResponseWriter, _ *http.Request) {
 		OK     bool        `json:"ok"`
 		Agents []AgentInfo `json:"agents"`
 	}{true, agents})
+}
+
+// handleConsoleWithEnrollment augments the console's machine summaries with
+// credential status while keeping the fanout handler in sync.go untouched.
+func (s *Server) handleConsoleWithEnrollment(w http.ResponseWriter, r *http.Request) {
+	capture := &responseCapture{header: make(http.Header)}
+	s.handleConsole(capture, r)
+
+	body := capture.body.Bytes()
+	payload := make(map[string]json.RawMessage)
+	if json.Unmarshal(body, &payload) == nil {
+		var machines []json.RawMessage
+		if json.Unmarshal(payload["machines"], &machines) == nil {
+			for i, raw := range machines {
+				machine := make(map[string]json.RawMessage)
+				if json.Unmarshal(raw, &machine) != nil {
+					continue
+				}
+				var agentID string
+				_ = json.Unmarshal(machine["agentId"], &agentID)
+				if enrolled := agentCredentialStatus(s.opts.Enrollment, agentID); enrolled != nil {
+					encoded, _ := json.Marshal(enrolled)
+					machine["enrolled"] = encoded
+				}
+				if updated, err := json.Marshal(machine); err == nil {
+					machines[i] = updated
+				}
+			}
+			if updated, err := json.Marshal(machines); err == nil {
+				payload["machines"] = updated
+				if updated, err := json.Marshal(payload); err == nil {
+					body = updated
+				}
+			}
+		}
+	}
+
+	for key, values := range capture.header {
+		for _, value := range values {
+			w.Header().Add(key, value)
+		}
+	}
+	status := capture.status
+	if status == 0 {
+		status = http.StatusOK
+	}
+	w.WriteHeader(status)
+	_, _ = w.Write(body)
+}
+
+type responseCapture struct {
+	header http.Header
+	status int
+	body   bytes.Buffer
+}
+
+func (c *responseCapture) Header() http.Header { return c.header }
+
+func (c *responseCapture) WriteHeader(status int) {
+	if c.status == 0 {
+		c.status = status
+	}
+}
+
+func (c *responseCapture) Write(data []byte) (int, error) {
+	if c.status == 0 {
+		c.status = http.StatusOK
+	}
+	return c.body.Write(data)
+}
+
+func agentCredentialStatus(enrollment EnrollmentService, agentID string) *bool {
+	status, ok := enrollment.(interface{ HasSecret(string) bool })
+	if !ok {
+		return nil
+	}
+	enrolled := status.HasSecret(agentID)
+	return &enrolled
 }
 
 func (s *Server) handleAgentEndpoint(w http.ResponseWriter, r *http.Request) {
