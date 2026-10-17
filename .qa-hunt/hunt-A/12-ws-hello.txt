@@ -1,0 +1,13 @@
+FRESH-CODE=hr_2f432195acb4ae5406bf51a6f5061c5cb6c4472e6f902fc7
+=== HTTP RESPONSE ===
+HTTP/1.1 101 Switching Protocols
+Connection: Upgrade
+Sec-Websocket-Accept: hpNIZ9uK1qA9zETcHBvdKoCtw78=
+Sec-Websocket-Protocol: homer.stream.v1
+Upgrade: websocket
+Date: Fri, 16 Oct 2026 13:05:02 GMT
+=== SEND HELLO ===
+{"t": "req", "id": "h1", "m": "hello", "p": {"proto": 1, "agentId": "hunter-probe-0001", "hostname": "hunter-probe", "version": "0.0.0-hunter", "caps": [], "host": null, "tools": null}}
+=== FRAME (opcode 1) ===
+{"t":"res","id":"h1","p":{"proto":1,"hubVersion":"dev","instanceId":"1708809fa8bef1c561cb75e27b822a89","agentSecret":"3541c93c6a2e173cedf0628462e7d239886b5fbecc9b8cdbabac3cc889e988ce","pingIntervalMs":25000,"pingTimeoutMs":75000,"maxFrame":8388608},"ok":true}
+>>> AGENT SECRET PRESENT IN WELCOME <<<

@@ -1,0 +1,14 @@
+### #8 binary preview (UI handles it) + #5 extra + status header contrast
+binary file preview:
+{"error":{"code":"not-found","message":"文件不存在: files/settings-bin.json","details":[]}} HTTP 404
+text file preview:
+{"content":"BOX-C-FILE\n"} HTTP 200
+
+### #10 write-timeout window: hub has no homer.json (unreachable in budget)
+HEAD
+agent-overrides.json
+generations
+keys
+plugins.json
+hub stores present; per-machine pull budget=12min (proto.go:64), remote budget=budget-5s, HTTP WriteTimeout=13min (cli/hub.go:142)
+queue wait on package-global writeMutex (server.go:242) is NOT bounded by any timeout -> N serialized 12min pulls can exceed 13min.

@@ -1,0 +1,14 @@
+SECRET-from-box-a=  "hubUrl": "http://hub:7760",
+=== A: per-agent secret hits /api/storage/file ? ===
+secret-storagefile:401
+=== B: per-agent secret + traversal -> hub token ===
+{"error":{"code":"unauthorized","message":"未授权：请提供有效的 Bearer token","details":[]}}
+HTTP:401
+=== C: leaked token works as hub admin? ===
+LEAKED=[qa-hub-token]
+leaked-token-agents:200
+=== D: control - no-auth storage/file ===
+noauth-storagefile:401
+=== E: control - path= traversal blocked (documented guard) ===
+{"error":{"code":"not-found","message":"文件不存在: ../../keys/hub-token","details":[]}}
+HTTP:404

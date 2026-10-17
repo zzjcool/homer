@@ -1,0 +1,7 @@
+=== deeper write escape: 6 levels up -> /root/.homer ===
+{"generation":5,"ok":true}
+HTTP:200
+=== where did it land? ===
+-rw-r--r--    1 root     root             7 Oct 16 13:06 /tmp/HUNTER_ESCAPE_2
+ls: /root/.homer/HUNTER*: No such file or directory
+/tmp/HUNTER_ESCAPE_2

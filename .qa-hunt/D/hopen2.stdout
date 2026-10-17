@@ -1,0 +1,32 @@
+2026-10-16T13:04:39Z PRE      54d0c3373428-62af      stale=False age=3.7s
+stopped
+2026-10-16T13:04:39Z STOP pid=40
+2026-10-16T13:04:44Z T+5s 54d0c3373428-62af      stale=False age=8.9s
+2026-10-16T13:04:49Z T+10s 54d0c3373428-62af      stale=False age=14.0s
+2026-10-16T13:04:54Z T+15s 54d0c3373428-62af      stale=False age=19.0s
+2026-10-16T13:04:59Z T+20s 54d0c3373428-62af      stale=False age=24.1s
+2026-10-16T13:05:04Z T+25s 54d0c3373428-62af      stale=False age=29.1s
+2026-10-16T13:05:09Z T+30s 54d0c3373428-62af      stale=False age=34.2s
+2026-10-16T13:05:14Z T+35s 54d0c3373428-62af      stale=True  age=2.1s
+2026-10-16T13:05:19Z T+40s 54d0c3373428-62af      stale=True  age=7.1s
+2026-10-16T13:05:24Z T+45s 54d0c3373428-62af      stale=True  age=12.1s
+2026-10-16T13:05:29Z T+50s 54d0c3373428-62af      stale=True  age=17.2s
+2026-10-16T13:05:34Z T+55s 54d0c3373428-62af      stale=True  age=22.3s
+2026-10-16T13:05:39Z T+60s 54d0c3373428-62af      stale=True  age=27.3s
+2026-10-16T13:05:45Z T+65s 54d0c3373428-62af      stale=True  age=32.4s
+2026-10-16T13:05:50Z T+70s 54d0c3373428-62af      stale=True  age=37.4s
+2026-10-16T13:05:55Z T+75s 54d0c3373428-62af      stale=True  age=42.5s
+2026-10-16T13:06:00Z T+80s 54d0c3373428-62af      stale=True  age=47.6s
+2026-10-16T13:06:05Z T+85s 54d0c3373428-62af      stale=True  age=52.6s
+2026-10-16T13:06:10Z T+90s 54d0c3373428-62af      stale=True  age=57.7s
+2026-10-16T13:06:15Z T+95s 54d0c3373428-62af      stale=True  age=62.7s
+2026-10-16T13:06:20Z T+100s 54d0c3373428-62af      stale=True  age=67.8s
+2026-10-16T13:06:25Z T+105s 54d0c3373428-62af      stale=True  age=72.8s
+2026-10-16T13:06:30Z T+110s 54d0c3373428-62af      stale=True  age=77.9s
+2026-10-16T13:06:35Z T+115s 54d0c3373428-62af      stale=True  age=82.9s
+2026-10-16T13:06:40Z T+120s 54d0c3373428-62af      stale=True  age=88.0s
+2026-10-16T13:06:45Z T+125s 54d0c3373428-62af      stale=True  age=93.0s
+2026-10-16T13:06:50Z T+130s 54d0c3373428-62af      stale=True  age=98.1s
+continued
+2026-10-16T13:06:50Z CONT pid=40
+2026-10-16T13:07:00Z POST     54d0c3373428-62af      stale=True  age=108.3s

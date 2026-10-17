@@ -1,0 +1,18 @@
+=== T+4s GET /api/keys ===
+curl: (28) Operation timed out after 20002 milliseconds with 0 bytes received
+  HTTP 000 time=20.002279
+=== T+4s POST /api/keys/op ===
+curl: (28) Operation timed out after 20002 milliseconds with 0 bytes received
+  HTTP 000 time=20.002539
+=== T+4s GET /api/keys/encrypt (GET only route? it's POST) ===
+  HTTP 405 time=0.000939
+=== CONTROL: GET /api/console (no mutex) ===
+  HTTP 200 time=0.001340
+=== CONTROL: GET /api/agents (no mutex) ===
+  HTTP 200 time=0.000977
+=== CONTROL: GET /api/storage (no mutex) ===
+  HTTP 200 time=0.001285
+=== CONTROL: GET /api/plugins ===
+  HTTP 200 time=0.000955
+=== CONTROL: GET /api/status ===
+  HTTP 200 time=0.006639

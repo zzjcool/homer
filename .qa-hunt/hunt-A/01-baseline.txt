@@ -1,0 +1,10 @@
++ curl -s -H 'Authorization: Bearer qa-hub-token' http://127.0.0.1:17760/api/auth/join
+{"code":"hr_9f140a554a9e8350397dfecd6906331511732b251527ad32","command":"curl -fsSL http://127.0.0.1:17760/install.sh | sh -s -- --token hr_9f140a554a9e8350397dfecd6906331511732b251527ad32","ok":true}+ echo
+
++ curl -s -H 'Authorization: Bearer qa-hub-token' 'http://127.0.0.1:17760/api/auth/join/status?code=hr_deadbeef'
+{"active":false,"ok":true}+ echo
+
++ curl -s -o /dev/null -w 'noauth-agents:%{http_code}\n' http://127.0.0.1:17760/api/agents
+noauth-agents:401
++ curl -s -o /dev/null -w 'hrfake-agents:%{http_code}\n' -H 'Authorization: Bearer hr_000000000000000000000000000000000000000000000000' http://127.0.0.1:17760/api/agents
+hrfake-agents:401

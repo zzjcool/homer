@@ -1,0 +1,24 @@
+import { attach, nav, ev, sleep, shot, waitFor, LOG } from "./lib2.mjs";
+const sid = await attach();
+await nav(sid, "http://hub:7760/");
+await ev(sid, "document.querySelector('#in-login-pw').value='qa-admin-password'");
+await ev(sid, "document.querySelector('#btn-login').click()");
+await waitFor(sid, "!document.querySelector('#workspace').classList.contains('hidden')", 10000);
+const L=(...a)=>console.log(...a);
+// J1: join code polling fails silently (catch(_){}) — user waits forever with no hint
+await ev(sid, `(()=>{const of=window.fetch.bind(window);window.fetch=(u,o)=>{const url=String(u);if(url.includes('/auth/join/status'))return Promise.reject(new TypeError('Failed to fetch'));return of(u,o)};window.__joinCalls=0;return 'patched'})()`);
+await ev(sid, `(()=>{const of=window.fetch.bind(window);return 1})()`);
+await ev(sid, `(()=>{const orig=window.fetch;window.fetch=(u,o)=>{if(String(u).includes('join/status'))window.__joinCalls++;return orig(u,o)};return 'counted'})()`);
+await ev(sid,"document.querySelector('#btn-join-top').click()");
+await waitFor(sid,"document.querySelector('#join-cmd').value.indexOf('hr_')>=0",10000);
+L("J1 join-cmd:", await ev(sid,"document.querySelector('#join-cmd').value.slice(0,60)"));
+await sleep(7000);
+L("J1 join/status calls in 7s:", await ev(sid,"window.__joinCalls"));
+L("J1 dlg open:", await ev(sid,"document.querySelector('#dlg-join').open"));
+L("J1 any error text in dialog:", await ev(sid,"document.querySelector('#dlg-join').textContent.replace(/\\s+/g,' ').slice(0,400)"));
+L("J1 toast:", await ev(sid,"document.querySelector('#toast').textContent"));
+await shot(sid,"/root/code/homer-cli/.qa-hunt/shots-B/19-join-poll-silent.png");
+await ev(sid,"document.querySelector('#dlg-join').close()");
+await sleep(500);
+L("ERRS:", JSON.stringify(LOG.err.slice(0,5)), "window.__err:", await ev(sid,"JSON.stringify(window.__err)"));
+process.exit(0);

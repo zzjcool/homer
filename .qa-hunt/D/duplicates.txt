@@ -1,0 +1,18 @@
+13:08:47Z  UI cards (CDP eval):
+[{"id":"54d0c3373428-b745","host":"54d0c3373428","stale":false,"ip":"172.21.0.3","aid":"54d0c3373428-b745"},
+ {"id":"54d0c3373428-bc77","host":"54d0c3373428","stale":false,"ip":"172.21.0.3","aid":"54d0c3373428-bc77"},
+ {"id":"b6675d68ddf7-7920","host":"b6675d68ddf7","stale":false,"ip":"172.21.0.6","aid":"b6675d68ddf7-7920"},
+ {"id":"e363efdcf085-1563","host":"e363efdcf085","stale":false,"ip":"172.21.0.4","aid":"e363efdcf085-1563"},
+ {"id":"e363efdcf085-7b6d","host":"e363efdcf085","stale":true,"ip":"172.21.0.4","aid":"e363efdcf085-7b6d"}]
+
+13:11:xxZ UI cards with button sets (note: same host 54d0c3373428 x3, different button sets):
+[{"id":"54d0c3373428-4323","host":"54d0c3373428","stale":false,"cls":"agent-card","btns":["查看","收取","下发","详情","密钥","登录公钥","吊销","移除"]},
+ {"id":"54d0c3373428-b745","host":"54d0c3373428","stale":true,"cls":"agent-card stale","btns":["查看(D)","详情","密钥(D)","登录公钥(D)","吊销","移除"]},
+ {"id":"54d0c3373428-bc77","host":"54d0c3373428","stale":false,"cls":"agent-card","btns":["查看","详情","密钥","登录公钥","吊销","移除"]},
+ {"id":"b6675d68ddf7-7920","host":"b6675d68ddf7","stale":false,"cls":"agent-card","btns":["查看","处理冲突","详情","密钥","登录公钥","吊销","移除"]},
+ {"id":"e363efdcf085-1563","host":"e363efdcf085","stale":false,"cls":"agent-card","btns":["查看","处理冲突","详情","密钥","登录公钥","吊销","移除"]},
+ {"id":"e363efdcf085-7b6d","host":"e363efdcf085","stale":true,"cls":"agent-card stale","btns":["查看(D)","详情","密钥(D)","登录公钥(D)","吊销","移除"]}]
+
+install.sh re-enroll output (box-c, 13:08Z):
+>> 检测到旧的 agent.json，已改名为 agent.json.before-reenroll，将用新接入码重新接入
+>> agent 已在后台启动（日志: /root/.homer/agent.log，PID: 534）

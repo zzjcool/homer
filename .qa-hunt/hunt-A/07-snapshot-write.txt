@@ -1,0 +1,14 @@
+=== current generation ===
+GET-snapshot:200
+2
+
+=== POST /api/snapshot with hr_ code (generation 0 = full replace) ===
+{"generation":3,"ok":true}
+HTTP:200
+=== HEAD after ===
+3
+
+=== read back the injected store ===
+INJECTED-BY-HRCODE-MARKER
+=== GET /api/snapshot now returns the hr_ code planted config ===
+{"homerJson":"{\"version\":1}","store":{"pi":{"settings.json":"INJECTED-BY-HRCODE-MARKER"}},"generation":3}

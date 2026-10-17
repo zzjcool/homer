@@ -1,0 +1,9 @@
+sh: can't open /proc/764/cmdline: no such file
+2026-10-16T13:14:32Z DEAD_PID=617
+2026-10-16T13:14:32Z STOPPED 617
+2026-10-16T13:14:35Z BASELINE live pull: http=409 t=0.008387
+2026-10-16T13:14:35Z ISSUE pull to FROZEN 54d0c3373428-4323 (background)
+2026-10-16T13:14:37Z NOW live pull (should block if mutex held): http=409 t=58.995398
+2026-10-16T13:15:36Z NOW keys (also takes writeMutex): http=200 t=0.000670
+2026-10-16T13:15:36Z DEAD RESULT: {"error":{"code":"agent-offline","message":"机器已离线","details":["agent: agent-offline: agent \"54d0c3373428-4323\" stream closed: stream: session closed: stream: connection closed (code 4000): ping timeout"]}} DEAD_HTTP=503 DEAD_T=60.990877 
+2026-10-16T13:15:36Z CONT 617

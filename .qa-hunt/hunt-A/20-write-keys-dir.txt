@@ -1,0 +1,16 @@
+=== write marker INTO keys dir (4 levels up) - does NOT overwrite existing files ===
+{"generation":6,"ok":true}
+HTTP:200
+=== did it land in the keys dir? ===
+total 28
+drwx------    2 root     root          4096 Oct 16 13:06 .
+drwxr-xr-x    4 root     root          4096 Oct 16 13:06 ..
+-rw-r--r--    1 root     root             5 Oct 16 13:06 HUNTER_KEYS_WRITE
+-rw-------    1 root     root           393 Oct 16 13:05 agent-secrets.json
+-rw-r--r--    0 root     root            61 Oct 16 12:21 hub-password
+-rw-------    1 root     root            13 Oct 16 12:28 hub-token
+-rw-------    1 root     root            32 Oct 16 12:29 session-key
+---
+pwned=== hub still alive? ===
+health:200
+token-agents:200

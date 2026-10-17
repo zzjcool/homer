@@ -1,0 +1,24 @@
+PID=1310
+=== STOP 前：确认在线且下发不挂 ===
+pre-pull http=200 t=0.004107
+STOP at: 13:47:24
+T
+T+0s  beh=HANG(等agent)  stale/age=False age=2.3
+T+5s  beh=HANG(等agent)  stale/age=False age=7.4
+T+10s  beh=HANG(等agent)  stale/age=False age=12.5
+T+15s  beh=HANG(等agent)  stale/age=False age=17.6
+T+20s  beh=HANG(等agent)  stale/age=False age=22.7
+T+26s  beh=HANG(等agent)  stale/age=False age=27.7
+T+31s  beh=HANG(等agent)  stale/age=False age=32.8
+T+36s  beh=HANG(等agent)  stale/age=False age=37.9
+T+41s  beh=HANG(等agent)  stale/age=False age=43.0
+T+46s  beh=HANG(等agent)  stale/age=False age=48.1
+T+51s  beh=HANG(等agent)  stale/age=False age=53.2
+T+56s  beh=HANG(等agent)  stale/age=False age=58.3
+T+61s  beh=HANG(等agent)  stale/age=False age=63.4
+T+66s  beh=HANG(等agent)  stale/age=False age=68.4
+T+71s  beh=HANG(等agent)  stale/age=False age=73.5
+T+76s  beh=RET=503  stale/age=True age=76.6
+>>> 相变发生在 T+76s
+=== CONT ===
+S

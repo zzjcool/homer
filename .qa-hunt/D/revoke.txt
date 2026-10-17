@@ -1,0 +1,15 @@
+2026-10-16T13:11Z  revoke 54d0c3373428-b745
+--- before ---      [('54d0c3373428-b745', False)]
+--- revoke ---      {"ok":true}
+--- after 4s ---    [('54d0c3373428-b745', True)]      <- row retained, only stale flipped
+
+hub log:
+hub: kicking agent stream agent="54d0c3373428-b745" code=4401 reason="agent secret revoked"
+hub: agent stream disconnected agent="54d0c3373428-b745" remote="172.21.0.3:47762": stream: connection closed (code 4401): agent secret revoked
+
+box-c /root/.homer/agent.log:
+2026/10/16 13:11:12 与 hub http://hub:7760 的连接已断开，持续 3m47.829s：stream: connection closed (code 4401): agent secret revoked
+2026/10/16 13:11:12 agentSecret 已吊销，请重新接入（5 分钟后重试）
+
+revoke 2nd time: {"error":{"code":"not-enrolled","message":"该机器没有有效凭证（可能从未接入或已吊销）","details":[]}}
+revoke never-enrolled: {"error":{"code":"not-enrolled","message":"该机器没有有效凭证（可能从未接入或已吊销）","details":[]}}

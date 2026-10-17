@@ -1,0 +1,45 @@
+import { attach, nav, ev, sleep, shot, waitFor, LOG } from "./lib2.mjs";
+const sid = await attach();
+await nav(sid, "http://hub:7760/");
+await ev(sid, "document.querySelector('#in-login-pw').value='qa-admin-password'");
+await ev(sid, "document.querySelector('#btn-login').click()");
+await waitFor(sid, "!document.querySelector('#workspace').classList.contains('hidden')", 10000);
+const L=(...a)=>console.log(...a);
+// HARNESS: hang the dispatch POST to emulate a slow/hung backend.
+await ev(sid, `(()=>{const of=window.fetch.bind(window);window.fetch=(u,o)=>{const url=String(u);if(url.includes('/pull')) { window.__pullCalls=(window.__pullCalls||0)+1; return new Promise(()=>{}); } return of(u,o);};return 'patched'})()`);
+const r = await ev(sid, `(()=>{const a=app.agents.find(a=>!a.stale)||app.agents[0];if(!a)return 'none';
+  app.scopeDirection='dispatch';app.scopeStep='choose';app.scopeAgent=a;app.scopeChoices=[{id:'pi',enabled:true}];app.scopeKeys=[];
+  app.pendingAction={kind:'dispatch-one',agentId:a.agentId,name:(a.hostname||a.agentId)};
+  document.querySelector('#dlg-confirm').showModal();
+  document.querySelector('#confirm-choices').replaceChildren();
+  const i=document.createElement('input');i.type='checkbox';i.dataset.adapter='pi';i.checked=true;document.querySelector('#confirm-choices').appendChild(i);
+  return a.agentId;})()`);
+L("harness target:", r);
+// click OK twice quickly (double-click simulation on a slow handler)
+await ev(sid,"document.querySelector('#btn-confirm-ok').click()");
+await sleep(50);
+await ev(sid,"document.querySelector('#btn-confirm-ok').click()");
+await sleep(1500);
+L("pull calls:", await ev(sid,"window.__pullCalls"));
+L("dlg open:", await ev(sid,"document.querySelector('#dlg-confirm').open"));
+L("desc:", await ev(sid,"document.querySelector('#confirm-desc').textContent"));
+L("okbtn:", await ev(sid,"JSON.stringify({t:document.querySelector('#btn-confirm-ok').textContent,d:document.querySelector('#btn-confirm-ok').disabled})"));
+L("cancel disabled:", await ev(sid,"document.querySelector('#btn-confirm-cancel').disabled"));
+L("back:", await ev(sid,"JSON.stringify({hidden:document.querySelector('#btn-confirm-back').classList.contains('hidden'),disabled:document.querySelector('#btn-confirm-back').disabled})"));
+await shot(sid,"/root/code/homer-cli/.qa-hunt/shots-B/15-dispatch-wait-0s.png");
+await sleep(10000);
+L("t+11s okbtn:", await ev(sid,"document.querySelector('#btn-confirm-ok').textContent"));
+L("t+11s cancel disabled:", await ev(sid,"document.querySelector('#btn-confirm-cancel').disabled"));
+await shot(sid,"/root/code/homer-cli/.qa-hunt/shots-B/16-dispatch-wait-11s.png");
+await ev(sid,"document.querySelector('#btn-confirm-cancel').click()");
+await sleep(800);
+L("after cancel dlg open:", await ev(sid,"document.querySelector('#dlg-confirm').open"));
+L("after cancel okbtn:", await ev(sid,"document.querySelector('#btn-confirm-ok').textContent"));
+await shot(sid,"/root/code/homer-cli/.qa-hunt/shots-B/17-dispatch-cancel-attempt.png");
+// Escape key
+await ev(sid,"document.querySelector('#dlg-confirm').dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))");
+await sleep(500);
+L("after Esc dlg open:", await ev(sid,"document.querySelector('#dlg-confirm').open"));
+L("ERRS:", JSON.stringify(LOG.err.slice(0,5)));
+L("__err:", await ev(sid,"JSON.stringify(window.__err)"));
+process.exit(0);

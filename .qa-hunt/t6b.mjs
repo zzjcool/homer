@@ -1,0 +1,11 @@
+import { attach, nav, ev, sleep, shot, waitFor, LOG } from "./lib2.mjs";
+const sid = await attach();
+await nav(sid, "http://hub:7760/");
+await ev(sid, "document.querySelector('#in-login-pw').value='qa-admin-password'");
+await ev(sid, "document.querySelector('#btn-login').click()");
+await waitFor(sid, "!document.querySelector('#workspace').classList.contains('hidden')", 10000);
+const L=(...a)=>console.log(...a);
+L("cards:", await ev(sid,"[...document.querySelectorAll('.agent-card')].map(c=>c.dataset.agentId+' :: '+c.textContent.slice(0,60)+' :: BTN='+[...c.querySelectorAll('button')].map(b=>b.textContent.trim()).join(','))"));
+L("hero:", await ev(sid,"document.querySelector('#hero').textContent.slice(0,200)"));
+await shot(sid,"/root/code/homer-cli/.qa-hunt/shots-B/10-state.png");
+process.exit(0);

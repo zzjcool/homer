@@ -1,0 +1,7 @@
+=== non-destructive probe: dispatch to ONLY my own probe machine with no adapter scope ===
+{"ok":false,"status":"aborted","direction":"dispatch","agents":[],"errors":["没有确认，未做任何改动。"]}
+HTTP:409
+
+=== push to my own probe machine (offline -> expect agent-offline/unreachable but auth passed?) ===
+{"error":{"code":"agent-offline","message":"机器已离线","details":["agent: agent-offline: 机器 hunter-probe-0001 离线（最后心跳 49s 前）。请等它重新上线或先在机器上重启 agent"]}}
+HTTP:503

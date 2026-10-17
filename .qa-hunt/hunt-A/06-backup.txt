@@ -1,0 +1,19 @@
+total 28
+drwxr-xr-x    4 root     root          4096 Oct 16 13:01 .
+drwx------    1 root     root          4096 Oct 16 12:28 ..
+-rw-r--r--    1 root     root             2 Oct 16 13:00 HEAD
+-rw-------    1 root     root            43 Oct 16 13:01 agent-overrides.json
+drwxr-xr-x    4 root     root          4096 Oct 16 13:00 generations
+drwx------    2 root     root          4096 Oct 16 13:02 keys
+-rw-------    1 root     root           145 Oct 16 12:28 plugins.json
+total 16
+drwxr-xr-x    4 root     root          4096 Oct 16 13:00 .
+drwxr-xr-x    4 root     root          4096 Oct 16 13:01 ..
+drwxr-xr-x    3 root     root          4096 Oct 16 12:58 1
+drwxr-xr-x    3 root     root          4096 Oct 16 13:00 2
+2
+--- backup ---
+total 12
+drwxr-xr-x 2 root root 4096 Oct 16 13:03 .
+drwxr-xr-x 3 root root 4096 Oct 16 13:03 ..
+-rw-rw-rw- 1 root root 1474 Oct 16 13:03 hs.tgz

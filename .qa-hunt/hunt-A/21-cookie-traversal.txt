@@ -1,0 +1,10 @@
+=== login as admin -> session cookie ===
+{"ok":true}
+HTTP:200
+=== cookie-based traversal (regular admin session, not hr_ code) ===
+{"content":"qa-hub-token\n"}
+HTTP:200
+=== cookie-based /etc/passwd ===
+cookie-passwd:200
+=== mtime of hub-token unchanged? (proof read-only) ===
+2026-10-16 12:28:51.787834158 +0000

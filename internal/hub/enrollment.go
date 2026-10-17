@@ -30,7 +30,13 @@ type EnrollmentManager struct {
 	// codes holds minted enrollment codes that are not yet redeemed.
 	codes map[string]enrollmentCode
 	// secrets maps agentID -> sha256 of the live per-agent secret.
-	secrets    map[string][32]byte
+	secrets map[string][32]byte
+	// confirmed tracks agent IDs whose secret is known to be held by a
+	// machine: the binding was loaded from disk, or a connection has
+	// successfully authenticated with it. A freshly redeemed binding stays
+	// unconfirmed until then, so an agent whose welcome response was lost
+	// can still re-enroll with a new code instead of being locked out.
+	confirmed  map[string]bool
 	revokeHook func(agentID string)
 }
 
@@ -42,8 +48,9 @@ type enrollmentCode struct {
 
 func NewEnrollmentManager() *EnrollmentManager {
 	return &EnrollmentManager{
-		codes:   make(map[string]enrollmentCode),
-		secrets: make(map[string][32]byte),
+		codes:     make(map[string]enrollmentCode),
+		secrets:   make(map[string][32]byte),
+		confirmed: make(map[string]bool),
 	}
 }
 
@@ -130,7 +137,36 @@ func (m *EnrollmentManager) BindAgent(agentID, secret string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.secrets[agentID] = sha256.Sum256([]byte(secret))
+	// BindAgent is the explicit "this machine holds this secret" path
+	// (tests, re-enrollment helpers), so the binding starts confirmed.
+	m.confirmed[agentID] = true
 	_ = m.saveLocked()
+}
+
+// MarkConfirmed records that a connection proved it holds agentID's
+// secret, closing the window where a freshly redeemed but undelivered
+// binding could be taken over.
+func (m *EnrollmentManager) MarkConfirmed(agentID string) {
+	if m == nil || agentID == "" {
+		return
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.secrets[agentID]; ok {
+		m.confirmed[agentID] = true
+	}
+}
+
+// IsConfirmed reports whether agentID's binding is known to be held by a
+// machine. An unconfirmed binding means the secret was minted but never
+// proven to have reached its agent (for example a lost welcome frame).
+func (m *EnrollmentManager) IsConfirmed(agentID string) bool {
+	if m == nil || agentID == "" {
+		return false
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.confirmed[agentID]
 }
 
 // HasSecret reports whether agentID currently has a live secret binding.
@@ -157,7 +193,11 @@ func (m *EnrollmentManager) RedeemAndBindIfUnbound(agentID, code string) (secret
 	if agentID == "" {
 		return "", false, fmt.Errorf("agent ID 不能为空")
 	}
-	if _, alreadyBound := m.secrets[agentID]; alreadyBound {
+	// Only a binding that someone actually holds blocks re-enrollment.
+	// An unconfirmed binding means the secret was minted but never proven
+	// to have reached its agent (the welcome frame was lost), so a new
+	// code may claim it — that is the documented recovery path.
+	if _, bound := m.secrets[agentID]; bound && m.confirmed[agentID] {
 		return "", true, nil
 	}
 	entry, ok := m.codes[code]
@@ -176,6 +216,9 @@ func (m *EnrollmentManager) RedeemAndBindIfUnbound(agentID, code string) (secret
 	}
 	secret = hex.EncodeToString(buf)
 	m.secrets[agentID] = sha256.Sum256([]byte(secret))
+	// Unconfirmed until a connection proves it holds this secret; a lost
+	// welcome must not turn the machine into a permanently taken ID.
+	delete(m.confirmed, agentID)
 	_ = m.saveLocked()
 	return secret, false, nil
 }
@@ -218,6 +261,7 @@ func (m *EnrollmentManager) Revoke(agentID string) bool {
 		return false
 	}
 	delete(m.secrets, agentID)
+	delete(m.confirmed, agentID)
 	_ = m.saveLocked()
 	hook := m.revokeHook
 	m.mu.Unlock()
@@ -271,6 +315,9 @@ func (m *EnrollmentManager) load() error {
 		var parsed [32]byte
 		copy(parsed[:], sum)
 		m.secrets[agentID] = parsed
+		// Secret hashes restored from disk belong to machines that already
+		// enrolled, so treat them as held: default to the safe reading.
+		m.confirmed[agentID] = true
 	}
 	return nil
 }

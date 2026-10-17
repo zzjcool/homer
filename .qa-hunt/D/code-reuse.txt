@@ -1,0 +1,14 @@
+2026-10-16T13:20Z
+reuse hr_ code1 (already redeemed) to start a new agent on box-c:
+homer agent: 2026/10/16 13:20:53 WebSocket 401：凭证无效/接入码已用:请到控制台重新生成接入码，
+  并用 `homer agent --token <新码>` 重新接入（只改 keys/hub-token 不会生效，
+  agent.json 里已有 secret 时它会被忽略）（5 分钟后重试）
+
+GET /api/auth/join/status?code=hr_9d19ccaa0ab526f0d929de5413597597bcf3cc22b5b22ff0 (already redeemed)
+-> {"active":false,"ok":true}
+
+GET /api/agents  with Bearer = the SAME already-redeemed code
+-> http=401
+CONTRADICTS scout-backend §2.4 (which reported 200 for /api paths with a burned code).
+Likely explanation: scout tested a minted-but-never-Redeemed code; I tested a truly-Redeemed one.
+Flagged for qa-repro rather than asserted as a defect.

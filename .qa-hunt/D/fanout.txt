@@ -1,0 +1,20 @@
+2026-10-16T13:12Z
+POST /api/sync?direction=dispatch  body={"confirm":true}
+-> HTTP 409 {"ok":false,"status":"aborted","direction":"dispatch","agents":[],"errors":["没有确认，未做任何改动。"]}
+
+POST /api/sync?direction=dispatch&confirm=true
+-> HTTP 422
+{"ok":false,"status":"partial","direction":"dispatch","agents":[
+ {"agentId":"54d0c3373428-4323","hostname":"54d0c3373428","ok":true,"skipped":true},
+ {"agentId":"54d0c3373428-b745","hostname":"54d0c3373428","ok":true,"skipped":true},
+ {"agentId":"54d0c3373428-bc77","hostname":"54d0c3373428","ok":false,"skipped":false,"status":"conflicts-remain","error":"54d0c3373428没有应用这次同步。"},
+ {"agentId":"b6675d68ddf7-7920","hostname":"b6675d68ddf7","ok":false,"skipped":false,"status":"conflicts-remain","error":"b6675d68ddf7没有应用这次同步。"},
+ {"agentId":"e363efdcf085-1563","hostname":"e363efdcf085","ok":false,"skipped":false,"status":"conflicts-remain","error":"e363efdcf085没有应用这次同步。"},
+ {"agentId":"e363efdcf085-7b6d","hostname":"e363efdcf085","ok":true,"skipped":true}],
+ "errors":null}
+NOTE: 54d0c3373428-4323 was SIGSTOP-frozen (half-open) at that moment, yet counted as skipped.
+NOTE: errors:null while HTTP is 422 -> all detail is in agents[].error.
+
+single-machine pull to an offline machine (correct behaviour, NOT a bug):
+POST /api/agents/e363efdcf085-7b6d/pull -> 503
+{"error":{"code":"agent-offline","message":"机器已离线","details":["agent: agent-offline: 机器 e363efdcf085-7b6d 离线（最后心跳 11m20s 前）。请等它重新上线或先在机器上重启 agent"]}}
