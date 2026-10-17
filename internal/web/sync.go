@@ -43,19 +43,29 @@ const (
 // the planner-approved human sentences — never commands errors or git
 // output.
 type agentApplyResult struct {
-	AgentID  string `json:"agentId"`
-	Hostname string `json:"hostname"`
-	OK       bool   `json:"ok"`
-	Skipped  bool   `json:"skipped"`
-	Reason   string `json:"reason,omitempty"`
-	Status   string `json:"status,omitempty"`
-	Error    string `json:"error,omitempty"`
+	AgentID   string              `json:"agentId"`
+	Hostname  string              `json:"hostname"`
+	OK        bool                `json:"ok"`
+	Skipped   bool                `json:"skipped"`
+	Reason    string              `json:"reason,omitempty"`
+	Status    string              `json:"status,omitempty"`
+	Error     string              `json:"error,omitempty"`
+	Applied   agentAppliedDetails `json:"applied"`
+	Conflicts []json.RawMessage   `json:"conflicts"`
+}
+
+type agentAppliedDetails struct {
+	Written   []json.RawMessage `json:"written"`
+	Deleted   []json.RawMessage `json:"deleted"`
+	Conflicts []json.RawMessage `json:"conflicts"`
 }
 
 type syncReport struct {
 	OK        bool               `json:"ok"`
 	Status    string             `json:"status"`
 	Direction string             `json:"direction"`
+	Applied   int                `json:"applied"`
+	Skipped   int                `json:"skipped"`
 	Agents    []agentApplyResult `json:"agents"`
 	Errors    []string           `json:"errors"`
 }
@@ -70,7 +80,7 @@ const (
 	msgNotConfirmed     = "没有确认，未做任何改动。"
 	msgDivergedHistory  = "这台机器和中心的历史已经分叉，这次没有改文件。"
 	msgGenericFailure   = "同步没有完成。"
-	msgAgentNotApplied  = "没有应用这次同步。"
+	msgAgentNotApplied  = "这次没有全部应用到（部分文件可能已写入）。"
 	msgAgentUnreachable = "没有连上，这次没能更新它。"
 	msgAgentTimeout     = "响应超时，这次没能更新它。"
 )
@@ -247,20 +257,37 @@ func (s *Server) syncDispatchToMachines(w http.ResponseWriter, r *http.Request, 
 	}
 	results := fanoutPullOnlineAgents(r.Context(), s.opts.Agents, scope)
 	allOK := true
+	applied, skipped := 0, 0
+	var errorsOut []string
 	for _, result := range results {
-		if !result.OK && !result.Skipped {
+		if result.Skipped {
+			skipped++
+			continue
+		}
+		// Count machines that received a pull attempt, including a partial
+		// application that returned an error.
+		applied++
+		if !result.OK {
 			allOK = false
+			if result.Error != "" {
+				errorsOut = append(errorsOut, result.Error)
+			}
 		}
 	}
 	status := "synced"
-	if !allOK {
+	if applied == 0 && skipped > 0 {
+		status = "skipped"
+	} else if !allOK {
 		status = "partial"
 	}
 	writeJSON(w, reportHTTPStatus(allOK, status, nil), syncReport{
 		OK:        allOK,
 		Status:    status,
 		Direction: string(syncDispatch),
+		Applied:   applied,
+		Skipped:   skipped,
 		Agents:    results,
+		Errors:    errorsOut,
 	})
 }
 
@@ -489,13 +516,31 @@ func fanoutPullOnlineAgents(ctx context.Context, agents AgentsSource, scope Sync
 					}
 				default:
 					var payload struct {
-						OK     bool   `json:"ok"`
-						Status string `json:"status"`
+						OK        bool                `json:"ok"`
+						Status    string              `json:"status"`
+						Applied   agentAppliedDetails `json:"applied"`
+						Conflicts []json.RawMessage   `json:"conflicts"`
+						Errors    []string            `json:"errors"`
 					}
-					if json.Unmarshal(raw, &payload) != nil || !payload.OK {
+					unmarshalErr := json.Unmarshal(raw, &payload)
+					result.Applied = payload.Applied
+					result.Conflicts = payload.Conflicts
+					if unmarshalErr != nil || !payload.OK {
 						result.OK = false
 						result.Status = payload.Status
-						result.Error = name + msgAgentNotApplied
+						messages := make([]string, 0, len(payload.Errors))
+						for _, message := range payload.Errors {
+							message = strings.TrimSpace(message)
+							if message == "" || strings.Contains(message, "homer merge") || strings.Contains(message, "git ") {
+								continue
+							}
+							messages = append(messages, message)
+						}
+						if len(messages) > 0 {
+							result.Error = name + "：" + strings.Join(messages, "；")
+						} else {
+							result.Error = name + msgAgentNotApplied
+						}
 					}
 				}
 				results[index] = result

@@ -1028,9 +1028,9 @@ async function api(path, opts = {}) {
     // 机器已经回话、只是没做成（例如应用升级失败）：整份回执一并带上。
     if (data.report) e.report = data.report;
     // 写操作失败信封（ok:false + status + errors，HTTP 409/422）。
-    // errors 可能缺省，status 仍然说明这是冲突而不是请求本身失败。
+    // status 是内部状态标记；没有人话错误时使用通用提示，不直接展示标记。
     if (!err.message && (data.errors || data.status)) {
-      e.message = (data.errors || []).join("；") || data.status || "操作未完成";
+      e.message = (data.errors || []).join("；") || "操作未完成";
       e.code = data.status; e.errors = data.errors || []; e.report = data;
     }
     throw e;
@@ -3775,10 +3775,13 @@ async function dispatchPluginToAll(plugin, button) {
       body: { adapters: [plugin.id], confirm: true },
     });
     if (result.ok) {
-      // 被按机器停用剔除的机器在 skipped+reason 里，明确告诉用户谁没收到。
-      const skipped = (result.agents || []).filter(agent => agent.skipped && agent.reason);
-      if (skipped.length) {
-        toast("已下发「" + plugin.id + "」；" + skipped.length + " 台机器因已停用该适配器被跳过");
+      const agents = result.agents || [];
+      const skipped = agents.filter(agent => agent.skipped);
+      const received = agents.length - skipped.length;
+      if (received === 0) {
+        toast("没有在线机器收到「" + plugin.id + "」");
+      } else if (skipped.length) {
+        toast("已下发「" + plugin.id + "」；" + skipped.length + " 台机器被跳过");
       } else {
         toast("已下发「" + plugin.id + "」到全部在线机器");
       }
