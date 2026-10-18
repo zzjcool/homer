@@ -212,6 +212,12 @@ type ServeOptions struct {
 	// Overrides is the hub-owned per-machine adapter disable set. Nil keeps
 	// embedded servers compatible and behaves as though no adapters are disabled.
 	Overrides *AgentOverrides
+	// HubOps is the hub's own lifecycle (status, self-update, in-place
+	// restart). Nil keeps embedded servers compatible: every /api/hub*
+	// route answers 501 hub-disabled instead of pretending the capability
+	// exists. See hubops.go for why this is a field and not a type
+	// assertion.
+	HubOps HubOperations
 }
 
 // PlatformSource is the optional capability AgentsSource implementations
