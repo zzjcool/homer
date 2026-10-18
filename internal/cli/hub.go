@@ -45,7 +45,7 @@ func runServe(options CommandOptions, out, errOut io.Writer) int {
 	// without scraping startup logs (Tailscale's "print once" follow-up),
 	// and without binding: the hub is usually already listening here.
 	if options.ShowJoin {
-		return showJoinCommand(paths, addr, options, out, errOut)
+		return showJoinCommand(paths, showJoinAddr(options.Addr), options, out, errOut)
 	}
 
 	listener, err := net.Listen("tcp", addr)
@@ -426,4 +426,18 @@ func defaultAddr(addr string) string {
 		return defaultServeAddr
 	}
 	return addr
+}
+
+// showJoinAddr is the address printed by --show-join. It never opens a
+// socket. A bare ":port" is an unspecified bind; joinCommand only rewrites a
+// parsed unspecified IP, so a bare port would otherwise print the unusable
+// "http://:7760". Substituting 0.0.0.0 keeps joinCommand's LAN-IP rewrite
+// working without listening.
+func showJoinAddr(addr string) string {
+	addr = defaultAddr(addr)
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil || host != "" {
+		return addr
+	}
+	return net.JoinHostPort("0.0.0.0", port)
 }

@@ -272,6 +272,50 @@ func TestJoinCommandHidesTokenFromProcessList(t *testing.T) {
 	}
 }
 
+// showJoinAddr never listens, and it must not hand joinCommand a bare ":port":
+// joinCommand only rewrites an unspecified *parsed IP*, so a bare port fell
+// through and printed the unusable "http://:7760".
+func TestShowJoinAddrNeverNeedsAListener(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"", defaultServeAddr},
+		{":7760", "0.0.0.0:7760"},
+		{"127.0.0.1:7760", "127.0.0.1:7760"},
+		{"0.0.0.0:7760", "0.0.0.0:7760"},
+		{"192.168.1.5:7760", "192.168.1.5:7760"},
+	}
+	for _, tc := range cases {
+		if got := showJoinAddr(tc.in); got != tc.want {
+			t.Fatalf("showJoinAddr(%q) = %q, want %q", tc.in, got, tc.want)
+		}
+	}
+}
+
+// The regression that motivated showJoinAddr: a user passing a bare port to
+// --show-join got an agent command pointing at http://:7760, which no agent
+// can dial. Assert on the printed command, not just the helper.
+func TestServeShowJoinBarePortPrintsDialableURL(t *testing.T) {
+	t.Setenv("HOMER_HUB_TOKEN", "")
+	home := t.TempDir()
+	const token = "persisted-hub-token"
+	if _, _, err := hub.EnsureHubToken(home, token); err != nil {
+		t.Fatal(err)
+	}
+	var out, errOut bytes.Buffer
+	code := runWithIO([]string{"homer", "serve", "--show-join", "--addr", ":7760", "--home", home}, &out, &errOut)
+	if code != 0 {
+		t.Fatalf("exit = %d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	if strings.Contains(out.String(), "http://:7760") {
+		t.Fatalf("bare port leaked into the URL: %q", out.String())
+	}
+	if !strings.Contains(out.String(), ":7760") {
+		t.Fatalf("port missing from join command: %q", out.String())
+	}
+	if strings.Contains(errOut.String(), "监听失败") {
+		t.Fatalf("show-join tried to bind: %q", errOut.String())
+	}
+}
+
 // install.sh leaves the one-time enrollment code in keys/hub-token and nothing
 // removes it after redemption. A restart must therefore NOT present that
 // burned code when agent.json already holds the machine's own secret: the hub
