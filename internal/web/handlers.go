@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/zzjcool/homer/internal/cli/commands"
 	"github.com/zzjcool/homer/internal/core"
@@ -50,7 +51,7 @@ func (s *Server) serveHTTP(w http.ResponseWriter, r *http.Request) {
 			writeMethodNotAllowed(w)
 			return
 		}
-		s.handleHealth(w)
+		s.handleHealth(w, r)
 		return
 	}
 	if strings.HasPrefix(path, "/api/auth/") {
@@ -96,6 +97,13 @@ func (s *Server) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Everything below is /api/* with a valid credential. A hub that is
+	// draining before an in-place restart answers writes here instead of
+	// racing a process that is about to exec itself (contract D11).
+	if s.rejectWhileRestarting(w, r) {
+		return
+	}
+
 	switch {
 	case path == "/api/console":
 		if r.Method != http.MethodGet {
@@ -103,6 +111,25 @@ func (s *Server) serveHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.handleConsoleWithEnrollment(w, r)
+	case path == "/api/hub":
+		// The hub's own lifecycle: one GET resource, sibling POST verbs.
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w)
+			return
+		}
+		s.handleHubStatus(w, r)
+	case path == "/api/hub/upgrade":
+		if r.Method != http.MethodPost {
+			writeMethodNotAllowed(w)
+			return
+		}
+		s.handleHubUpdate(w, r)
+	case path == "/api/hub/restart":
+		if r.Method != http.MethodPost {
+			writeMethodNotAllowed(w)
+			return
+		}
+		s.handleHubRestart(w, r)
 	case path == "/api/status":
 		if r.Method != http.MethodGet {
 			writeMethodNotAllowed(w)
@@ -245,13 +272,146 @@ func (s *Server) serveStatic(w http.ResponseWriter, path string) {
 	s.serveIndex(w)
 }
 
-func (s *Server) handleHealth(w http.ResponseWriter) {
+func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+	bootID, startedAt := s.bootIdentity()
+	if s.opts.HubOps != nil {
+		// The hub implementation is authoritative for its own boot: it is
+		// the only layer that knows a re-exec happened (and whether this
+		// boot is a rollback). HubStatus is memory-only by contract, so
+		// this stays a cheap read even while a download is running.
+		if reported := s.opts.HubOps.HubStatus(r.Context()).BootID; reported != "" {
+			bootID = reported
+		}
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":        true,
 		"status":    "healthy",
 		"version":   Version,
 		"homerHome": s.homePath(),
+		// bootId changes on every process boot and is the ONLY restart
+		// confirmation the console trusts (D19): the version does not
+		// change across a pure restart, and a source-built hub is always
+		// "newest".
+		"bootId":    bootID,
+		"startedAt": startedAt.UTC().Format(time.RFC3339),
 	})
+}
+
+// handleHubStatus serves GET /api/hub. HubStatus is read from memory; the
+// console polls it while a multi-minute update runs.
+func (s *Server) handleHubStatus(w http.ResponseWriter, r *http.Request) {
+	if s.opts.HubOps == nil {
+		writeHubDisabled(w)
+		return
+	}
+	writeJSON(w, http.StatusOK, s.opts.HubOps.HubStatus(r.Context()))
+}
+
+// handleHubUpdate serves POST /api/hub/upgrade: check, download, verify,
+// replace, restart. The 202 is returned as soon as the sequence is accepted;
+// a successful update ends with the process replacing itself, which can never
+// be reported through this response.
+func (s *Server) handleHubUpdate(w http.ResponseWriter, r *http.Request) {
+	if s.opts.HubOps == nil {
+		writeHubDisabled(w)
+		return
+	}
+	accepted, err := s.opts.HubOps.StartHubUpdate(r.Context())
+	if err != nil {
+		writeHubOperationError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusAccepted, accepted)
+}
+
+// handleHubRestart serves POST /api/hub/restart: restart only, no update.
+// Success is confirmed by the console watching /api/health's bootId change.
+func (s *Server) handleHubRestart(w http.ResponseWriter, r *http.Request) {
+	if s.opts.HubOps == nil {
+		writeHubDisabled(w)
+		return
+	}
+	accepted, err := s.opts.HubOps.RestartHub(r.Context())
+	if err != nil {
+		writeHubOperationError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusAccepted, accepted)
+}
+
+// writeHubDisabled is the frozen D2/D8 answer for embedded servers: 501, not
+// 404 (the route exists) and not 503 (the hub is not busy, it just cannot do
+// this).
+func writeHubDisabled(w http.ResponseWriter) {
+	writeError(w, http.StatusNotImplemented, hubCodeDisabled, "这台 hub 不能自己更新", nil)
+}
+
+// writeHubOperationError renders a hub failure, preferring the explicit HTTP
+// mapping a *HubError carries. Everything else falls through to
+// writeErrorValue so the error envelope stays single-sourced.
+func writeHubOperationError(w http.ResponseWriter, err error) {
+	if writeHubError(w, err) {
+		return
+	}
+	writeErrorValue(w, err)
+}
+
+// writeHubError renders a *HubError and reports whether it did. A nil or
+// foreign error returns false so the caller keeps the existing 500/502
+// mapping instead of this layer inventing one.
+func writeHubError(w http.ResponseWriter, err error) bool {
+	var hubErr *HubError
+	if !errors.As(err, &hubErr) || hubErr == nil {
+		return false
+	}
+	status := hubErr.Status
+	if status == 0 {
+		status = http.StatusInternalServerError
+	}
+	code := strings.TrimSpace(hubErr.Code)
+	if code == "" {
+		code = hubCodeFailed
+	}
+	// The implementation owns the wording (it is the layer that knows
+	// whether a failed update wrote the binary). The error table is only a
+	// fallback for an error constructed without one.
+	message := strings.TrimSpace(hubErr.Message)
+	if message == "" {
+		message = errorMessage(code)
+	}
+	writeError(w, status, code, message, hubErr.Details)
+	return true
+}
+
+// rejectWhileRestarting short-circuits writes once the hub has entered its
+// draining phase for an in-place restart (contract D11), and reports whether
+// it wrote the response.
+//
+// Reads stay open: the console keeps polling /api/health and /api/hub while
+// the hub goes down under it, and that polling is what confirms the restart.
+// The two hub actions stay open: restarting must not lock out the endpoint
+// that started it, or a failed exec could never be retried. /api/auth/* stays
+// open so an operator can still log out or in on a hub that got stuck
+// draining (those routes are also handled before this point; the check below
+// keeps that true if the ordering ever moves).
+func (s *Server) rejectWhileRestarting(w http.ResponseWriter, r *http.Request) bool {
+	if s.opts.HubOps == nil || r.Method == http.MethodGet {
+		return false
+	}
+	path := r.URL.Path
+	if !strings.HasPrefix(path, "/api/") {
+		return false
+	}
+	if path == "/api/hub/restart" || path == "/api/hub/upgrade" || strings.HasPrefix(path, "/api/auth/") {
+		return false
+	}
+	// Exactly one status read per request: HubStatus takes the
+	// implementation's mutex, and this gate runs on every write.
+	if s.opts.HubOps.HubStatus(r.Context()).Phase != hubPhaseRestarting {
+		return false
+	}
+	writeError(w, http.StatusServiceUnavailable, hubCodeRestarting, "中心正在重启，请稍后重试", nil)
+	return true
 }
 
 func (s *Server) handleStatus(w http.ResponseWriter, _ *http.Request) {

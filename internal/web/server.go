@@ -2,6 +2,8 @@ package web
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -244,9 +247,45 @@ type Server struct {
 	opts    ServeOptions
 	handler http.Handler
 	auth    *authStore
+	// bootID identifies this process boot for the console's restart
+	// confirmation (contract D19): a restart is successful when
+	// /api/health's bootId changes, never when the version changes — a pure
+	// restart keeps the same version. Generated once in NewServer.
+	bootID string
+	// startedAt is when this process (not this request) began serving.
+	startedAt time.Time
 	// releaseCache memoizes proxied GitHub-Release binaries per platform
 	// (see releaseproxy.go); a sync.Map needs no init.
 	releaseCache sync.Map
+}
+
+// Process-wide boot identity, used when a Server was built as a literal and
+// therefore never ran NewServer (some tests and embedders do that). Health
+// must still answer with a usable bootId rather than an empty field.
+var (
+	processBootID    = newBootID()
+	processStartedAt = time.Now()
+)
+
+// newBootID returns 8 random hex characters. Randomness (not a counter) is
+// the point: the console compares it across a process replacement, and a
+// counter would collide with a supervisor-restarted predecessor.
+func newBootID() string {
+	var buffer [4]byte
+	if _, err := rand.Read(buffer[:]); err != nil {
+		// crypto/rand failing must not break /api/health; the clock still
+		// differs between boots, which is all the field is used for.
+		return strconv.FormatInt(time.Now().UnixNano()&0xffffffff, 16)
+	}
+	return hex.EncodeToString(buffer[:])
+}
+
+// bootIdentity reports which process is answering and when it started.
+func (s *Server) bootIdentity() (string, time.Time) {
+	if s != nil && s.bootID != "" {
+		return s.bootID, s.startedAt
+	}
+	return processBootID, processStartedAt
 }
 
 // writeMutex is intentionally package-global. Multiple Server values in one
@@ -311,7 +350,7 @@ func NewServer(opts ServeOptions) (*Server, error) {
 	if opts.Token == "" && !hasPassword && !isLoopbackAddr(opts.Addr) {
 		return nil, fmt.Errorf("尚未设置管理员密码：请先用回环地址启动（homer serve）并在浏览器完成初始化，或用 --token 提供机器令牌")
 	}
-	server := &Server{opts: opts, auth: newAuthStore()}
+	server := &Server{opts: opts, auth: newAuthStore(), bootID: newBootID(), startedAt: time.Now()}
 	server.handler = http.HandlerFunc(server.serveHTTP)
 	return server, nil
 }
