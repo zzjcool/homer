@@ -6,7 +6,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 func TestBackupLayoutPruneAndPermissions(t *testing.T) {

@@ -1,6 +1,6 @@
 package pi
 
-import "github.com/zzjcool/homer-cli/internal/adapter"
+import "github.com/zzjcool/homer/internal/adapter"
 
 // ScanError and ScanOutcome are aliases so all built-in adapters expose the
 // same scanner result type.

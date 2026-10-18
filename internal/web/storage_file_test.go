@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/gens"
+	"github.com/zzjcool/homer/internal/gens"
 )
 
 func newStorageFileTestServer(t *testing.T) *Server {

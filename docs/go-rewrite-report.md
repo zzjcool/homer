@@ -67,23 +67,23 @@ amd64/arm64 四平台归档与 `file://dist` installer 冒烟通过；覆盖-hom
 
 ```text
 $ go build ./... && go vet ./... && if [ -n "$(gofmt -l . | grep -v vendor || true)" ]; then gofmt -l . | grep -v vendor; exit 1; fi && go test ./... -count=1
-?    github.com/zzjcool/homer-cli/cmd/homer [no test files]
-ok   github.com/zzjcool/homer-cli/internal/adapter 0.015s
-ok   github.com/zzjcool/homer-cli/internal/adapter/herdr 0.003s [no tests to run]
-ok   github.com/zzjcool/homer-cli/internal/adapter/opencode 0.002s [no tests to run]
-ok   github.com/zzjcool/homer-cli/internal/adapter/pi 0.002s [no tests to run]
-ok   github.com/zzjcool/homer-cli/internal/agecrypto 0.049s
-ok   github.com/zzjcool/homer-cli/internal/backup 0.004s
-ok   github.com/zzjcool/homer-cli/internal/cli 0.244s
-ok   github.com/zzjcool/homer-cli/internal/cli/commands 1.091s
-ok   github.com/zzjcool/homer-cli/internal/core 0.016s
-ok   github.com/zzjcool/homer-cli/internal/doctor 0.182s
-ok   github.com/zzjcool/homer-cli/internal/engine 0.010s
-ok   github.com/zzjcool/homer-cli/internal/gitx 0.882s
-ok   github.com/zzjcool/homer-cli/internal/orderedjson 0.007s
-ok   github.com/zzjcool/homer-cli/internal/secretscan 0.004s
-ok   github.com/zzjcool/homer-cli/internal/sync 0.131s
-ok   github.com/zzjcool/homer-cli/tests/e2e 2.975s
+?    github.com/zzjcool/homer/cmd/homer [no test files]
+ok   github.com/zzjcool/homer/internal/adapter 0.015s
+ok   github.com/zzjcool/homer/internal/adapter/herdr 0.003s [no tests to run]
+ok   github.com/zzjcool/homer/internal/adapter/opencode 0.002s [no tests to run]
+ok   github.com/zzjcool/homer/internal/adapter/pi 0.002s [no tests to run]
+ok   github.com/zzjcool/homer/internal/agecrypto 0.049s
+ok   github.com/zzjcool/homer/internal/backup 0.004s
+ok   github.com/zzjcool/homer/internal/cli 0.244s
+ok   github.com/zzjcool/homer/internal/cli/commands 1.091s
+ok   github.com/zzjcool/homer/internal/core 0.016s
+ok   github.com/zzjcool/homer/internal/doctor 0.182s
+ok   github.com/zzjcool/homer/internal/engine 0.010s
+ok   github.com/zzjcool/homer/internal/gitx 0.882s
+ok   github.com/zzjcool/homer/internal/orderedjson 0.007s
+ok   github.com/zzjcool/homer/internal/secretscan 0.004s
+ok   github.com/zzjcool/homer/internal/sync 0.131s
+ok   github.com/zzjcool/homer/tests/e2e 2.975s
 ```
 
 ### GoReleaser snapshot / 四平台归档
@@ -134,7 +134,7 @@ $ sh -n install.sh && go test ./tests/e2e -run 'Test(InstallDistBaseURLArchiveSm
     --- PASS: TestMVPSyncReviewGroups/04-remote-ahead-same-file-pull-rejects-conflict (0.06s)
     --- PASS: TestMVPSyncReviewGroups/06-pull-delete-propagates-and-backs-up-deleted-content (0.15s)
 PASS
-ok   github.com/zzjcool/homer-cli/tests/e2e 1.867s
+ok   github.com/zzjcool/homer/tests/e2e 1.867s
 
 $ HOME=$(mktemp -d) HOMER_INSTALL_PACKAGE=/tmp/homer-w11-release-final/homer_linux_amd64.tar.gz HOMER_INSTALL_PREFIX=$(mktemp -d) sh install.sh
 ✓ homer 安装完成（/tmp/tmp.sr8liujL7L/homer）
@@ -151,12 +151,12 @@ checksum rejection OK
 homer install: error: checksum mismatch for homer_linux_amd64.tar.gz
 
 $ (cd npm && npm pack --pack-destination /tmp/homer-w11-npm-pack-final)
-npm notice name: homer-cli
+npm notice name: homer
 npm notice version: 1.0.0
 npm notice total files: 4
-homer-cli-1.0.0.tgz
+homer-1.0.0.tgz
 
-$ HOMER_INSTALL_PACKAGE=/tmp/homer-w11-cross-final/homer-linux-amd64 npm install --prefix /tmp/homer-w11-npm-test-final /tmp/homer-w11-npm-pack-final/homer-cli-1.0.0.tgz
+$ HOMER_INSTALL_PACKAGE=/tmp/homer-w11-cross-final/homer-linux-amd64 npm install --prefix /tmp/homer-w11-npm-test-final /tmp/homer-w11-npm-pack-final/homer-1.0.0.tgz
 added 1 package in 436ms
 homer — dotfiles for humans and their AI agents
 ```
@@ -175,7 +175,7 @@ $ /tmp/homer-tools/goreleaser release --snapshot --clean
 
 - v1.1 分支：`fix/v1.1-audit`
 - 实现 commit：`1b45dcb`（完整 hash 见交付 git log）
-- PR 创建入口：<https://github.com/zzjcool/homer-cli/pull/new/fix/v1.1-audit>（分支已 push；当前环境无 gh/API token，需在该入口确认创建）。
+- PR 创建入口：<https://github.com/zzjcool/homer/pull/new/fix/v1.1-audit>（分支已 push；当前环境无 gh/API token，需在该入口确认创建）。
 
 ## 已知限制 / 未决问题
 
@@ -263,31 +263,31 @@ local-only 基线并给出接线提示，有 remote 时自动首推并建立 `or
 ```text
 $ npm --prefix npm run typecheck && npm --prefix npm test
 
-> homer-cli@1.0.0 typecheck
+> homer@1.0.0 typecheck
 > node --check install.js && node --check bin/homer.js
 
 
-> homer-cli@1.0.0 test
+> homer@1.0.0 test
 > node --check install.js && node --check bin/homer.js
 
 $ go build ./... && go vet ./... && test -z "$(gofmt -l . | grep -v vendor || true)" && go test ./... -count=1
-?    github.com/zzjcool/homer-cli/cmd/homer [no test files]
-ok   github.com/zzjcool/homer-cli/internal/adapter 0.013s
-ok   github.com/zzjcool/homer-cli/internal/adapter/herdr 0.002s [no tests to run]
-ok   github.com/zzjcool/homer-cli/internal/adapter/opencode 0.002s [no tests to run]
-ok   github.com/zzjcool/homer-cli/internal/adapter/pi 0.002s [no tests to run]
-ok   github.com/zzjcool/homer-cli/internal/agecrypto 0.047s
-ok   github.com/zzjcool/homer-cli/internal/backup 0.004s
-ok   github.com/zzjcool/homer-cli/internal/cli 0.227s
-ok   github.com/zzjcool/homer-cli/internal/cli/commands 1.509s
-ok   github.com/zzjcool/homer-cli/internal/core 0.015s
-ok   github.com/zzjcool/homer-cli/internal/doctor 0.172s
-ok   github.com/zzjcool/homer-cli/internal/engine 0.008s
-ok   github.com/zzjcool/homer-cli/internal/gitx 0.909s
-ok   github.com/zzjcool/homer-cli/internal/orderedjson 0.006s
-ok   github.com/zzjcool/homer-cli/internal/secretscan 0.003s
-ok   github.com/zzjcool/homer-cli/internal/sync 0.276s
-ok   github.com/zzjcool/homer-cli/tests/e2e 3.611s
+?    github.com/zzjcool/homer/cmd/homer [no test files]
+ok   github.com/zzjcool/homer/internal/adapter 0.013s
+ok   github.com/zzjcool/homer/internal/adapter/herdr 0.002s [no tests to run]
+ok   github.com/zzjcool/homer/internal/adapter/opencode 0.002s [no tests to run]
+ok   github.com/zzjcool/homer/internal/adapter/pi 0.002s [no tests to run]
+ok   github.com/zzjcool/homer/internal/agecrypto 0.047s
+ok   github.com/zzjcool/homer/internal/backup 0.004s
+ok   github.com/zzjcool/homer/internal/cli 0.227s
+ok   github.com/zzjcool/homer/internal/cli/commands 1.509s
+ok   github.com/zzjcool/homer/internal/core 0.015s
+ok   github.com/zzjcool/homer/internal/doctor 0.172s
+ok   github.com/zzjcool/homer/internal/engine 0.008s
+ok   github.com/zzjcool/homer/internal/gitx 0.909s
+ok   github.com/zzjcool/homer/internal/orderedjson 0.006s
+ok   github.com/zzjcool/homer/internal/secretscan 0.003s
+ok   github.com/zzjcool/homer/internal/sync 0.276s
+ok   github.com/zzjcool/homer/tests/e2e 3.611s
 $ go test ./... -count=1 -v > /tmp/homer-v11-go-test-final.log 2>&1 && printf ...
 RUN_COUNT=388
 PASS_COUNT=388

@@ -3,7 +3,7 @@ package engine
 import (
 	"sort"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 // These aliases keep the public engine signatures aligned with the frozen

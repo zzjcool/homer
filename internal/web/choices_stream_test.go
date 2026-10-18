@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/gens"
-	"github.com/zzjcool/homer-cli/internal/keyring"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/gens"
+	"github.com/zzjcool/homer/internal/keyring"
 )
 
 func inspectCredentialPaths() []string {

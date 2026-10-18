@@ -1,4 +1,4 @@
-# homer-cli
+# homer
 
 > Dotfiles for humans and their AI agents.
 
@@ -9,7 +9,7 @@
 ## 快速开始（三行版）
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/zzjcool/homer-cli/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/zzjcool/homer/master/install.sh | sh
 homer init && homer secret keygen
 homer push --yes                 # 首次 push 自动 git init + 建立基线
 ```
@@ -208,7 +208,7 @@ v1 第三方只接受 `role: "adapter"` 的 JSON 数据；不能通过 manifest 
 ### 1. release 二进制（推荐）
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/zzjcool/homer-cli/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/zzjcool/homer/master/install.sh | sh
 ```
 
 脚本探测 `uname -s` / `uname -m`，从 GitHub Release latest 下载对应的
@@ -252,7 +252,7 @@ for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64; do
 ### 3. npm 薄壳（兼容既有 npm / pi 安装路径）
 
 ```sh
-npm install -g homer-cli
+npm install -g @zzjcool/homer
 ```
 
 `npm/` 仅提供 wrapper 和 best-effort `postinstall` 二进制下载；GitHub 不可达

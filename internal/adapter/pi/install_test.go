@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/adapter/pi"
-	"github.com/zzjcool/homer-cli/internal/pluginregistry"
+	"github.com/zzjcool/homer/internal/adapter/pi"
+	"github.com/zzjcool/homer/internal/pluginregistry"
 )
 
 func TestPackageCommandsHaveOfficialInstaller(t *testing.T) {

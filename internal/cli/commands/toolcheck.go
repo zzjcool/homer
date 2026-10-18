@@ -7,11 +7,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/manifest"
-	"github.com/zzjcool/homer-cli/internal/pluginregistry"
-	"github.com/zzjcool/homer-cli/internal/shellenv"
-	syncx "github.com/zzjcool/homer-cli/internal/sync"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/manifest"
+	"github.com/zzjcool/homer/internal/pluginregistry"
+	"github.com/zzjcool/homer/internal/shellenv"
+	syncx "github.com/zzjcool/homer/internal/sync"
 )
 
 func pullLook(deps *PullDeps) func(string) (string, error) {

@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/hub"
+	"github.com/zzjcool/homer/internal/hub"
 )
 
 // cpuTimes is one aggregate sample from the kernel's CPU counters.

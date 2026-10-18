@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/pluginregistry"
+	"github.com/zzjcool/homer/internal/pluginregistry"
 )
 
 // standIn is a pretend pi, herdr or opencode. It answers --version from a

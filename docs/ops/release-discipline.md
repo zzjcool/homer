@@ -1,4 +1,4 @@
-# SOP：homer-cli 发布与跨平台二进制纪律
+# SOP：homer 发布与跨平台二进制纪律
 
 > 2026-10-10 Mac agent 变砖事故沉淀。适用：打 tag 发 Release、升级 agent、二进制变砖恢复。
 
@@ -17,7 +17,7 @@
 ## Mac 恢复命令（agent 变砖时）
 
 ```bash
-curl -fsSL https://github.com/zzjcool/homer-cli/releases/latest/download/homer_darwin_arm64.tar.gz -o /tmp/homer.tar.gz \
+curl -fsSL https://github.com/zzjcool/homer/releases/latest/download/homer_darwin_arm64.tar.gz -o /tmp/homer.tar.gz \
   && tar xzf /tmp/homer.tar.gz -C /tmp \
   && mv /tmp/homer ~/.local/bin/homer.new && mv ~/.local/bin/homer.new ~/.local/bin/homer
 # 若 exec format error 先清 quarantine：
@@ -36,7 +36,7 @@ xattr -d com.apple.quarantine ~/.local/bin/homer
 ## hub 自身升级（hw 机器）
 
 ```bash
-cd ~/code/homer-cli && git pull
+cd ~/code/homer && git pull
 go build -ldflags "-s -w -X main.version=$(git describe --tags)" -o /tmp/homer ./cmd/homer
 install -m 755 /tmp/homer ~/.local/bin/homer.new && mv ~/.local/bin/homer.new ~/.local/bin/homer
 systemctl --user restart homer-serve   # hub；同机 agent 也跑这个二进制，记得 restart homer-agent

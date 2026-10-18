@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/orderedjson"
+	"github.com/zzjcool/homer/internal/orderedjson"
 )
 
 type CategoryDrift struct {

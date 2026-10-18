@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/stream"
-	"github.com/zzjcool/homer-cli/internal/stream/wsconn"
+	"github.com/zzjcool/homer/internal/stream"
+	"github.com/zzjcool/homer/internal/stream/wsconn"
 )
 
 func TestSessionLocalCloseSendsWebSocketCloseCode(t *testing.T) {

@@ -4,9 +4,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/engine"
-	"github.com/zzjcool/homer-cli/internal/orderedjson"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/engine"
+	"github.com/zzjcool/homer/internal/orderedjson"
 )
 
 // RequiredPlaceholder is the value stored in git for an excluded local key.

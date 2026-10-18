@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 // RestartRunningAgents reloads homer agent processes that are already

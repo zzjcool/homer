@@ -1,8 +1,8 @@
 package sync
 
 import (
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/keyring"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/keyring"
 )
 
 // WithEncryptedIgnores returns the adapter config with every file this

@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/orderedjson"
+	"github.com/zzjcool/homer/internal/orderedjson"
 )
 
 var ageRecipientPattern = regexp.MustCompile(`^age1[02-9ac-hj-np-z]{58}$`)

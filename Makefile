@@ -1,4 +1,4 @@
-# homer-cli QA 网页环境
+# homer QA 网页环境
 #
 # 目标：`make qa-up` 从源码一键启动 hub 控制台 + idle agent 容器 + 浏览器，
 # AI QA 直接操作网页界面完成测试。

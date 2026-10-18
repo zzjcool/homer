@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	syncx "github.com/zzjcool/homer-cli/internal/sync"
+	"github.com/zzjcool/homer/internal/core"
+	syncx "github.com/zzjcool/homer/internal/sync"
 )
 
 func TestRunPull_PreferRemoteAdapters_OnlyListedRewritten(t *testing.T) {

@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/hub"
-	"github.com/zzjcool/homer-cli/internal/stream"
-	"github.com/zzjcool/homer-cli/internal/toolctl"
-	"github.com/zzjcool/homer-cli/internal/web"
+	"github.com/zzjcool/homer/internal/hub"
+	"github.com/zzjcool/homer/internal/stream"
+	"github.com/zzjcool/homer/internal/toolctl"
+	"github.com/zzjcool/homer/internal/web"
 )
 
 const heartbeatJitter = 0.2

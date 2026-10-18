@@ -1,4 +1,4 @@
-# homer-cli M3 实施计划（密钥层 + home + doctor + herdr/opencode adapter）
+# homer M3 实施计划（密钥层 + home + doctor + herdr/opencode adapter）
 
 > 目标（DESIGN §6 M3）：age 集成、curl 安装脚本、herdr/opencode adapter —— **MVP 验收场景达成**（DESIGN §3：新机器 curl 安装 → `homer home <url>` → 配置 + 密钥全部归位）。
 > 本文冻结全部新增 TS 接口；worker 只实现，不发明接口。M1/M2 冻结接口**零破坏性修改**，仅允许 §2.0 列出的 additive 变更。基线：master `10cc6ea`，750 tests 绿。
@@ -301,9 +301,9 @@ export const DEFAULT_OPENCODE_ADAPTER: AdapterConfig = {
 
 ```sh
 #!/bin/sh
-# homer-cli 一键安装（curl -fsSL .../install.sh | sh）
+# homer 一键安装（curl -fsSL .../install.sh | sh）
 # 可测性注入位（env）：
-#   HOMER_INSTALL_PACKAGE  默认 homer-cli@latest（测试传 npm pack 的 tarball 路径）
+#   HOMER_INSTALL_PACKAGE  默认 homer@latest（测试传 npm pack 的 tarball 路径）
 #   HOMER_INSTALL_PREFIX   默认继承 npm 全局 prefix（测试传 NPM_CONFIG_PREFIX）
 set -eu
 # 1. 检测 node >= 20（command -v node + 版本比较）；缺失 → 打印安装指引 + exit 1
@@ -405,7 +405,7 @@ P4（串行收尾）────────── W9-integrator（init 注册�
 npm run typecheck && npm test          # 全量绿（750 基线 + M3 全部新增，e2e 含 §3-P4 MVP 七组）
 sh -n install.sh                       # 语法通过
 npm run build && npm pack                                              # tarball 产出
-HOMER_INSTALL_PACKAGE=$(ls homer-cli-*.tgz) NPM_CONFIG_PREFIX=$(mktemp -d) sh install.sh   # 安装成功
+HOMER_INSTALL_PACKAGE=$(ls homer-*.tgz) NPM_CONFIG_PREFIX=$(mktemp -d) sh install.sh   # 安装成功
 # MVP 主线（tests/e2e/m3.test.ts 自动化）：
 #   机器 A：init(pi+herdr+opencode) → secret keygen → secret push → push
 #   机器 B：homer home <origin> --yes → 三工具配置逐字节归位 + 密钥明文归位(0600) + doctor 无 fail + status 零漂移
@@ -419,4 +419,4 @@ HOMER_INSTALL_PACKAGE=$(ls homer-cli-*.tgz) NPM_CONFIG_PREFIX=$(mktemp -d) sh in
 
 以上为计划全文（约 11 个模块：S0/M0 + P1×5 + P2×2 + W8 + W9）。
 
-**完成报告**：我的工具集为只读（read/grep/find/ls），无法直接写 `docs/m3-plan.md`，已将完整计划全文置于上方报告主体，请主 agent 原样落盘到 `/root/code/homer-cli/docs/m3-plan.md`。M3 计划共 **11 个模块，其中 9 个可在 4 个并行波次中并行执行**（P0 两路：S0-scout + M0-scaffold；P1 五路：age/adapters/allowlist/install/firstsync；P2 两路：secret/doctor），关键决策：**age 包选型走 `AgeCryptoPort` 单点封装 + S0 前置调研 age-encryption（fallback node:crypto 自实现）；secret 管线为独立子命令族（secrets/ 一密钥一 .age 文件、私钥在 gitignored 的 `<home>/keys/`、与 store 管线经 `commitPaths(['secrets/'])` 完全解耦）；home 范围 = clone+配置归位+密钥解密+doctor，不装依赖，首次对接空 base 三选一（merge 保留本地 → push 漂移语义）。**
+**完成报告**：我的工具集为只读（read/grep/find/ls），无法直接写 `docs/m3-plan.md`，已将完整计划全文置于上方报告主体，请主 agent 原样落盘到 `/root/code/homer/docs/m3-plan.md`。M3 计划共 **11 个模块，其中 9 个可在 4 个并行波次中并行执行**（P0 两路：S0-scout + M0-scaffold；P1 五路：age/adapters/allowlist/install/firstsync；P2 两路：secret/doctor），关键决策：**age 包选型走 `AgeCryptoPort` 单点封装 + S0 前置调研 age-encryption（fallback node:crypto 自实现）；secret 管线为独立子命令族（secrets/ 一密钥一 .age 文件、私钥在 gitignored 的 `<home>/keys/`、与 store 管线经 `commitPaths(['secrets/'])` 完全解耦）；home 范围 = clone+配置归位+密钥解密+doctor，不装依赖，首次对接空 base 三选一（merge 保留本地 → push 漂移语义）。**

@@ -1,4 +1,4 @@
-# homer-cli e2e image: build stage + runtime with git for gitx.
+# homer e2e image: build stage + runtime with git for gitx.
 FROM golang:1.23-alpine AS build
 WORKDIR /src
 COPY go.mod go.sum ./

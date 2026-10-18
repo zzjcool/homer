@@ -3,8 +3,8 @@ package web
 import (
 	"context"
 
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/keyring"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/keyring"
 )
 
 type InspectParams struct {

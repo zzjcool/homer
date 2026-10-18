@@ -11,9 +11,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/gens"
-	"github.com/zzjcool/homer-cli/internal/keyring"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/gens"
+	"github.com/zzjcool/homer/internal/keyring"
 )
 
 func TestKeyConsoleRoundTrip(t *testing.T) {

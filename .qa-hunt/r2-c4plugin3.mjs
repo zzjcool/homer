@@ -1,5 +1,5 @@
 setTimeout(() => process.exit(9), 100_000).unref();
-import { connect, sleep, login } from "/root/code/homer-cli/.qa-hunt/repro2-lib.mjs";
+import { connect, sleep, login } from "/root/code/homer/.qa-hunt/repro2-lib.mjs";
 const { send, ev, sid, shot } = await connect();
 await send("Page.enable", {}, sid);
 await send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false }, sid);

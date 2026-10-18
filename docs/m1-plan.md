@@ -1,4 +1,4 @@
-# homer-cli M1 实施计划
+# homer M1 实施计划
 
 > 目标（DESIGN §6 M1）：仓库结构 + homer.json schema + pi adapter 只读 diff/status —— 跑通“看见漂移”。
 > 本文冻结全部跨模块 TS 接口；worker 只实现，不发明接口。

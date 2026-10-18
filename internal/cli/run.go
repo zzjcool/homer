@@ -7,9 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/core"
-	syncx "github.com/zzjcool/homer-cli/internal/sync"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/core"
+	syncx "github.com/zzjcool/homer/internal/sync"
 )
 
 // Run is the stable process entry point used by cmd/homer. args is normally

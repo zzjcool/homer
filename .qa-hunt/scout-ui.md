@@ -1,6 +1,6 @@
 # 冻结面侦察 · UI/网页控制台
 
-仓库 /root/code/homer-cli，HEAD=010521a。纯只读侦察。所有行号基于 HEAD 磁盘内容。
+仓库 /root/code/homer，HEAD=010521a。纯只读侦察。所有行号基于 HEAD 磁盘内容。
 
 环境（已实测）：curl http://127.0.0.1:17760/api/health → 200 {"ok":true,"status":"healthy","version":"dev"}；
 /api/auth/status → {"configured":true,"ok":true,"setupCodeRequired":false}；

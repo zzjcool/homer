@@ -10,7 +10,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/zzjcool/homer-cli/internal/pair"
+	"github.com/zzjcool/homer/internal/pair"
 )
 
 const pipeAddress = "pipe-test"

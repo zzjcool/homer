@@ -3,7 +3,7 @@ package engine
 import (
 	"sort"
 
-	"github.com/zzjcool/homer-cli/internal/orderedjson"
+	"github.com/zzjcool/homer/internal/orderedjson"
 )
 
 // Value is the JSON value representation used by the orderedjson package.  The

@@ -1,4 +1,4 @@
-# W10-integrator 报告（homer-cli M2 · P4）
+# W10-integrator 报告（homer M2 · P4）
 
 **分支**：`pi-subagent/w10-integrator`（基于 master `d685c81`，702 tests 绿）
 **commit**：`bd77e80` `feat(m2): W10 integrator — e2e acceptance + status remote injection + seam fixes`
@@ -54,7 +54,7 @@
 
 ```
 $ npm run typecheck
-> homer-cli@0.0.0 typecheck
+> homer@0.0.0 typecheck
 > tsc --noEmit
 （无输出 = 通过）
 
@@ -360,7 +360,7 @@ warning 现在明确指向重试路径 `homer push`；而 M3 修复后「本地�
 
 ```
 $ npm run typecheck
-> homer-cli@0.0.0 typecheck
+> homer@0.0.0 typecheck
 > tsc --noEmit
 （无输出 = 通过）
 
@@ -383,7 +383,7 @@ $ npm test
 
 1. **无法自动创建 MR/PR**：环境无 `gh` / `glab` / `hub`，只有 `git`（SSH remote 可用）。
    分支已 push，GitHub 回显创建入口：
-   **https://github.com/zzjcool/homer-cli/pull/new/pi-subagent/w10-integrator**（建议 base = `master`）。
+   **https://github.com/zzjcool/homer/pull/new/pi-subagent/w10-integrator**（建议 base = `master`）。
    本地未 merge、未 push 到 master。
 2. **§4.2 的 4 处接缝裁定需 orchestrator 追认**（S1/S4 改变了可观察行为；S2/S3 是缺陷修复）。
    若不追认 S1，则 §3-P4① 与 §5 的 Done 判据不可达（e2e 会红）。

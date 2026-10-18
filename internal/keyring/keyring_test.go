@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/adapter/pi"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/gens"
+	"github.com/zzjcool/homer/internal/adapter/pi"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/gens"
 )
 
 func TestEnvelopeRoundTripAndSyncShape(t *testing.T) {

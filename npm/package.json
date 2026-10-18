@@ -1,11 +1,11 @@
 {
-  "name": "homer-cli",
+  "name": "@zzjcool/homer",
   "version": "1.0.0",
   "description": "The homer Go binary distribution wrapper",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zzjcool/homer-cli.git"
+    "url": "git+https://github.com/zzjcool/homer.git"
   },
   "engines": {
     "node": ">=18"

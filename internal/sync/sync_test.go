@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/orderedjson"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/orderedjson"
 )
 
 func TestGoldenPlanPullVectors(t *testing.T) {

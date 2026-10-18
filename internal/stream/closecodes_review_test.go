@@ -3,7 +3,7 @@ package stream_test
 import (
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/stream"
+	"github.com/zzjcool/homer/internal/stream"
 )
 
 func TestCloseCodeValues(t *testing.T) {

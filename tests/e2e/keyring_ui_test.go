@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/web"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/web"
 )
 
 func TestKeyringConsoleClicksCreateEncryptUnlock(t *testing.T) {

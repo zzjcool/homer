@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/manifest"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/manifest"
 )
 
 // SplitManifestActions removes manifest-kind actions from a pull plan and

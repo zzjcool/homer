@@ -24,7 +24,7 @@ jobs:
           go-version-file: go.mod
       - name: Configure git identity
         run: |
-          git config --global user.email "ci@homer-cli.local"
+          git config --global user.email "ci@homer.local"
           git config --global user.name "homer-ci"
       - name: Build
         run: go build ./...

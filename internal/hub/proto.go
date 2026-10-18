@@ -3,7 +3,7 @@ package hub
 import (
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/toolctl"
+	"github.com/zzjcool/homer/internal/toolctl"
 )
 
 // Stream methods shared by the hub and agents. Method names are the wire

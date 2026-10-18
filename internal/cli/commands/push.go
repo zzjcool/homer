@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/gitx"
-	"github.com/zzjcool/homer-cli/internal/orderedjson"
-	"github.com/zzjcool/homer-cli/internal/secretscan"
-	syncx "github.com/zzjcool/homer-cli/internal/sync"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/gitx"
+	"github.com/zzjcool/homer/internal/orderedjson"
+	"github.com/zzjcool/homer/internal/secretscan"
+	syncx "github.com/zzjcool/homer/internal/sync"
 )
 
 // GitPort is the command-layer git seam.  Production calls use the real

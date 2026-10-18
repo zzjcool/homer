@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 // UpgradeDownloadTimeout bounds one hub-channel download. Both the

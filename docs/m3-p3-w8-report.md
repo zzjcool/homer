@@ -1,7 +1,7 @@
 # P3-W8 · home 报告（`homer home <repo-url>` 一键归位）
 
 > 计划：`docs/m3-plan.md` §2.7（home 流程，冻结）+ §1-D5（首次对接语义）+ §3-P3-W8（验收）
-> 分支：`m3-p3-w8-home`　基线：`94f1a0f`（master，1107 tests 绿）　隔离 worktree：`/root/code/homer-cli-w8`
+> 分支：`m3-p3-w8-home`　基线：`94f1a0f`（master，1107 tests 绿）　隔离 worktree：`/root/code/homer-w8`
 
 ## 1. 做了什么
 
@@ -96,13 +96,13 @@ secret 备份跳过（1 红）、`confirm` 拒绝仍继续（1 红）。**13/13 
 ```
 $ npm run typecheck && npm test
 
-> homer-cli@0.0.0 typecheck
+> homer@0.0.0 typecheck
 > tsc --noEmit
 
-> homer-cli@0.0.0 test
+> homer@0.0.0 test
 > vitest run
 
- RUN  v5.0.1 /root/code/homer-cli-w8
+ RUN  v5.0.1 /root/code/homer-w8
 
  Test Files  52 passed (52)
       Tests  1132 passed | 1 skipped (1133)
@@ -179,5 +179,5 @@ homer doctor: 通过   合计: ok 8  warn 0  fail 0
 
 - 分支：`m3-p3-w8-home`（基线 `94f1a0f`，已 push 到 `origin`）
 - 实现 commit：`4358216`（`src/cli/commands/home.ts` + `tests/cli/home.test.ts` + `tests/core/m3-p0-scaffold.test.ts` 断言更新）
-- PR 链接（远端提示，仓库无 glab/gh CLI）：<https://github.com/zzjcool/homer-cli/pull/new/m3-p3-w8-home>
-- 隔离：独立 worktree `/root/code/homer-cli-w8`，未触碰 master checkout / 其它 wave 的 worktree。
+- PR 链接（远端提示，仓库无 glab/gh CLI）：<https://github.com/zzjcool/homer/pull/new/m3-p3-w8-home>
+- 隔离：独立 worktree `/root/code/homer-w8`，未触碰 master checkout / 其它 wave 的 worktree。

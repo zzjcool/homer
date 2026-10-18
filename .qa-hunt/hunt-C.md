@@ -1,6 +1,6 @@
 # 缺陷狩猎 · 角度 C：API 契约一致性 / 错误语义 / 200 掩盖失败
 
-仓库 `/root/code/homer-cli`，HEAD `010521a`。hub `http://127.0.0.1:17760`，Bearer `qa-hub-token`。
+仓库 `/root/code/homer`，HEAD `010521a`。hub `http://127.0.0.1:17760`，Bearer `qa-hub-token`。
 box-a=`e363efdcf085`，box-b=`b6675d68ddf7`，box-c=`54d0c3373428`（hub 容器名 `homer-qa-hub`）。
 全部结论来自 curl 实机 + CDP 真浏览器；产物在 `.qa-hunt/artifacts-C/`。
 
@@ -200,7 +200,7 @@ $ docker compose -f qa/env/docker-compose.yml ps   # hub + box-a/b/c + browser �
 7. **C7 那 30 个未文档化端点里各有多少个错误码未列**：只统计了标题数，没有逐个端点核对错误码清单。
 
 ## 环境
-- 仓库 `/root/code/homer-cli` @ `010521a`；go1.23.4。
+- 仓库 `/root/code/homer` @ `010521a`；go1.23.4。
 - hub `http://127.0.0.1:17760`（容器 `homer-qa-hub` / 内部 `http://hub:7760`），Bearer `qa-hub-token`，密码 `qa-admin-password`。
 - box-a=`e363efdcf085` / box-b=`b6675d68ddf7` / box-c=`54d0c3373428`，容器内 hub 主机名 `44e53f65e565`。
 - 浏览器 CDP `http://127.0.0.1:3000`（browserless chromium），node 用 `/root/code/pi-async/node_modules/ws` 连根 ws，`Target.attachToTarget(flat)` 取 sessionId，页面走 `http://hub:7760/`。

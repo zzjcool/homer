@@ -9,7 +9,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/zzjcool/homer-cli/internal/hub"
+	"github.com/zzjcool/homer/internal/hub"
 )
 
 func collectPlatform() *hub.HostSnapshot {

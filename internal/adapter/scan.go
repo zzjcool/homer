@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/manifest"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/manifest"
 )
 
 // ScanError is a non-fatal diagnostic emitted while collecting a snapshot.

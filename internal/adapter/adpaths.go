@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 var windowsAbsolutePath = regexp.MustCompile(`^[A-Za-z]:[\\/]`)

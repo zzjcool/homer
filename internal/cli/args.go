@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/cli/commands"
 )
 
 // Command is a top-level homer command.  The complete command list stays in

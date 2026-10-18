@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/hub"
+	"github.com/zzjcool/homer/internal/hub"
 )
 
 // T3 W-C: homer serve / homer agent 命令注册与解析（plan §2.6 冻结面）。

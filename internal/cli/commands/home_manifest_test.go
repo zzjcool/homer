@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/manifest"
-	syncx "github.com/zzjcool/homer-cli/internal/sync"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/manifest"
+	syncx "github.com/zzjcool/homer/internal/sync"
 )
 
 func w4WriteManifestHomeClone(t *testing.T, config core.HomerConfig, snapshot core.AdapterSnapshot, dest string) {

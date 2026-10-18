@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/zzjcool/homer-cli/internal/agecrypto"
+	"github.com/zzjcool/homer/internal/agecrypto"
 )
 
 // FrameError is reserved for a peer-side protocol error. P1 uses FrameAbort

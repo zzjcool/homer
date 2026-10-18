@@ -4,9 +4,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/engine"
-	"github.com/zzjcool/homer-cli/internal/orderedjson"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/engine"
+	"github.com/zzjcool/homer/internal/orderedjson"
 )
 
 // PullAction is the file-level plan produced by PlanPull and

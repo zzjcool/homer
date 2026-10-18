@@ -1,4 +1,4 @@
-# homer-cli M1 验收报告（P2 · M5-integrator）
+# homer M1 验收报告（P2 · M5-integrator）
 
 > 阶段：`docs/m1-plan.md` §2-P2 / §4（M1 Done 定义）
 > 基线：master `3ed2d11`（P1 四模块已合并：engine `035a607` / pi-adapter `b65ae5e` / store `7b41a76` / cli `3ed2d11`，全量 238 tests 绿）
@@ -81,7 +81,7 @@
 ```
 $ npm run typecheck
 
-> homer-cli@0.0.0 typecheck
+> homer@0.0.0 typecheck
 > tsc --noEmit
 
 exit=0
@@ -92,11 +92,11 @@ exit=0
 ```
 $ npm test
 
-> homer-cli@0.0.0 test
+> homer@0.0.0 test
 > vitest run
 
 
- RUN  v5.0.1 /root/code/homer-cli
+ RUN  v5.0.1 /root/code/homer
 
 
  Test Files  13 passed (13)
@@ -214,7 +214,7 @@ $ git diff --stat src/core/types.ts
 
 ### 未决问题
 
-1. **无法开 MR/PR**：本仓库 `git remote -v` 为空（`/root/code/homer-cli` 是本地仓库，无 origin），因此无法 push 分支 / 开 MR。提交已落在当前 `master`（`git log -1`，提交信息 `feat(m1): e2e acceptance + integration fixes + m1-report`）。若需要 MR 流程，请先配置 remote 后由 orchestrator 指定目标分支，我再补 push + MR（本地不自行 merge，也不 push 到 main/master）。
+1. **无法开 MR/PR**：本仓库 `git remote -v` 为空（`/root/code/homer` 是本地仓库，无 origin），因此无法 push 分支 / 开 MR。提交已落在当前 `master`（`git log -1`，提交信息 `feat(m1): e2e acceptance + integration fixes + m1-report`）。若需要 MR 流程，请先配置 remote 后由 orchestrator 指定目标分支，我再补 push + MR（本地不自行 merge，也不 push 到 main/master）。
 2. **`homer init` 在 pi root 缺失时静默 exit 0**：见 §4 第 5 条，需产品决策（M2+）。
 3. **真实环境冒烟为只读单次**：未对真实 `~/.pi/agent` 做任何写操作，因此「store 与真实目录长期一致性」未验证（M2 写路径的事）。
 

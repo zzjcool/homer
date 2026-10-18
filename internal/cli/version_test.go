@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/web"
+	"github.com/zzjcool/homer/internal/web"
 )
 
 func TestVersionAndVersionFlagPrintDevelopmentVersion(t *testing.T) {

@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/agentd"
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/hub"
-	"github.com/zzjcool/homer-cli/internal/stream"
-	"github.com/zzjcool/homer-cli/internal/web"
+	"github.com/zzjcool/homer/internal/agentd"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/hub"
+	"github.com/zzjcool/homer/internal/stream"
+	"github.com/zzjcool/homer/internal/web"
 )
 
 // BenchmarkFourParallel measures four real agentd daemons connected to an

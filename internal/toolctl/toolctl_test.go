@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/adapter"
-	"github.com/zzjcool/homer-cli/internal/pluginregistry"
-	"github.com/zzjcool/homer-cli/internal/shellenv"
+	"github.com/zzjcool/homer/internal/adapter"
+	"github.com/zzjcool/homer/internal/pluginregistry"
+	"github.com/zzjcool/homer/internal/shellenv"
 )
 
 // fakeBin writes an executable script. Scripts use only shell builtins and

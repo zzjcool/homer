@@ -1,9 +1,9 @@
 # M3 · P1-W3 报告：symlink 逃逸 allowlist（`allowEscape`）
 
-- 分支：`m3-p1-w3-allowlist`（worktree `/root/code/homer-cli-w3`，基线 `4251323`）
+- 分支：`m3-p1-w3-allowlist`（worktree `/root/code/homer-w3`，基线 `4251323`）
 - commit：`b4b310df4fbd1404d4c7af354609450dbad23435`
 - push：`origin/m3-p1-w3-allowlist`（新建）
-- PR 创建入口（本机无 `gh`/`glab` CLI）：https://github.com/zzjcool/homer-cli/pull/new/m3-p1-w3-allowlist
+- PR 创建入口（本机无 `gh`/`glab` CLI）：https://github.com/zzjcool/homer/pull/new/m3-p1-w3-allowlist
 
 ## 做了什么
 
@@ -55,18 +55,18 @@
 ## 验证输出（原样）
 
 ```
-$ cd /root/code/homer-cli-w3 && git status --short
+$ cd /root/code/homer-w3 && git status --short
  M src/adapters/pi/scan.ts
  M tests/core/config.test.ts
 ?? tests/adapters/pi/scan-allowescape.test.ts
 
 $ npm run typecheck
-> homer-cli@0.0.0 typecheck
+> homer@0.0.0 typecheck
 > tsc --noEmit
 （无输出，exit 0）
 
 $ npx vitest run tests/adapters/pi tests/core/config
- RUN  v5.0.1 /root/code/homer-cli-w3
+ RUN  v5.0.1 /root/code/homer-w3
 
  Test Files  5 passed (5)
       Tests  116 passed (116)
@@ -92,10 +92,10 @@ $ npm test
 
 ## 未决问题 / 需要 orchestrator 知晓
 
-1. **共享 checkout 被别的 worker 抢占**：任务给的「工作目录 `/root/code/homer-cli`」在我实现期间被
+1. **共享 checkout 被别的 worker 抢占**：任务给的「工作目录 `/root/code/homer`」在我实现期间被
    切到了 `m3-p1-w4-install` 分支（`git reflog`: `checkout: moving from m3-p0-scaffold to m3-p1-w4-install`
    → `merge tmp-w2`），且出现了 W4 的未跟踪文件 `install.sh` / `tests/e2e/install.test.ts`。
-   我按隔离要求改为在**独立 git worktree** `/root/code/homer-cli-w3`（新分支 `m3-p1-w3-allowlist`，
+   我按隔离要求改为在**独立 git worktree** `/root/code/homer-w3`（新分支 `m3-p1-w3-allowlist`，
    基线 `4251323`）工作，并把我在共享 checkout 里留下的改动（`git checkout --` + 删掉我创建的
    `tests/adapters/pi/scan-allowescape.test.ts`）**清理干净**，当前共享 checkout 只剩 W4 的
    `?? install.sh` / `?? tests/e2e/install.test.ts`，与我的工作无交叉。

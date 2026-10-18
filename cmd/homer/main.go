@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/zzjcool/homer-cli/internal/cli"
+	"github.com/zzjcool/homer/internal/cli"
 )
 
 // version is populated by the release build. P0 keeps the entry point thin;

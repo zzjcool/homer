@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/gens"
-	"github.com/zzjcool/homer-cli/internal/gitx"
+	"github.com/zzjcool/homer/internal/gens"
+	"github.com/zzjcool/homer/internal/gitx"
 )
 
 // Planner-frozen conflict fixture (MVP step 4): a three-way conflict —

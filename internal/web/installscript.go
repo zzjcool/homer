@@ -160,7 +160,7 @@ else
   if [ "$RELEASE_SUPPORTED" -eq 0 ]; then
     echo "!! GitHub Releases 没有本平台（${GOOS_ACTUAL}/${GOARCH_ACTUAL}）的预编译归档" >&2
   else
-    RELEASE_BASE="https://github.com/zzjcool/homer-cli/releases/latest/download"
+    RELEASE_BASE="https://github.com/zzjcool/homer/releases/latest/download"
     RELEASE_ARCHIVE="homer_${GOOS_ACTUAL}_${GOARCH_ACTUAL}.tar.gz"
     REL_TMP=$(mktemp -d "${TMPDIR:-/tmp}/homer-release.XXXXXX")
     rm -f "$BIN_DIR/homer-rel.tar.gz"
@@ -181,7 +181,7 @@ else
   fi
   if [ "$RELEASE_FALLBACK" -eq 1 ]; then
     echo "   请从源码构建:"
-    echo "     git clone https://github.com/zzjcool/homer-cli && cd homer-cli"
+    echo "     git clone https://github.com/zzjcool/homer && cd homer"
     echo "     go install ./cmd/homer"
     echo "   （需要 Go 1.22+；token 已写入 $HOMER_HOME/keys/hub-token）"
   fi

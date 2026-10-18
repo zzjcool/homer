@@ -1,6 +1,6 @@
 process.on("unhandledRejection", e => console.log("[suppressed]", String(e).slice(0,60)));
 setTimeout(() => process.exit(9), 60_000).unref();
-import { connect, sleep, login } from "/root/code/homer-cli/.qa-hunt/repro2-lib.mjs";
+import { connect, sleep, login } from "/root/code/homer/.qa-hunt/repro2-lib.mjs";
 const { send, ev, sid, shot, events } = await connect();
 await send("Page.enable", {}, sid);
 await send("Page.navigate", { url: "http://hub:7760/" }, sid);

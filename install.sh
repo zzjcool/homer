@@ -147,7 +147,7 @@ if [ -n "$PACKAGE_SOURCE" ]; then
   fi
 else
   VERSION=${HOMER_INSTALL_VERSION:-latest}
-  BASE_URL=${HOMER_INSTALL_BASE_URL:-https://github.com/zzjcool/homer-cli/releases}
+  BASE_URL=${HOMER_INSTALL_BASE_URL:-https://github.com/zzjcool/homer/releases}
   DIRECT_URL=${HOMER_INSTALL_URL:-}
 
   if [ -n "$DIRECT_URL" ]; then

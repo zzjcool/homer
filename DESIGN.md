@@ -1,4 +1,4 @@
-# homer-cli — DESIGN
+# homer — DESIGN
 
 > Dotfiles for humans and their AI agents.
 > 一个 git 仓库管好你所有工具的配置；新机器一条命令全部归位，密钥安全送达。
@@ -12,7 +12,7 @@
 - **Homer** —— 《Homeward Bound 不可思议的旅程》里历尽千山万水回家的金毛犬
 - **荷马（Homer）** —— 《奥德赛》归乡史诗的作者，nostos（归乡）主题的缔造者
 
-npm 包名 `homer-cli`（裸名 `homer` 被一个 2022 年停更的僵尸 DNS 包占用，月下载 28 次，无实质冲突）；安装后命令就叫 `homer`。
+npm 包名 `@zzjcool/homer`（裸名 `homer` 已被一个 2013 年创建、长期停更的 DNS 僵尸包占用，无法取得）；安装后命令就叫 `homer`。
 
 ## 1. 市场调研结论（2026-09-22，三路并行调研）
 
@@ -129,7 +129,7 @@ homer history              # 同步历史
 homer unlock --stale       # 清理残留锁
 ```
 
-pi 扩展形态：`pi install npm:homer-cli` 后提供 `/homer status` 等命令 + footer 漂移显示（参考 @dbaida/pi-sync 的 `↑1 ↓0`）；CLI 独立可用（参考 pi-syncro 的双形态）。
+pi 扩展形态：`pi install npm:@zzjcool/homer` 后提供 `/homer status` 等命令 + footer 漂移显示（参考 @dbaida/pi-sync 的 `↑1 ↓0`）；CLI 独立可用（参考 pi-syncro 的双形态）。
 
 ### 2.4 传输通道分层
 
@@ -256,7 +256,7 @@ homer 作为 pi 子进程运行时**不能抢占 TTY**。模式：homer 子进�
 **验收场景 = 真实场景**：新机器上
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/zzjcool/homer-cli/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/zzjcool/homer/master/install.sh | sh
 homer home https://github.com/<user>/my-config.git
 # → pi + herdr + opencode 的配置、skills、extensions、密钥全部归位
 # → pi 启动即用，herdr agents 就位，opencode 配置生效
@@ -277,7 +277,7 @@ MVP 不做（v2+）：tailcat 集成、adapter 插件市场、claude/codex adapt
 ## 4. 技术选型
 
 - **语言**：TypeScript + Node（与 pi 生态同构，pi 扩展形态可复用核心逻辑）
-- **发布**：npm `homer-cli`（bin: `homer`）+ pi package（`pi.install` 清单）双形态
+- **发布**：npm `@zzjcool/homer`（bin: `homer`）+ pi package（`pi.install` 清单）双形态
 - **测试**：vitest；合并逻辑必须有字段级测试矩阵
 - **零重运行时依赖优先**（参考 @dbaida/pi-sync 单文件零依赖的做法）；age 加密考虑 `age-encryption` npm 实现
 

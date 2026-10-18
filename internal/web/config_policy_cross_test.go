@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/gens"
+	"github.com/zzjcool/homer/internal/gens"
 )
 
 // configPolicyStub mirrors stagedContractStub for the config-policy seam: it

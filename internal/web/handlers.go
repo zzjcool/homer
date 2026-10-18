@@ -13,12 +13,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/gens"
-	"github.com/zzjcool/homer-cli/internal/orderedjson"
-	"github.com/zzjcool/homer-cli/internal/sshkey"
-	"github.com/zzjcool/homer-cli/internal/upgrade"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/gens"
+	"github.com/zzjcool/homer/internal/orderedjson"
+	"github.com/zzjcool/homer/internal/sshkey"
+	"github.com/zzjcool/homer/internal/upgrade"
 )
 
 func (s *Server) serveHTTP(w http.ResponseWriter, r *http.Request) {

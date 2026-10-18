@@ -7,11 +7,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/adapter"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/engine"
-	"github.com/zzjcool/homer-cli/internal/gitx"
-	syncx "github.com/zzjcool/homer-cli/internal/sync"
+	"github.com/zzjcool/homer/internal/adapter"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/engine"
+	"github.com/zzjcool/homer/internal/gitx"
+	syncx "github.com/zzjcool/homer/internal/sync"
 )
 
 // StatusOptions is the read-only status command's option set.  JSON and

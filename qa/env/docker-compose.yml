@@ -1,4 +1,4 @@
-# homer-cli QA 网页环境（AI 操作浏览器界面测试 hub 控制台）
+# homer QA 网页环境（AI 操作浏览器界面测试 hub 控制台）
 #
 # 拓扑（复用 e2e/Dockerfile 的源码构建）：
 #   hub      - 源码构建的 homer 镜像，预置管理员密码 + 固定 hub token，

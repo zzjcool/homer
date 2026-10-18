@@ -39,7 +39,7 @@ func TestInstallScriptMismatchedPlatformDoesNotCrash(t *testing.T) {
 	const stubBinary = "#!/bin/sh\nexit 0\n"
 	var sawAuthHeader bool
 	releaseServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/zzjcool/homer-cli/releases/latest/download/homer_darwin_arm64.tar.gz" {
+		if r.URL.Path != "/zzjcool/homer/releases/latest/download/homer_darwin_arm64.tar.gz" {
 			http.NotFound(w, r)
 			return
 		}
@@ -62,12 +62,12 @@ func TestInstallScriptMismatchedPlatformDoesNotCrash(t *testing.T) {
 	t.Cleanup(releaseServer.Close)
 
 	script := RenderInstallScript(releaseServer.URL, "linux", "amd64")
-	const githubReleaseBase = "https://github.com/zzjcool/homer-cli/releases/latest/download"
+	const githubReleaseBase = "https://github.com/zzjcool/homer/releases/latest/download"
 	if !strings.Contains(script, githubReleaseBase) {
 		t.Fatalf("template no longer embeds %s; update this test", githubReleaseBase)
 	}
 	script = strings.Replace(script, githubReleaseBase,
-		releaseServer.URL+"/zzjcool/homer-cli/releases/latest/download", 1)
+		releaseServer.URL+"/zzjcool/homer/releases/latest/download", 1)
 	scriptPath := filepath.Join(root, "install.sh")
 	if err := os.WriteFile(scriptPath, []byte(script), 0o700); err != nil {
 		t.Fatal(err)
@@ -191,12 +191,12 @@ func TestInstallScriptMismatchFallsBackToSourceBuild(t *testing.T) {
 			t.Cleanup(server.Close)
 
 			script := RenderInstallScript(server.URL, "linux", "amd64")
-			const githubReleaseBase = "https://github.com/zzjcool/homer-cli/releases/latest/download"
+			const githubReleaseBase = "https://github.com/zzjcool/homer/releases/latest/download"
 			if !strings.Contains(script, githubReleaseBase) {
 				t.Fatalf("template no longer embeds %s; update this test", githubReleaseBase)
 			}
 			script = strings.Replace(script, githubReleaseBase,
-				server.URL+"/zzjcool/homer-cli/releases/latest/download", 1)
+				server.URL+"/zzjcool/homer/releases/latest/download", 1)
 			scriptPath := filepath.Join(root, "install.sh")
 			if err := os.WriteFile(scriptPath, []byte(script), 0o700); err != nil {
 				t.Fatal(err)

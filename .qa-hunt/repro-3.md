@@ -1,6 +1,6 @@
 # 独立复现判定 · 第 3 组（角度 C 的 C1/C2/C3/C5/C6 + 角度 D 的 C1~C5）
 
-仓库 /root/code/homer-cli，HEAD `010521a`。hub `http://127.0.0.1:17760`（Bearer `qa-hub-token`）。
+仓库 /root/code/homer，HEAD `010521a`。hub `http://127.0.0.1:17760`（Bearer `qa-hub-token`）。
 判定人：qa-repro（**未复用任何 hunter 脚本**；本轮脚本全在 `.qa-hunt/repro3/`）。
 时间窗 2026-10-16 13:38Z ~ 13:55Z。
 

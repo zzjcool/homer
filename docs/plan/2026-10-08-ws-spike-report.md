@@ -7,7 +7,7 @@
 
 ## 做了什么
 
-- 新增独立模块 `github.com/zzjcool/homer-cli/tests/spike`，`go 1.23.4`，只依赖 `github.com/coder/websocket v1.8.12`。
+- 新增独立模块 `github.com/zzjcool/homer/tests/spike`，`go 1.23.4`，只依赖 `github.com/coder/websocket v1.8.12`。
 - `wsecho` 提供 WebSocket echo、请求头/子协议回显、应用层 ping/pong、按需/周期推送、可配置 close code/reason、`/ndjson` chunked+flush 端点、`http.Server.WriteTimeout` 配置，以及不暴露 `http.Hijacker` 的测试路由。
 - `wsecho -proxy-to ...` 提供隔离的 userland TCP 转发/blackhole，用于 V8；控制监听默认只绑定 loopback。
 - `wsprobe` 输出 JSON，每项都有 pass/fail/not-run、耗时和实测数字，覆盖 V1~V12、R13；V3 五个空闲目标并行，V3/V4 长测试在后台进程并行执行。
@@ -51,21 +51,21 @@
 命令与输出：
 
 ```text
-$ timeout 180s bash -o pipefail -c 'cd /tmp/homer-cli-p0/tests/spike && go test -race -count=1 ./... 2>&1 | tee /tmp/spike-final-race.log'
-?   	github.com/zzjcool/homer-cli/tests/spike/wsecho	[no test files]
-?   	github.com/zzjcool/homer-cli/tests/spike/wsprobe	[no test files]
-ok  	github.com/zzjcool/homer-cli/tests/spike/internal/spike	6.462s
+$ timeout 180s bash -o pipefail -c 'cd /tmp/homer-p0/tests/spike && go test -race -count=1 ./... 2>&1 | tee /tmp/spike-final-race.log'
+?   	github.com/zzjcool/homer/tests/spike/wsecho	[no test files]
+?   	github.com/zzjcool/homer/tests/spike/wsprobe	[no test files]
+ok  	github.com/zzjcool/homer/tests/spike/internal/spike	6.462s
 
-$ timeout 60s bash -o pipefail -c 'cd /tmp/homer-cli-p0/tests/spike && go test -count=1 ./... 2>&1 | tee /tmp/spike-final-test.log'
-?   	github.com/zzjcool/homer-cli/tests/spike/wsecho	[no test files]
-?   	github.com/zzjcool/homer-cli/tests/spike/wsprobe	[no test files]
-ok  	github.com/zzjcool/homer-cli/tests/spike/internal/spike	4.607s
+$ timeout 60s bash -o pipefail -c 'cd /tmp/homer-p0/tests/spike && go test -count=1 ./... 2>&1 | tee /tmp/spike-final-test.log'
+?   	github.com/zzjcool/homer/tests/spike/wsecho	[no test files]
+?   	github.com/zzjcool/homer/tests/spike/wsprobe	[no test files]
+ok  	github.com/zzjcool/homer/tests/spike/internal/spike	4.607s
 
-$ timeout 120s bash -c 'cd /tmp/homer-cli-p0/tests/spike && go vet ./... > /tmp/spike-final-vet.log 2>&1; status=$?; cat /tmp/spike-final-vet.log; echo "go vet exit=$status"; exit "$status"'
+$ timeout 120s bash -c 'cd /tmp/homer-p0/tests/spike && go vet ./... > /tmp/spike-final-vet.log 2>&1; status=$?; cat /tmp/spike-final-vet.log; echo "go vet exit=$status"; exit "$status"'
 
 go vet exit=0
 
-$ timeout 120s sh -c 'cd /tmp/homer-cli-p0/tests/spike && go mod tidy && git -C /tmp/homer-cli-p0 status --short'
+$ timeout 120s sh -c 'cd /tmp/homer-p0/tests/spike && go mod tidy && git -C /tmp/homer-p0 status --short'
 (no stdout/stderr; exit 0; go.mod/go.sum 无变化)
 ```
 
@@ -74,7 +74,7 @@ $ timeout 120s sh -c 'cd /tmp/homer-cli-p0/tests/spike && go mod tidy && git -C 
 已从 `tests/spike` 目录运行 `go run ./wsprobe`（V1/V6），验证上一轮修正后的嵌套 module 命令路径：
 
 ```text
-$ timeout 45s bash -o pipefail -c 'cd /tmp/homer-cli-p0/tests/spike && go run ./wsprobe -url ws://127.0.0.1:17801/ws -suite V1,V6 -out /tmp/spike-go-run-smoke.json 2>&1 | tee /tmp/spike-go-run-smoke.log'
+$ timeout 45s bash -o pipefail -c 'cd /tmp/homer-p0/tests/spike && go run ./wsprobe -url ws://127.0.0.1:17801/ws -suite V1,V6 -out /tmp/spike-go-run-smoke.json 2>&1 | tee /tmp/spike-go-run-smoke.log'
 2026/10/08 23:39:33 wsprobe starting suite=V1,V6 url=ws://127.0.0.1:17801/ws
 {
   "suite": "V1,V6",
@@ -486,22 +486,22 @@ cloudflared 原始日志关键行：
 仓库是 Go 项目且没有根 `package.json`，因此 `npm run typecheck` / `npm test` 不适用；未为此新增任何根文件。两条命令均因同一 ENOENT 退出：
 
 ```text
-$ timeout 30s sh -c 'cd /tmp/homer-cli-p0 && npm run typecheck'
+$ timeout 30s sh -c 'cd /tmp/homer-p0 && npm run typecheck'
 npm error code ENOENT
 npm error syscall open
-npm error path /tmp/homer-cli-p0/package.json
+npm error path /tmp/homer-p0/package.json
 npm error errno -2
-npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/tmp/homer-cli-p0/package.json'
+npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/tmp/homer-p0/package.json'
 npm error enoent This is related to npm not being able to find a file.
 npm error enoent
 npm error A complete log of this run can be found in: /home/zzjcool/.npm/_logs/2026-10-08T15_37_05_192Z-debug-0.log
 
-$ timeout 30s sh -c 'cd /tmp/homer-cli-p0 && npm test'
+$ timeout 30s sh -c 'cd /tmp/homer-p0 && npm test'
 npm error code ENOENT
 npm error syscall open
-npm error path /tmp/homer-cli-p0/package.json
+npm error path /tmp/homer-p0/package.json
 npm error errno -2
-npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/tmp/homer-cli-p0/package.json'
+npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/tmp/homer-p0/package.json'
 npm error enoent This is related to npm not being able to find a file.
 npm error enoent
 npm error A complete log of this run can be found in: /home/zzjcool/.npm/_logs/2026-10-08T15_37_10_104Z-debug-0.log
@@ -509,7 +509,7 @@ npm error A complete log of this run can be found in: /home/zzjcool/.npm/_logs/2
 
 ## MR 链接
 
-https://github.com/zzjcool/homer-cli/pull/6
+https://github.com/zzjcool/homer/pull/6
 
 ## 未决问题
 

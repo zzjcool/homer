@@ -7,10 +7,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/hub"
-	"github.com/zzjcool/homer-cli/internal/resolutions"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/hub"
+	"github.com/zzjcool/homer/internal/resolutions"
 )
 
 // homerPathsForHome mirrors the executor's HOMER_HOME override while keeping

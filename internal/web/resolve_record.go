@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/gens"
-	"github.com/zzjcool/homer-cli/internal/resolutions"
+	"github.com/zzjcool/homer/internal/gens"
+	"github.com/zzjcool/homer/internal/resolutions"
 )
 
 type resolveRecordSkip struct {

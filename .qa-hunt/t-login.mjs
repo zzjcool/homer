@@ -10,5 +10,5 @@ console.log("ver:", await ev(sid, "document.querySelector('#ver')?.textContent")
 console.log("agent count:", await ev(sid, "document.querySelectorAll('#agent-list .agent-card, #agent-list .agent-row').length"));
 console.log("agent-list children:", await ev(sid, "document.querySelector('#agent-list').children.length"));
 console.log("cards html sample:", await ev(sid, "document.querySelector('#agent-list').textContent.slice(0,400)"));
-await shot(sid, "/root/code/homer-cli/.qa-hunt/shots-B/01-logged-in.png");
+await shot(sid, "/root/code/homer/.qa-hunt/shots-B/01-logged-in.png");
 process.exit(0);

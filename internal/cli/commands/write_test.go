@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/gitx"
-	syncx "github.com/zzjcool/homer-cli/internal/sync"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/gitx"
+	syncx "github.com/zzjcool/homer/internal/sync"
 )
 
 func writeTestPaths(t *testing.T) core.HomerPaths {

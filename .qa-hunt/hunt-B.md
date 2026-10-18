@@ -1,6 +1,6 @@
 # 缺陷狩猎 · 角度 B：网页 UI 交互状态机 / 静默失败 / 假进度
 
-仓库 /root/code/homer-cli HEAD=010521a。真实浏览器（browserless chromium, CDP）操作控制台。
+仓库 /root/code/homer HEAD=010521a。真实浏览器（browserless chromium, CDP）操作控制台。
 hub http://hub:7760 · 账号 qa-admin-password · 专属 box homer-qa-box-b（hub 状态与其他 hunter 共享，
 下列结论均不依赖全局唯一性）。
 
@@ -33,7 +33,7 @@ hub http://hub:7760 · 账号 qa-admin-password · 专属 box homer-qa-box-b（h
   `curl -fsSL http://hub:7760/install.sh | sh -s -- --token hr_be18f7f03b...`——确认对话框已打开、命令已取到。
 - 证据: `.qa-hunt/shots-B/C1-copy-join-broken.png`、`.qa-hunt/shots-B/13-copyjoin-broken.png`
 - 复现步骤:
-  1. `cd /root/code/homer-cli && timeout 60 node .qa-hunt/t16.mjs`
+  1. `cd /root/code/homer && timeout 60 node .qa-hunt/t16.mjs`
   2. 或浏览器打开 `http://hub:7760/`（非 https）→ 登录 → 点右上「接入命令」→ 点命令框右侧「复制」。
 - 实机输出: `C1 detector navigator.clipboard: undefined isSecureContext: false origin: http://hub:7760` /
   `C1 __err: ["Uncaught TypeError: Cannot read properties of undefined (reading 'writeText')"] btnText: 复制 fallbackHidden: true`
@@ -69,7 +69,7 @@ hub http://hub:7760 · 账号 qa-admin-password · 专属 box homer-qa-box-b（h
   `.qa-hunt/shots-B/C7-second-dialog-before.png`（另一个对话框正常）、
   `.qa-hunt/shots-B/C7-second-dialog-AFTER-orphan.png`（**截图可见标题「处理冲突 · b6675d68ddf7（…7920）」，正文却是「已下发到「54d0c3373428」。」**，按钮变成「完成」）
 - 复现步骤:
-  1. `cd /root/code/homer-cli && timeout 120 node .qa-hunt/t20.mjs`
+  1. `cd /root/code/homer && timeout 120 node .qa-hunt/t20.mjs`
   2. 或浏览器：任一机器点「下发」→ 勾一个适配器 → 「确认下发」（后端慢时）→ 观察「取消」是灰的
      → 按 Esc 关掉 → 立刻对另一台机器点「处理冲突」→ 等原请求返回，看它的正文被改成「已下发到「上一台」」。
 - 下游后果: 用户明确按了取消/关掉了窗口，操作仍然执行（无撤销），并且把结果文案写进了**不相干的对话框**；
@@ -103,7 +103,7 @@ hub http://hub:7760 · 账号 qa-admin-password · 专属 box homer-qa-box-b（h
   `.qa-hunt/shots-B/R2-menu-closed-after-REAL-poll.png`（轮询后菜单收起）、
   `.qa-hunt/shots-B/22-menu-open.png` / `23-menu-closed-after-poll.png`（同现象，手动 refresh 版）
 - 复现步骤:
-  1. `cd /root/code/homer-cli && timeout 150 node .qa-hunt/t24.mjs`（等真实 30s 轮询，脚本会自动等到 footer 变化）
+  1. `cd /root/code/homer && timeout 150 node .qa-hunt/t24.mjs`（等真实 30s 轮询，脚本会自动等到 footer 变化）
   2. 或浏览器：点开任一机器卡片的「更多」（不要动别的，等最多 30 秒）→ 菜单自己关上；
      点开「更多」后用 Tab 聚焦「详情」→ 30s 后焦点被丢回 body，键盘用户失去位置。
 - 实机输出: `open menu snapshot: {"open":true,"focused":"详情"}` / `poll fired at i=19: 06:19:31 已刷新` /
@@ -131,7 +131,7 @@ hub http://hub:7760 · 账号 qa-admin-password · 专属 box homer-qa-box-b（h
 - 前置状态探测: 操作前确认处于已登录态（`#workspace` 非 hidden、`#btn-logout` 可见可点）。
 - 证据: `.qa-hunt/shots-B/C4-logout-fake.png`（已回到登录门、无错误）、`.qa-hunt/shots-B/14-logout-failed.png`
 - 复现步骤:
-  1. `cd /root/code/homer-cli && timeout 120 node .qa-hunt/t16.mjs`
+  1. `cd /root/code/homer && timeout 120 node .qa-hunt/t16.mjs`
   2. 或浏览器：断网（DevTools offline）→ 点右上「退出」→ 页面回到登录门，没有任何错误；
      恢复网络后**刷新页面即直接回到已登录工作区**（Cookie 未被清除）。
 - 实机输出: `C4 logoutCalls: 1 workspaceHidden: true gateLoginShown: true errText: ""` /
@@ -157,7 +157,7 @@ hub http://hub:7760 · 账号 qa-admin-password · 专属 box homer-qa-box-b（h
 - 前置状态探测: 记录刷新前 `#refreshed-at` 文本（`06:13:14 已刷新`），确认点击后有变化（`06:13:17 已刷新`）
   → 证明 refresh 确实执行了，只是**执行期间没有任何可见反馈**。
 - 证据: `.qa-hunt/shots-B/C5-refresh-no-feedback.png`
-- 复现步骤: `cd /root/code/homer-cli && timeout 90 node .qa-hunt/t18.mjs`
+- 复现步骤: `cd /root/code/homer && timeout 90 node .qa-hunt/t18.mjs`
   （或浏览器：DevTools 设 Slow 3G → 连点「刷新」3 次 → 页面无任何变化，Network 面板 3 个 /api/agents 并发）
 - 实机输出: `t+0.3s busyVisible: false btnDisabled: false btnText: 刷新 ariaBusy: null refreshed-at: 06:13:14 已刷新` /
   `C5 concurrent /api/agents in flight: 3`
@@ -180,7 +180,7 @@ hub http://hub:7760 · 账号 qa-admin-password · 专属 box homer-qa-box-b（h
   `"disks":[{"mount":"/","total":...,"used":...}]` —— 基线正常；再注入缺字段的变体观察渲染。
 - 证据: `.qa-hunt/shots-B/21-nan-card.png`、`.qa-hunt/shots-B/12-nan.png`
 - 复现步骤:
-  1. `cd /root/code/homer-cli && timeout 120 node .qa-hunt/t13.mjs`
+  1. `cd /root/code/homer && timeout 120 node .qa-hunt/t13.mjs`
   2. 最小纯函数复现（浏览器控制台）：
      `hostSummary({host:{cpu:{usage:8},memory:{total:100},disks:[{used:5,total:10}]}})` → `"CPU 8% · 内存 NaN% · 磁盘 50%"`
 - 实机输出: `card text: 54d0c3373428 ... CPU 8% · 内存 NaN% · 磁盘 50% ...` /
@@ -208,7 +208,7 @@ hub http://hub:7760 · 账号 qa-admin-password · 专属 box homer-qa-box-b（h
 - 前置状态探测: 轮询启动前先 `waitFor(#join-cmd.value.indexOf('hr_')>=0)`，实测
   `curl -fsSL http://hub:7760/install.sh | sh -s -- --token hr_...`，确认已进入「等待接入」状态。
 - 证据: `.qa-hunt/shots-B/19-join-poll-silent.png`
-- 复现步骤: `cd /root/code/homer-cli && timeout 120 node .qa-hunt/t11.mjs`
+- 复现步骤: `cd /root/code/homer && timeout 120 node .qa-hunt/t11.mjs`
   （或浏览器：打开「接入命令」→ DevTools 设 Offline，或把 hub 停掉 → 窗口永远显示「机器用这个接入码
   连上之后，窗口会自己关上」，没有任何「连不上服务器」的提示）
 - 实机输出: `J1 join/status calls in 7s: 3` / `J1 dlg open: true` /
@@ -250,7 +250,7 @@ hub http://hub:7760 · 账号 qa-admin-password · 专属 box homer-qa-box-b（h
 - 未跑 Go e2e（`tests/e2e/*_ui_test.go`）：需要容器网络与 chromedp 构建，时间预算内改跑 CDP 实机。
 
 ## 环境
-- 仓库：/root/code/homer-cli HEAD `010521a`
+- 仓库：/root/code/homer HEAD `010521a`
 - hub：http://127.0.0.1:17760（浏览器侧 http://hub:7760）· token `qa-hub-token` · 密码 `qa-admin-password`
 - 浏览器：browserless chromium `Chrome/156.0.8078.4`，CDP `ws://127.0.0.1:3000`
   （必须先 `Target.attachToTarget(flatten:true)` 拿 sessionId）

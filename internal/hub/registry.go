@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/stream"
-	"github.com/zzjcool/homer-cli/internal/toolctl"
+	"github.com/zzjcool/homer/internal/stream"
+	"github.com/zzjcool/homer/internal/toolctl"
 )
 
 type AgentInfo struct {

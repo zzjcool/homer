@@ -9,12 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/adapter"
-	"github.com/zzjcool/homer-cli/internal/adapter/herdr"
-	"github.com/zzjcool/homer-cli/internal/adapter/opencode"
-	"github.com/zzjcool/homer-cli/internal/adapter/pi"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/manifest"
+	"github.com/zzjcool/homer/internal/adapter"
+	"github.com/zzjcool/homer/internal/adapter/herdr"
+	"github.com/zzjcool/homer/internal/adapter/opencode"
+	"github.com/zzjcool/homer/internal/adapter/pi"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/manifest"
 )
 
 func writeFixture(t *testing.T, root, rel, content string) {

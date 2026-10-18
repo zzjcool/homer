@@ -3,7 +3,7 @@ package core
 import (
 	"reflect"
 
-	"github.com/zzjcool/homer-cli/internal/orderedjson"
+	"github.com/zzjcool/homer/internal/orderedjson"
 )
 
 // isParsableJson reports whether content is any valid JSON value. JSON arrays,

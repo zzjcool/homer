@@ -3,7 +3,7 @@ package vscode
 import (
 	"runtime"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 // VSCodeAdapterID is the stable adapter identifier written to snapshots and

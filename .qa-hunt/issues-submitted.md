@@ -1,30 +1,30 @@
 # issues-submitted.md
 
-homer-cli 缺陷狩猎轮 · qa-reporter 提交清单
-仓库 `zzjcool/homer-cli`，HEAD `010521a`（master），提交时间 2026-10-16。
+homer 缺陷狩猎轮 · qa-reporter 提交清单
+仓库 `zzjcool/homer`，HEAD `010521a`（master），提交时间 2026-10-16。
 起始号 #106（提交前最新 issue 为 #105，全 CLOSED）。
 
 ## 提交对照表
 
 | Issue | Finding | qa-repro 判定 | Severity (label) | 提交前是否复跑确认 |
 | --- | --- | --- | --- | --- |
-| [#106](https://github.com/zzjcool/homer-cli/issues/106) | A-C1 `/api/storage/file` 的 `adapter` 无 `..` 校验 → 任意文件读 | true | Critical (`critical`) | ✅ 诱饵文件法复跑，hr_/hub token 双主体 200、无凭证 401、深逃逸读 `/etc/passwd` 200 |
-| [#107](https://github.com/zzjcool/homer-cli/issues/107) | A-C2 `POST /api/snapshot` store 文件名未校验 → 任意文件覆盖写 | true | Critical (`critical`) | ✅ 诱饵覆盖法，连续两次覆盖 + 6 级 `..` 逃到 `/tmp` |
-| [#108](https://github.com/zzjcool/homer-cli/issues/108) | A-C3 一个 hr_ 码可冒认任意已存在机器的 agentId | true | Critical (`critical`) | ✅ 独占受害者，`agent-secrets.json` sha 由 `27b939b1…` 变 `0d2df90b…`（= 新 secret 的 sha256） |
-| [#109](https://github.com/zzjcool/homer-cli/issues/109) | A-C4 接入码可写（删机器/吊销凭证/改写中心配置） | true | High (`major`) | ✅ 独占受害者，revoke→409、remove→404、snapshot gen 3→4 并回读确认 |
-| [#110](https://github.com/zzjcool/homer-cli/issues/110) | A-C5 接入码自我增殖 | true | High (`major`) | ✅ 四代链全不同，第四代 `/api/agents` `/api/console` `/api/keys` 均 200；伪造码 401 |
-| [#111](https://github.com/zzjcool/homer-cli/issues/111) | C-C3 + D-C1（合并）package-global `writeMutex` 无超时 | true | High (`major`) | ✅ `kill -STOP` 半开，锁内请求 56.63s 相位对齐返回，锁外 0.0016s |
-| [#112](https://github.com/zzjcool/homer-cli/issues/112) | C-C1 fanout 丢弃每台机器真实错误 + 播报与事实相反 | true | High (`major`) | ✅ 同一冲突态下单机 pull vs fanout 对照；fanout 后 `NEWFILE-F7.md` 确实已写入 |
-| [#113](https://github.com/zzjcool/homer-cli/issues/113) | B-C1 `copyJoin` 在非安全上下文失效 | true | High (`major`) | ✅ CDP 真实鼠标，`isSecureContext=false`；同页 `copyAgentId` 降级正常作对照 |
-| [#114](https://github.com/zzjcool/homer-cli/issues/114) | B-C2 假取消 + 孤儿回调写穿对话框 | true | High (`major`) | ✅ `kill -STOP` 真实慢后端全链路；结果写进了**另一台机器**的「查看」对话框 |
-| [#115](https://github.com/zzjcool/homer-cli/issues/115) | B-C3 30s 轮询重建卡片吞噬菜单/焦点 | true | Medium (`minor`) | ✅ 元素身份标记 + 页面内焦点采样；8s 无轮询对照标记存活、轮询后 `GONE` |
-| [#116](https://github.com/zzjcool/homer-cli/issues/116) | B-C4 退出失败照样跳登录门 | true | Medium (`minor`) | ✅ CDP `Network.setBlockedURLs`；解封后 `/api/console` 仍 200 |
-| [#117](https://github.com/zzjcool/homer-cli/issues/117) | C-C2 fanout 全 skip 仍 200 + `ok:true` + `status:synced` | true | Medium (`minor`) | ✅ 6 台全 skip 复现；真实响应喂进 `index.html:3776` 表达式算出 toast（报 3 台、实际收到 0 台） |
-| [#118](https://github.com/zzjcool/homer-cli/issues/118) | D-C4 吊销后与掉线不可区分，吊销按钮仍可点 | true | Medium (`minor`) | ✅ `cls`/`dot`/`buttons` 三元组逐项相等；再点得 409 `not-enrolled` |
-| [#119](https://github.com/zzjcool/homer-cli/issues/119) | B-C7 接入码轮询失败被完全吞掉 | true | Medium（`minor`；复验上调自 Low） | ✅ CDP 阻断 14s，7 次轮询全败、0 错误提示、无错误展示位（`NO-ELEM`） |
-| [#120](https://github.com/zzjcool/homer-cli/issues/120) | C-C4 告警栏显示内部 token `partial` | true（root-cause-elsewhere） | Medium (`minor`) | ✅ 真浏览器 + CDP 真实接受 JS dialog，`#plugin-error` = `"partial"`；根因按复验改判为 `api():1033` |
-| [#121](https://github.com/zzjcool/homer-cli/issues/121) | B-C5 `#btn-refresh` 无防抖无反馈 | true | Low (`minor`) | ✅ 协议层计数 1→1、3→3（含真实鼠标轮）；`busyHidden:true, btnDisabled:false, ariaBusy:null` |
-| [#122](https://github.com/zzjcool/homer-cli/issues/122) | C-C5 + C-C6 + C-C8（打包成 1 条）docs/api-reference.md 与实现脱节 | downgraded（文档/一致性） | Low (`minor`) | ✅ 文档 6 个 `##` vs 实现 ~40 个 `/api/*`；install 未知 id 实测 404；幽灵机 GET 200 / POST 404 |
+| [#106](https://github.com/zzjcool/homer/issues/106) | A-C1 `/api/storage/file` 的 `adapter` 无 `..` 校验 → 任意文件读 | true | Critical (`critical`) | ✅ 诱饵文件法复跑，hr_/hub token 双主体 200、无凭证 401、深逃逸读 `/etc/passwd` 200 |
+| [#107](https://github.com/zzjcool/homer/issues/107) | A-C2 `POST /api/snapshot` store 文件名未校验 → 任意文件覆盖写 | true | Critical (`critical`) | ✅ 诱饵覆盖法，连续两次覆盖 + 6 级 `..` 逃到 `/tmp` |
+| [#108](https://github.com/zzjcool/homer/issues/108) | A-C3 一个 hr_ 码可冒认任意已存在机器的 agentId | true | Critical (`critical`) | ✅ 独占受害者，`agent-secrets.json` sha 由 `27b939b1…` 变 `0d2df90b…`（= 新 secret 的 sha256） |
+| [#109](https://github.com/zzjcool/homer/issues/109) | A-C4 接入码可写（删机器/吊销凭证/改写中心配置） | true | High (`major`) | ✅ 独占受害者，revoke→409、remove→404、snapshot gen 3→4 并回读确认 |
+| [#110](https://github.com/zzjcool/homer/issues/110) | A-C5 接入码自我增殖 | true | High (`major`) | ✅ 四代链全不同，第四代 `/api/agents` `/api/console` `/api/keys` 均 200；伪造码 401 |
+| [#111](https://github.com/zzjcool/homer/issues/111) | C-C3 + D-C1（合并）package-global `writeMutex` 无超时 | true | High (`major`) | ✅ `kill -STOP` 半开，锁内请求 56.63s 相位对齐返回，锁外 0.0016s |
+| [#112](https://github.com/zzjcool/homer/issues/112) | C-C1 fanout 丢弃每台机器真实错误 + 播报与事实相反 | true | High (`major`) | ✅ 同一冲突态下单机 pull vs fanout 对照；fanout 后 `NEWFILE-F7.md` 确实已写入 |
+| [#113](https://github.com/zzjcool/homer/issues/113) | B-C1 `copyJoin` 在非安全上下文失效 | true | High (`major`) | ✅ CDP 真实鼠标，`isSecureContext=false`；同页 `copyAgentId` 降级正常作对照 |
+| [#114](https://github.com/zzjcool/homer/issues/114) | B-C2 假取消 + 孤儿回调写穿对话框 | true | High (`major`) | ✅ `kill -STOP` 真实慢后端全链路；结果写进了**另一台机器**的「查看」对话框 |
+| [#115](https://github.com/zzjcool/homer/issues/115) | B-C3 30s 轮询重建卡片吞噬菜单/焦点 | true | Medium (`minor`) | ✅ 元素身份标记 + 页面内焦点采样；8s 无轮询对照标记存活、轮询后 `GONE` |
+| [#116](https://github.com/zzjcool/homer/issues/116) | B-C4 退出失败照样跳登录门 | true | Medium (`minor`) | ✅ CDP `Network.setBlockedURLs`；解封后 `/api/console` 仍 200 |
+| [#117](https://github.com/zzjcool/homer/issues/117) | C-C2 fanout 全 skip 仍 200 + `ok:true` + `status:synced` | true | Medium (`minor`) | ✅ 6 台全 skip 复现；真实响应喂进 `index.html:3776` 表达式算出 toast（报 3 台、实际收到 0 台） |
+| [#118](https://github.com/zzjcool/homer/issues/118) | D-C4 吊销后与掉线不可区分，吊销按钮仍可点 | true | Medium (`minor`) | ✅ `cls`/`dot`/`buttons` 三元组逐项相等；再点得 409 `not-enrolled` |
+| [#119](https://github.com/zzjcool/homer/issues/119) | B-C7 接入码轮询失败被完全吞掉 | true | Medium（`minor`；复验上调自 Low） | ✅ CDP 阻断 14s，7 次轮询全败、0 错误提示、无错误展示位（`NO-ELEM`） |
+| [#120](https://github.com/zzjcool/homer/issues/120) | C-C4 告警栏显示内部 token `partial` | true（root-cause-elsewhere） | Medium (`minor`) | ✅ 真浏览器 + CDP 真实接受 JS dialog，`#plugin-error` = `"partial"`；根因按复验改判为 `api():1033` |
+| [#121](https://github.com/zzjcool/homer/issues/121) | B-C5 `#btn-refresh` 无防抖无反馈 | true | Low (`minor`) | ✅ 协议层计数 1→1、3→3（含真实鼠标轮）；`busyHidden:true, btnDisabled:false, ariaBusy:null` |
+| [#122](https://github.com/zzjcool/homer/issues/122) | C-C5 + C-C6 + C-C8（打包成 1 条）docs/api-reference.md 与实现脱节 | downgraded（文档/一致性） | Low (`minor`) | ✅ 文档 6 个 `##` vs 实现 ~40 个 `/api/*`；install 未知 id 实测 404；幽灵机 GET 200 / POST 404 |
 
 **合计 17 条全部提交，无遗漏。** 第一梯队 3 条（Critical）、第二梯队 5 条（High）、
 第三梯队 5 条（Medium）、第四梯队 2 条（Low/UI 文案）、文档项 1 条（打包）。

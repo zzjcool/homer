@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/zzjcool/homer-cli/tests/spike/internal/spike"
+	"github.com/zzjcool/homer/tests/spike/internal/spike"
 )
 
 func main() {

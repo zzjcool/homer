@@ -3,7 +3,7 @@ package adapter_test
 import (
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/adapter"
+	"github.com/zzjcool/homer/internal/adapter"
 )
 
 func TestGlobMatchFrozenTable(t *testing.T) {

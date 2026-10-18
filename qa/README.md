@@ -1,4 +1,4 @@
-# homer-cli QA 网页环境
+# homer QA 网页环境
 
 AI QA 通过浏览器界面测试 hub 控制台的专用环境。`make qa-up` 从源码一键
 启动，无需预装 Go 或浏览器。

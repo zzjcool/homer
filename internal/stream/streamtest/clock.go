@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/stream"
+	"github.com/zzjcool/homer/internal/stream"
 )
 
 type fakeTimer struct {

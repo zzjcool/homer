@@ -28,7 +28,7 @@ console.log('TOASTS:',JSON.stringify(await ev(`window.__toasts`)));
 console.log('PLUGIN-ERROR:',JSON.stringify(await ev(`(document.querySelector('#plugin-error')||{}).textContent`)));
 console.log('plugin-error visible:',await ev(`(()=>{const e=document.querySelector('#plugin-error');return e? (!e.classList.contains('hidden') && e.textContent.trim().length>0) :'none'})()`));
 const shot=await send({method:'Page.captureScreenshot',params:{format:'png'}},sid);
-require('fs').writeFileSync('/root/code/homer-cli/.qa-hunt/artifacts-C/C2-ui-fanout-error.png',Buffer.from(shot.data,'base64'));
+require('fs').writeFileSync('/root/code/homer/.qa-hunt/artifacts-C/C2-ui-fanout-error.png',Buffer.from(shot.data,'base64'));
 console.log('screenshot saved');
 ws.close();
 })().catch(e=>{console.error('ERR',e.message);process.exit(1)});

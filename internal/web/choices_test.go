@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/gens"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/gens"
 )
 
 func choiceReport(items ...commands.StatusAdapterReport) []commands.StatusAdapterReport {

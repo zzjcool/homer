@@ -6,8 +6,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/engine"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/engine"
 )
 
 // The console's machine view must show WHICH files (e.g. which

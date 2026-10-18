@@ -1,4 +1,4 @@
-# homer-cli v1.2 P3-W5 验收记录与对抗式 review 修复
+# homer v1.2 P3-W5 验收记录与对抗式 review 修复
 
 ## 范围
 
@@ -92,25 +92,25 @@ $ go build ./...
 $ go vet ./...
 $ gofmt -l . | grep -v vendor
 $ go test ./...
-?   	github.com/zzjcool/homer-cli/cmd/homer	[no test files]
-?   	github.com/zzjcool/homer-cli/internal/adapter/vscode	[no test files]
-ok  	github.com/zzjcool/homer-cli/internal/adapter	(cached)
-ok  	github.com/zzjcool/homer-cli/internal/adapter/herdr	(cached) [no tests to run]
-ok  	github.com/zzjcool/homer-cli/internal/adapter/opencode	(cached) [no tests to run]
-ok  	github.com/zzjcool/homer-cli/internal/adapter/pi	(cached) [no tests to run]
-ok  	github.com/zzjcool/homer-cli/internal/agecrypto	(cached)
-ok  	github.com/zzjcool/homer-cli/internal/backup	(cached)
-ok  	github.com/zzjcool/homer-cli/internal/cli	(cached)
-ok  	github.com/zzjcool/homer-cli/internal/cli/commands	(cached)
-ok  	github.com/zzjcool/homer-cli/internal/core	(cached)
-ok  	github.com/zzjcool/homer-cli/internal/doctor	(cached)
-ok  	github.com/zzjcool/homer-cli/internal/engine	(cached)
-ok  	github.com/zzjcool/homer-cli/internal/gitx	(cached)
-ok  	github.com/zzjcool/homer-cli/internal/manifest	(cached)
-ok  	github.com/zzjcool/homer-cli/internal/orderedjson	(cached)
-ok  	github.com/zzjcool/homer-cli/internal/secretscan	(cached)
-ok  	github.com/zzjcool/homer-cli/internal/sync	(cached)
-ok  	github.com/zzjcool/homer-cli/tests/e2e	4.822s
+?   	github.com/zzjcool/homer/cmd/homer	[no test files]
+?   	github.com/zzjcool/homer/internal/adapter/vscode	[no test files]
+ok  	github.com/zzjcool/homer/internal/adapter	(cached)
+ok  	github.com/zzjcool/homer/internal/adapter/herdr	(cached) [no tests to run]
+ok  	github.com/zzjcool/homer/internal/adapter/opencode	(cached) [no tests to run]
+ok  	github.com/zzjcool/homer/internal/adapter/pi	(cached) [no tests to run]
+ok  	github.com/zzjcool/homer/internal/agecrypto	(cached)
+ok  	github.com/zzjcool/homer/internal/backup	(cached)
+ok  	github.com/zzjcool/homer/internal/cli	(cached)
+ok  	github.com/zzjcool/homer/internal/cli/commands	(cached)
+ok  	github.com/zzjcool/homer/internal/core	(cached)
+ok  	github.com/zzjcool/homer/internal/doctor	(cached)
+ok  	github.com/zzjcool/homer/internal/engine	(cached)
+ok  	github.com/zzjcool/homer/internal/gitx	(cached)
+ok  	github.com/zzjcool/homer/internal/manifest	(cached)
+ok  	github.com/zzjcool/homer/internal/orderedjson	(cached)
+ok  	github.com/zzjcool/homer/internal/secretscan	(cached)
+ok  	github.com/zzjcool/homer/internal/sync	(cached)
+ok  	github.com/zzjcool/homer/tests/e2e	4.822s
 ```
 
 仓库根目录是 Go 项目；本轮同时在 `npm/` wrapper 目录执行了其 Node 语法检查脚本，未改动 npm 文件。
@@ -122,33 +122,33 @@ $ go build ./...
 $ go vet ./...
 $ gofmt -l .
 $ go test -count=1 ./...
-?    github.com/zzjcool/homer-cli/cmd/homer [no test files]
-ok   github.com/zzjcool/homer-cli/internal/adapter 0.017s
-ok   github.com/zzjcool/homer-cli/internal/adapter/herdr 0.002s [no tests to run]
-ok   github.com/zzjcool/homer-cli/internal/adapter/opencode 0.002s [no tests to run]
-ok   github.com/zzjcool/homer-cli/internal/adapter/pi 0.003s [no tests to run]
-ok   github.com/zzjcool/homer-cli/internal/adapter/vscode 0.002s
-ok   github.com/zzjcool/homer-cli/internal/agecrypto 0.050s
-ok   github.com/zzjcool/homer-cli/internal/backup 0.004s
-ok   github.com/zzjcool/homer-cli/internal/cli 0.229s
-ok   github.com/zzjcool/homer-cli/internal/cli/commands 1.591s
-ok   github.com/zzjcool/homer-cli/internal/core 0.009s
-ok   github.com/zzjcool/homer-cli/internal/doctor 0.168s
-ok   github.com/zzjcool/homer-cli/internal/engine 0.007s
-ok   github.com/zzjcool/homer-cli/internal/gitx 0.931s
-ok   github.com/zzjcool/homer-cli/internal/manifest 0.160s
-ok   github.com/zzjcool/homer-cli/internal/orderedjson 0.008s
-ok   github.com/zzjcool/homer-cli/internal/secretscan 0.004s
-ok   github.com/zzjcool/homer-cli/internal/sync 0.278s
-ok   github.com/zzjcool/homer-cli/tests/e2e 4.830s
+?    github.com/zzjcool/homer/cmd/homer [no test files]
+ok   github.com/zzjcool/homer/internal/adapter 0.017s
+ok   github.com/zzjcool/homer/internal/adapter/herdr 0.002s [no tests to run]
+ok   github.com/zzjcool/homer/internal/adapter/opencode 0.002s [no tests to run]
+ok   github.com/zzjcool/homer/internal/adapter/pi 0.003s [no tests to run]
+ok   github.com/zzjcool/homer/internal/adapter/vscode 0.002s
+ok   github.com/zzjcool/homer/internal/agecrypto 0.050s
+ok   github.com/zzjcool/homer/internal/backup 0.004s
+ok   github.com/zzjcool/homer/internal/cli 0.229s
+ok   github.com/zzjcool/homer/internal/cli/commands 1.591s
+ok   github.com/zzjcool/homer/internal/core 0.009s
+ok   github.com/zzjcool/homer/internal/doctor 0.168s
+ok   github.com/zzjcool/homer/internal/engine 0.007s
+ok   github.com/zzjcool/homer/internal/gitx 0.931s
+ok   github.com/zzjcool/homer/internal/manifest 0.160s
+ok   github.com/zzjcool/homer/internal/orderedjson 0.008s
+ok   github.com/zzjcool/homer/internal/secretscan 0.004s
+ok   github.com/zzjcool/homer/internal/sync 0.278s
+ok   github.com/zzjcool/homer/tests/e2e 4.830s
 
 $ (cd npm && npm run typecheck && npm test)
 
-> homer-cli@1.0.0 typecheck
+> homer@1.0.0 typecheck
 > node --check install.js && node --check bin/homer.js
 
 
-> homer-cli@1.0.0 test
+> homer@1.0.0 test
 > node --check install.js && node --check bin/homer.js
 ```
 
@@ -157,5 +157,5 @@ $ (cd npm && npm run typecheck && npm test)
 ## 交付
 
 - 分支：`fix/v1.2-adversarial-review`
-- MR/PR：<https://github.com/zzjcool/homer-cli/pull/new/fix/v1.2-adversarial-review>
+- MR/PR：<https://github.com/zzjcool/homer/pull/new/fix/v1.2-adversarial-review>
 - fix commit hash 以交付时 `git rev-parse HEAD` 为准；本轮未本地 merge 到 `master`。
