@@ -92,6 +92,17 @@ func TestConsoleUserCopy(t *testing.T) {
 		`aidEl.dataset.agentId`, "copyAgentId(a.agentId, aidEl)",
 		// 「更多」菜单溢出向上翻（#93）
 		"function fitAgentMorePanel", "agent-more-panel.flip-up", "agentMoreSafeBottom",
+		// Hub 入口与一键重启（契约 D15–D19）。这些串是冻结文案：
+		// 改动会让用户看到未经审阅的措辞，所以逐字锁在这里。
+		`id="btn-hub"`, "Hub", `id="dlg-hub"`, "function openHub",
+		"更新并重启", "仅重启", "已回滚到上一个版本",
+		"正在重启中心…", "中心已重启", "中心已重启，版本没有变化",
+		"中心没有在预期时间内回来", "已经等待 60 秒，健康检查仍然失败。",
+		"请在服务器上确认 homer 进程还在、查看它的日志；必要时重新执行 `homer serve`。",
+		"重新加载页面", "中心没有更新成功",
+		"重新启动中心？控制台大约 10 秒不可用，正在进行的同步会被中断。",
+		"更新到最新版本？会先检查再下载；完成后中心会重启，控制台大约 10 秒不可用。",
+		"？下载完成后中心会重启，控制台大约 10 秒不可用。",
 	} {
 		if !strings.Contains(html, required) {
 			t.Fatalf("console copy missing %q", required)
