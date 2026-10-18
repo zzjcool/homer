@@ -1,9 +1,0 @@
-=== REMOVE with hr_ code only: target e363efdcf085-c78a (my own box-a ghost) ===
---- list BEFORE ---
-['54d0c3373428-62af', 'b6675d68ddf7-7920', 'e363efdcf085-1563', 'e363efdcf085-7b6d', 'e363efdcf085-c78a']
-{"ok":true}
-HTTP:200
---- list AFTER ---
-['54d0c3373428-62af', 'b6675d68ddf7-7920', 'e363efdcf085-1563', 'e363efdcf085-7b6d']
-=== same hr_ code still works for reads after writing? ===
-hr-agents:200

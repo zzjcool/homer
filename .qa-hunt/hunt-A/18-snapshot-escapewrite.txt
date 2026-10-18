@@ -1,8 +1,0 @@
-=== POST /api/snapshot with hr_ code, store file name containing ../../../ ===
-{"generation":4,"ok":true}
-HTTP:200
-=== did the file land OUTSIDE the store dir? ===
----
-cat: can't open '/root/.homer/HUNTER_WRITE_MARKER': No such file or directory
-=== also check generations dir ===
-/root/.homer/generations/HUNTER_WRITE_MARKER

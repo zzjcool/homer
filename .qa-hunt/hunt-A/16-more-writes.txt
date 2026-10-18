@@ -1,8 +1,0 @@
-=== POST /api/agents/<id>/ssh-key with hr_ code (my probe machine) ===
-{"error":{"code":"ssh-key","message":"GitHub 用户名无效","details":[]}}
-HTTP:400
-=== revoke other machine with hr_ code (proof of cross-machine blast radius) ===
-{"ok":true}
-HTTP:200
-=== GET /api/console with hr_ code ===
-hr-console:200

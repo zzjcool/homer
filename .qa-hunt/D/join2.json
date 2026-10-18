@@ -1,1 +1,0 @@
-{"code":"hr_c16d3dd6bdaccb363a316d755bf58c677170ddb46a9a4a78","command":"curl -fsSL http://127.0.0.1:17760/install.sh | sh -s -- --token hr_c16d3dd6bdaccb363a316d755bf58c677170ddb46a9a4a78","ok":true}

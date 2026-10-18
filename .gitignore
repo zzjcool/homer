@@ -23,3 +23,6 @@ core
 
 # 本地 QA 狩猎产物（复现脚本、截图、日志）
 .qa-hunt/
+
+# Python 工具缓存（本仓库是 Go 项目，防误入）
+.ruff_cache/

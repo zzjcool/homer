@@ -1,9 +1,0 @@
-### resolve (hub-local) generic error loses the real reason
-POST /api/resolve?choice=local&confirm=true:
-{"ok":false,"status":"error","choice":"local","agents":[],"errors":["同步没有完成。"]} HTTP 422
-POST /api/sync?direction=from-center&confirm=true:
-{"ok":false,"status":"error","direction":"from-center","agents":[],"errors":["同步没有完成。"]} HTTP 422
-
-### UI leak of raw internal status token (plugin-error box)
-dispatchPluginToAll -> setPluginError((result.errors||[]).join(\"；\") || result.status || \"下发没有完成\")
-observed: #plugin-error textContent == "partial"  (see C2-ui-fanout-error.png)
