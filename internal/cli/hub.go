@@ -48,7 +48,22 @@ func runServe(options CommandOptions, out, errOut io.Writer) int {
 		return showJoinCommand(paths, showJoinAddr(options.Addr), options, out, errOut)
 	}
 
-	listener, err := net.Listen("tcp", addr)
+	// Hub self-update/restart (contract docs/plan/2026-10-18-hub-self-update-
+	// contract.md). Built before the server so the console's routes have an
+	// implementation from the very first request.
+	//
+	// Order matters here (D13): the boot marker is written at process start,
+	// BEFORE the listener exists, and deleted only once the bind succeeded. A
+	// binary that dies on the way to "ready" therefore leaves its marker
+	// behind, which is exactly what the next boot needs to see. resumeBoot
+	// may exec into <self>.prev and never return.
+	hubOps := newHubOps(paths.Home, addr)
+	hubOps.resumeBoot()
+	if hubOps.bootNotice != "" {
+		writeLine(out, hubOps.bootNotice)
+	}
+
+	listener, err := listenHub(addr)
 	if err != nil {
 		writeLine(errOut, fmt.Sprintf("homer serve: 监听失败: %s", err.Error()))
 		return 1
@@ -57,6 +72,13 @@ func runServe(options CommandOptions, out, errOut io.Writer) int {
 	// what both the loopback check and the startup message must use.
 	boundAddr := listener.Addr().String()
 	loopback := isLoopbackBound(boundAddr)
+	hubOps.setBoundAddr(boundAddr)
+	// ready: the listener is up, so this process is no longer a crash-loop
+	// candidate. Delete the marker before serving a single request.
+	hubOps.markReady()
+	if hubOps.rolledBack {
+		writeLine(out, "homer serve: 上一版程序启动失败，已回滚到原来的版本。")
+	}
 
 	// Token lifecycle (advisor ruling): --token persists (deliberate
 	// rotation), HOMER_HUB_TOKEN overrides this process only, then
@@ -77,34 +99,67 @@ func runServe(options CommandOptions, out, errOut io.Writer) int {
 		return 1
 	}
 	authenticator := &hub.Authenticator{Token: token, Enrollment: enrollment}
-	agentHub := hub.NewAgentHub(registry, authenticator, enrollment, hub.HubOptions{
-		Logger:  stderrLogger{out: errOut},
-		Version: web.Version,
-	})
-	dispatcher.Hub = agentHub
-	agents := &reportedAdaptersAgents{Dispatcher: dispatcher}
 	// 插件状态是 serve 的一部分（B1 契约）。首次在新 home 上运行（还没有
 	// plugins.json）时，把全部官方插件默认安装上：老部署升级到插件体系的
 	// 行为连续性——升级前内置的一切（pi/herdr/opencode/vscode/keyring）
 	// 升级后依然在。全新部署同样默认全装，用户可以在插件页卸载不需要的。
 	plugins := pluginruntime.NewWithLegacyDefault(options.Home)
-	server, err := web.NewServer(web.ServeOptions{
-		Addr:                    boundAddr,
-		HomerHome:               options.Home,
-		Token:                   token,
-		Agents:                  agents,
-		AgentEndpoint:           agentHub,
-		Enrollment:              enrollment,
-		AgentEndpointAuthorized: authenticator.Authorized,
-		AgentIDOfRequest:        authenticator.AgentID,
-		Plugins:                 plugins,
-		Overrides:               web.LoadAgentOverrides(options.Home),
-	})
+	overrides := web.LoadAgentOverrides(options.Home)
+
+	// buildStack assembles one serving generation: agent stream hub, web
+	// server and the http.Server in front of it. It is a closure because a
+	// FAILED in-place restart with no supervisor must keep the hub usable
+	// (D12), and everything drained on the way to the exec is permanent:
+	// agentHub.Shutdown latches h.closing and http.Server.Shutdown closes the
+	// listener for good. Recovery therefore needs fresh instances of both.
+	// Console sessions are not preserved across that path — the password
+	// cookie store lives in web.Server — which is why this only runs after a
+	// restart has already gone wrong.
+	buildStack := func(listener net.Listener) (*serveStack, error) {
+		agentHub := hub.NewAgentHub(registry, authenticator, enrollment, hub.HubOptions{
+			Logger:  stderrLogger{out: errOut},
+			Version: web.Version,
+		})
+		dispatcher.Hub = agentHub
+		agents := &reportedAdaptersAgents{Dispatcher: dispatcher}
+		server, err := web.NewServer(web.ServeOptions{
+			Addr:                    listener.Addr().String(),
+			HomerHome:               options.Home,
+			Token:                   token,
+			Agents:                  agents,
+			AgentEndpoint:           agentHub,
+			Enrollment:              enrollment,
+			AgentEndpointAuthorized: authenticator.Authorized,
+			AgentIDOfRequest:        authenticator.AgentID,
+			Plugins:                 plugins,
+			Overrides:               overrides,
+			HubOps:                  hubOps,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return &serveStack{
+			Listener: listener,
+			AgentHub: agentHub,
+			Server:   server,
+			HTTP: &http.Server{
+				Handler:           server.Handler(),
+				ReadHeaderTimeout: 10 * time.Second,
+				// Pull can spend several minutes installing plugins. The write
+				// budget has to cover that wait. Agent streams are hijacked,
+				// which clears this deadline, so it never cuts a live agent
+				// connection.
+				WriteTimeout: 13 * time.Minute,
+			},
+		}, nil
+	}
+	stack, err := buildStack(listener)
 	if err != nil {
 		_ = listener.Close()
 		writeLine(errOut, fmt.Sprintf("homer serve: %s", err.Error()))
 		return 1
 	}
+	server := stack.Server
 	writeLine(out, fmt.Sprintf("homer serve: http://%s（Ctrl+C 停止）", displayAddr(boundAddr)))
 	// First-run without a password: the console is locked until the
 	// administrator finishes setup in a browser. Loopback/LAN browsers set
@@ -133,43 +188,81 @@ func runServe(options CommandOptions, out, errOut io.Writer) int {
 		writeLine(out, "agent 接入: homer agent --hub http://<本机地址>"+agentPortSuffix(boundAddr))
 		writeLine(out, "查看含 token 的接入命令: homer serve --show-join")
 	}
-	httpServer := &http.Server{
-		Handler:           server.Handler(),
-		ReadHeaderTimeout: 10 * time.Second,
-		// Pull can spend several minutes installing plugins. The write
-		// budget has to cover that wait. Agent streams are hijacked, which
-		// clears this deadline, so it never cuts a live agent connection.
-		WriteTimeout: 13 * time.Minute,
-	}
 	// Graceful shutdown: SIGINT/SIGTERM drains in-flight requests before the
 	// process exits, matching the pair command's NotifyContext pattern.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	serveDone := make(chan error, 1)
-	go func() {
-		err := httpServer.Serve(listener)
-		if err != nil && err != http.ErrServerClosed {
-			serveDone <- err
-			return
+
+	// The serve loop. A console restart drains this iteration's stack and then
+	// exec's a fresh image, which never comes back here. A FAILED exec with no
+	// supervisor (D12) must keep the hub usable, so the loop rebuilds the
+	// drained components, re-binds and serves again instead of returning and
+	// letting the process exit.
+	for {
+		hubOps.setShutdown(stack.AgentHub.Shutdown, stack.HTTP.Shutdown)
+
+		serveDone := make(chan error, 1)
+		current := stack
+		go func() {
+			err := current.HTTP.Serve(current.Listener)
+			if err != nil && err != http.ErrServerClosed {
+				serveDone <- err
+				return
+			}
+			serveDone <- nil
+		}()
+
+		recover := false
+		select {
+		case err := <-serveDone:
+			if err != nil {
+				writeLine(errOut, fmt.Sprintf("homer serve: %s", err.Error()))
+				return 1
+			}
+		case <-ctx.Done():
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			// Tell every agent we are going away (close 1001) before the HTTP
+			// server stops, so in-flight calls fail at once and agents reconnect.
+			_ = stack.AgentHub.Shutdown(shutdownCtx)
+			_ = stack.HTTP.Shutdown(shutdownCtx)
+			cancel()
+			_ = <-serveDone
+			return 0
+		case <-hubOps.execFailed:
+			// The restart drained the server and closed the listener, then the
+			// exec returned an error and there is no supervisor to pick this
+			// process up. Bind again and keep serving.
+			recover = true
 		}
-		serveDone <- nil
-	}()
-	select {
-	case err := <-serveDone:
+		if !recover {
+			return 0
+		}
+		newListener, err := listenHub(boundAddr)
 		if err != nil {
-			writeLine(errOut, fmt.Sprintf("homer serve: %s", err.Error()))
+			writeLine(errOut, fmt.Sprintf("homer serve: 重启失败后重新监听失败: %s", err.Error()))
 			return 1
 		}
-	case <-ctx.Done():
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		// Tell every agent we are going away (close 1001) before the HTTP
-		// server stops, so in-flight calls fail at once and agents reconnect.
-		_ = agentHub.Shutdown(shutdownCtx)
-		_ = httpServer.Shutdown(shutdownCtx)
-		cancel()
-		_ = <-serveDone
+		stack, err = buildStack(newListener)
+		if err != nil {
+			_ = newListener.Close()
+			writeLine(errOut, fmt.Sprintf("homer serve: 重启失败后无法重新提供服务: %s", err.Error()))
+			return 1
+		}
+		boundAddr = stack.Listener.Addr().String()
+		hubOps.setBoundAddr(boundAddr)
+		writeLine(out, fmt.Sprintf("homer serve: 重启没有完成，已继续在 http://%s 提供服务（需要重新登录）。", displayAddr(boundAddr)))
 	}
-	return 0
+}
+
+// serveStack is one serving generation of the hub. A failed in-place restart
+// cannot reuse it: hub.AgentHub.Shutdown latches the closing flag for good and
+// http.Server.Shutdown closes its listener permanently, so recovery builds a
+// new stack instead of reviving the drained one.
+type serveStack struct {
+	Listener net.Listener
+	AgentHub *hub.AgentHub
+	Server   *web.Server
+	HTTP     *http.Server
 }
 
 // reportedAdaptersAgents records adapter IDs returned by status and pull
