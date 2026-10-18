@@ -11,9 +11,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/gens"
-	"github.com/zzjcool/homer-cli/internal/pluginruntime"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/gens"
+	"github.com/zzjcool/homer/internal/pluginruntime"
 )
 
 func TestAgentOverridesPersistenceRoundTrip(t *testing.T) {

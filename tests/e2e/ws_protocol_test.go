@@ -20,9 +20,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/hub"
-	"github.com/zzjcool/homer-cli/internal/stream"
-	"github.com/zzjcool/homer-cli/internal/stream/wsconn"
+	"github.com/zzjcool/homer/internal/hub"
+	"github.com/zzjcool/homer/internal/stream"
+	"github.com/zzjcool/homer/internal/stream/wsconn"
 )
 
 const protocolTestToken = "ws-e2e-hub-token"

@@ -89,12 +89,12 @@ m3-p2-w6-secret
 4a1bc17e6c8af28254c9033aaebd4540b765c5b7
 
 $ npm run typecheck
-> homer-cli@0.0.0 typecheck
+> homer@0.0.0 typecheck
 > tsc --noEmit
 （无输出 = 通过）
 
 $ npm test
- RUN  v5.0.1 /root/code/homer-cli
+ RUN  v5.0.1 /root/code/homer
 
  Test Files  48 passed (48)
       Tests  1054 passed | 1 skipped (1055)
@@ -114,13 +114,13 @@ $ npx vitest run tests/cli/secret.test.ts tests/core/git
 
 - 分支已推送：`origin/m3-p2-w6-secret` = `4a1bc17`（`git ls-remote` 已核对）。
 - 本环境**无 `gh` / `glab` CLI 也无可用 token**，无法程序化建 PR；GitHub 在 push 时返回了建 PR 入口：
-  **https://github.com/zzjcool/homer-cli/pull/new/m3-p2-w6-secret**
+  **https://github.com/zzjcool/homer/pull/new/m3-p2-w6-secret**
 - 与 orchestrator 当前 master（`2f25368`）做 `git merge-tree --write-tree` 检查：**可干净合并**，
   且 W7 未触碰我的任何文件（零重叠）。
 
 ## 5. 未决问题 / 需要 orchestrator 知道的事
 
-1. **⚠️ 共享 worktree 竞态（重要，非本任务代码问题）**：`/root/code/homer-cli` 这个 checkout 被多个
+1. **⚠️ 共享 worktree 竞态（重要，非本任务代码问题）**：`/root/code/homer` 这个 checkout 被多个
    agent 共用。我在 `m3-p2-w6-secret` 上开发期间，**有另一个进程在 07:13:53 把该 worktree 的 HEAD
    从我的分支切到了 `master`**（`git reflog` 可查），导致我第一次 `git commit` 落在了本地 `master`
    上（`7dce7bb`），且我第一次 push 推的是**过期的** `b14b2b2`。已做无损修复：
@@ -128,7 +128,7 @@ $ npx vitest run tests/cli/secret.test.ts tests/core/git
      `4a1bc17`（只含我的 7 个文件），`git update-ref` 落到 `m3-p2-w6-secret` 并 `--force-with-lease` 推送；
    - 把本地 `master` **reset 回** orchestrator 的状态 `2f25368`（我的改动已完整保留在分支上）；
    - 临时 worktree / anchor ref 已清理，shared worktree HEAD 已恢复到 `master`、工作区干净。
-   **建议**：后续 worker 一律在自己的 worktree 里开发（如 `homer-cli-w7` 那样），不要让多个 agent
+   **建议**：后续 worker 一律在自己的 worktree 里开发（如 `homer-w7` 那样），不要让多个 agent
    共用同一个 checkout 的 HEAD；orchestrator 若发现本地 `master` 有异常 commit，可对照上表。
 2. **`secret push` 的 aborted 语义**：§2.6 冻结的顺序是「加密 → confirm → commit」，故用户在 confirm
    阶段拒绝时，`secrets/` 工作区**已含新密文但未 commit**（保持脏）。这是计划的既定顺序，无泄漏面

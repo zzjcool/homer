@@ -1,6 +1,6 @@
 # 冻结面侦察 · hub 后端 / agent 协议 / 契约
 
-仓库 /root/code/homer-cli，HEAD 010521a。全部证据带 文件:行号。
+仓库 /root/code/homer，HEAD 010521a。全部证据带 文件:行号。
 运行时事实来自 127.0.0.1:17760（qa-hub-token / hr_ 码实机 GET 验证，见 2.4 / 9）。
 
 ---

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/gens"
+	"github.com/zzjcool/homer/internal/gens"
 )
 
 // stagedContractStub mirrors tests/e2e's stagedUIStub through the web layer.

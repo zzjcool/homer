@@ -3,7 +3,7 @@ package pair
 import (
 	"errors"
 
-	"github.com/zzjcool/homer-cli/internal/shellenv"
+	"github.com/zzjcool/homer/internal/shellenv"
 )
 
 // ErrNoTailcat is returned when the optional tailcat transport CLI is absent.

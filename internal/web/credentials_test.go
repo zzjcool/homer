@@ -3,7 +3,7 @@ package web
 import (
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 func TestApplyCredentialProbeAddsPerMachinePresence(t *testing.T) {

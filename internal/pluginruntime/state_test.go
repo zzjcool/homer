@@ -9,8 +9,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/pluginregistry"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/pluginregistry"
 )
 
 func TestStatePersistsOfficialAndCustomPluginsInInstallOrder(t *testing.T) {

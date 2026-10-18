@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/pluginruntime"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/pluginruntime"
 )
 
 // Version is injected by the command package when it knows the build version.

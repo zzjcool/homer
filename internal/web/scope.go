@@ -12,9 +12,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/gens"
-	syncx "github.com/zzjcool/homer-cli/internal/sync"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/gens"
+	syncx "github.com/zzjcool/homer/internal/sync"
 )
 
 // SyncScope is an explicit adapter selection for collect or dispatch.

@@ -1,6 +1,6 @@
 # 复现判定 · 第 2 组（角度 B 全部 + 角度 C 的 C4）
 
-仓库 /root/code/homer-cli HEAD=010521a · hub http://127.0.0.1:17760 · box=homer-qa-box-b · 判定人 qa-repro（独立 harness `.qa-hunt/repro2-lib.mjs`，全部脚本自写于 `.qa-hunt/r2-*.mjs`，截图 `.qa-hunt/shots-repro2/`）。
+仓库 /root/code/homer HEAD=010521a · hub http://127.0.0.1:17760 · box=homer-qa-box-b · 判定人 qa-repro（独立 harness `.qa-hunt/repro2-lib.mjs`，全部脚本自写于 `.qa-hunt/r2-*.mjs`，截图 `.qa-hunt/shots-repro2/`）。
 **判定纪律**：所有判据与 hunter 不同源——CDP 网络层计数/阻断（非 window.fetch 打桩）、元素身份标记、页面内焦点采样、剪贴板降级路径观测、Go 层纯函数探针。全程未改被测源码（`zz_c6probe_test.go` 为临时 Go 测试文件，跑完即删，git 干净）。
 
 ---

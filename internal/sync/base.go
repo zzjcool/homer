@@ -5,9 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/adapter"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/gitx"
+	"github.com/zzjcool/homer/internal/adapter"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/gitx"
 )
 
 // CollectSyncSourcesOptions controls network access. Fetch defaults to true

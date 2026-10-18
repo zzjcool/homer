@@ -24,15 +24,15 @@ const candidates = [
 const binary = candidates.find((candidate) => fs.existsSync(candidate));
 if (!binary) {
   process.stderr.write(
-    'homer-cli: the Go binary is not installed. Use curl -fsSL https://raw.githubusercontent.com/zzjcool/homer-cli/master/install.sh | sh\n',
+    'homer: the Go binary is not installed. Use curl -fsSL https://raw.githubusercontent.com/zzjcool/homer/master/install.sh | sh\n',
   );
-  process.stderr.write('homer-cli: offline installs can set HOMER_INSTALL_PACKAGE when installing this package.\n');
+  process.stderr.write('homer: offline installs can set HOMER_INSTALL_PACKAGE when installing this package.\n');
   process.exit(1);
 }
 
 const result = spawnSync(binary, process.argv.slice(2), { stdio: 'inherit' });
 if (result.error) {
-  process.stderr.write(`homer-cli: failed to run ${binary}: ${result.error.message}\n`);
+  process.stderr.write(`homer: failed to run ${binary}: ${result.error.message}\n`);
   process.exit(1);
 }
 process.exit(result.status === null ? 1 : result.status);

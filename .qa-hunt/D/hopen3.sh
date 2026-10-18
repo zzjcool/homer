@@ -1,7 +1,7 @@
 #!/bin/sh
 # Isolated half-open test: SIGSTOP pid of /root/.hhuntD agent on box-c.
-LOG=/root/code/homer-cli/.qa-hunt/D/hopen3.log
-DC="docker compose -f /root/code/homer-cli/qa/env/docker-compose.yml"
+LOG=/root/code/homer/.qa-hunt/D/hopen3.log
+DC="docker compose -f /root/code/homer/qa/env/docker-compose.yml"
 : > $LOG
 PID=$(timeout 20 $DC exec -T box-c sh -c 'for p in /proc/[0-9]*; do c=$(tr "\0" " " < $p/cmdline 2>/dev/null); case "$c" in *hhuntD\ --*) ;; *\ --home\ /root/.hhuntD*) basename $p;; esac; done | head -1')
 echo "$(date -u +%FT%TZ) PID=$PID" | tee -a $LOG

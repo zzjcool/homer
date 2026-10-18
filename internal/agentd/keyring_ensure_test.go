@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 // TestEnsureMachineKeyringAdapter locks the reviewer-F1 fix: a remote key

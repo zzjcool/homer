@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/adapter"
-	"github.com/zzjcool/homer-cli/internal/agecrypto"
-	"github.com/zzjcool/homer-cli/internal/backup"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/gitx"
-	"github.com/zzjcool/homer-cli/internal/manifest"
-	"github.com/zzjcool/homer-cli/internal/orderedjson"
-	syncx "github.com/zzjcool/homer-cli/internal/sync"
+	"github.com/zzjcool/homer/internal/adapter"
+	"github.com/zzjcool/homer/internal/agecrypto"
+	"github.com/zzjcool/homer/internal/backup"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/gitx"
+	"github.com/zzjcool/homer/internal/manifest"
+	"github.com/zzjcool/homer/internal/orderedjson"
+	syncx "github.com/zzjcool/homer/internal/sync"
 )
 
 // HomeOptions controls `homer home <repo-url>`. Home is kept as an alias for

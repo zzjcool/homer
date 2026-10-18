@@ -1,6 +1,6 @@
 # M3 · P1-W1-age 报告（age 密钥层：AgeCryptoPort + keys + vault）
 
-> 分支 `m3-p1-w1-age`，commit `f170e55`（base `4251323`，worktree `/root/code/homer-cli-w1`）
+> 分支 `m3-p1-w1-age`，commit `f170e55`（base `4251323`，worktree `/root/code/homer-w1`）
 > 依据：`docs/m3-plan.md` §2.2 / §3-P1-W1 + `docs/m3-scout-report.md` §3（age 包 API 实测结论）
 
 ---
@@ -127,17 +127,17 @@ P0 阶段标记而非计划错误，故做最小更新：改为断言「拿到�
 
 ```
 $ npm run typecheck
-> homer-cli@0.0.0 typecheck
+> homer@0.0.0 typecheck
 > tsc --noEmit
 （无输出 = 绿）
 ```
 
 ```
 $ npm test
-> homer-cli@0.0.0 test
+> homer@0.0.0 test
 > vitest run
 
- RUN  v5.0.1 /root/code/homer-cli-w1
+ RUN  v5.0.1 /root/code/homer-w1
 
  Test Files  42 passed (42)
       Tests  914 passed | 1 skipped (915)
@@ -148,7 +148,7 @@ $ npm test
 ```
 $ npx vitest run tests/core/age
 
- RUN  v5.0.1 /root/code/homer-cli-w1
+ RUN  v5.0.1 /root/code/homer-w1
 
  Test Files  4 passed (4)
       Tests  119 passed | 1 skipped (120)
@@ -171,7 +171,7 @@ $ npx vitest run tests/core/age
 匿名 GitHub API 被限流（HTTP 403 `API rate limit exceeded`）——与 `docs/m3-p0-report.md`
 §6-1 记录的限制相同。请由 orchestrator 侧创建：
 
-- https://github.com/zzjcool/homer-cli/pull/new/m3-p1-w1-age
+- https://github.com/zzjcool/homer/pull/new/m3-p1-w1-age
 - 或 `gh pr create --base master --head m3-p1-w1-age`
 
 ---

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 // ParseAdapterIDs normalizes an explicit adapter selection. Blank tokens

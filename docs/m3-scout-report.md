@@ -1,4 +1,4 @@
-# homer-cli M3 · S0-scout 侦察报告
+# homer M3 · S0-scout 侦察报告
 
 > 只读侦察，生成于 M3 P0（与 M0-scaffold 并行）。本报告是 **W2-adapters 分类冻结依据**。
 > 基线 commit：`c731e51`（m3-plan.md 冻结）；工作树已有 M0 的 `package.json`/`package-lock.json` 改动（含 `age-encryption@^0.3.1`）。
@@ -149,7 +149,7 @@ drwxr-xr-x  node_modules/       29 个包
 | 维护 | 由 age 官方作者 Filippo Valsorda 维护；mtime 2026-08-28（活跃） |
 | 仓库 | github.com/FiloSottile/typage |
 
-> ⚠️ **homer-cli 是 ESM 还是 CJS？** 需 M0/orchestrator 确认（本侦察未核对 tsconfig module 字段）。若 homer 编译目标是 CJS，`import('age-encryption')` 需走动态 import。**列入待验证**。
+> ⚠️ **homer 是 ESM 还是 CJS？** 需 M0/orchestrator 确认（本侦察未核对 tsconfig module 字段）。若 homer 编译目标是 CJS，`import('age-encryption')` 需走动态 import。**列入待验证**。
 
 ### 3.2 API 验证代码片段（/tmp 同环境直接跑，Node v22.23.1）
 
@@ -202,7 +202,7 @@ const back    = age.armor.decode(armored);   // Uint8Array，可解密
 > 不需要 fallback（node:crypto 自实现）。**但有一处接口适配需在 W1 落地：**
 > §2.2 冻结签名 `generateIdentity(): AgeIdentity`（同步）与包 API `generateIdentity(): Promise<string>`（异步）冲突。`createAgeCryptoPort()` 封装点可吸收此差异（在 W1 内 await 包装即可），但 `AgeCryptoPort.encrypt/decrypt` **已经是 Promise 返回**，与包一致。**建议 orchestrator 在 W1 任务书里注明 `generateIdentity` 为 async 或改为 await 调用**（属实现细节，不改冻结签名也行，只要 W1 内部 await）。
 
-**风险**：ESM-only。若 homer-cli 产出 CJS，需动态 import（`const age = await import('age-encryption')`）；见待验证。
+**风险**：ESM-only。若 homer 产出 CJS，需动态 import（`const age = await import('age-encryption')`）；见待验证。
 
 ---
 
@@ -219,7 +219,7 @@ PATH 搜索完毕：/root/.pi/agent/bin, node, maven, java, sdkman, cargo, go, /
 
 ## 5. 风险与坑
 
-1. **ESM-only 依赖**（age-encryption + @noble/*）：homer-cli 若为 CJS 需动态 import。**最高优先级待验证项**。
+1. **ESM-only 依赖**（age-encryption + @noble/*）：homer 若为 CJS 需动态 import。**最高优先级待验证项**。
 2. **`generateIdentity` 同步/异步签名不一致**：§2.2 写同步，包是 Promise。W1 需 await 包装。
 3. **herdr agent/theme 定义**：无独立用户文件（内联 config.toml / 远端 catalog 缓存）。若未来 herdr 版本改为独立 `agents.toml`，分类需重审——**版本敏感点**。
 4. **opencode 双路径**：`~/.config/opencode`（默认，含 opencode.json）vs `~/.opencode`（无 opencode.json）。默认 root 固定 `~/.config/opencode`（符合 XDG，实测主配置在此），可接受，但 README 应提示。
@@ -230,7 +230,7 @@ PATH 搜索完毕：/root/.pi/agent/bin, node, maven, java, sdkman, cargo, go, /
 
 ## 6. 待验证问题
 
-1. **homer-cli 编译目标是 ESM 还是 CJS？** → 决定 age-encryption 是否需要动态 import。（未核对 tsconfig module 字段）
+1. **homer 编译目标是 ESM 还是 CJS？** → 决定 age-encryption 是否需要动态 import。（未核对 tsconfig module 字段）
 2. **Node 版本下限**：install.sh 应检查 ~G==20.19（非 ~G==20）—— 需在 M0/W4 落实。
 3. `~/.local/state/opencode/model.json`（最近模型选择）是否值得可选同步？默认裁定忽略；如需，属 M4+。
 4. herdr 未来版本是否会新增 `~/.config/herdr` 下独立文件（如 agents.toml / keybindings）？当前 0.9.1 无。

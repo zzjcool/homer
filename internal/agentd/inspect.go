@@ -10,10 +10,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/keyring"
-	"github.com/zzjcool/homer-cli/internal/web"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/keyring"
+	"github.com/zzjcool/homer/internal/web"
 )
 
 const inspectAdapterConcurrency = 4

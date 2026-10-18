@@ -31,24 +31,24 @@ $ timeout 300 go build ./...
 $ timeout 300 go vet ./tests/integration/... ./tests/bench/...
 
 $ timeout 900 go test -race -count=1 ./tests/integration/... -timeout 800s
-ok   github.com/zzjcool/homer-cli/tests/integration  61.658s
+ok   github.com/zzjcool/homer/tests/integration  61.658s
 
 $ timeout 300 go test ./tests/bench -run XXX -bench BenchmarkFourParallel -benchtime 5x
 goos: linux
 goarch: amd64
-pkg: github.com/zzjcool/homer-cli/tests/bench
+pkg: github.com/zzjcool/homer/tests/bench
 cpu: AMD Ryzen 5 4600H with Radeon Graphics
 BenchmarkFourParallel-12    	       5	 121977370 ns/op
 PASS
-ok   github.com/zzjcool/homer-cli/tests/bench  1.960s
+ok   github.com/zzjcool/homer/tests/bench  1.960s
 
 $ (cd npm && npm run typecheck && npm test)
 
-> homer-cli@1.0.0 typecheck
+> homer@1.0.0 typecheck
 > node --check install.js && node --check bin/homer.js
 
 
-> homer-cli@1.0.0 test
+> homer@1.0.0 test
 > node --check install.js && node --check bin/homer.js
 ```
 
@@ -56,20 +56,20 @@ Stability verification:
 
 ```text
 $ GIT_CONFIG_GLOBAL=/tmp/p6a-stability-gitconfig.JwJbqX timeout 900 go test -race ./tests/integration/... -run ^TestReconnectAfterCut$ -count=10 -timeout 800s
-ok   github.com/zzjcool/homer-cli/tests/integration	3.216s
+ok   github.com/zzjcool/homer/tests/integration	3.216s
 $ GIT_CONFIG_GLOBAL=/tmp/p6a-stability-gitconfig.JwJbqX timeout 900 go test -race ./tests/integration/... -run ^TestInflightDisconnectFailsFast$ -count=10 -timeout 800s
-ok   github.com/zzjcool/homer-cli/tests/integration	2.327s
+ok   github.com/zzjcool/homer/tests/integration	2.327s
 $ GIT_CONFIG_GLOBAL=/tmp/p6a-stability-gitconfig.JwJbqX timeout 900 go test -race ./tests/integration/... -run ^TestSameAgentIDSupersede$ -count=10 -timeout 800s
-ok   github.com/zzjcool/homer-cli/tests/integration	2.511s
+ok   github.com/zzjcool/homer/tests/integration	2.511s
 $ GIT_CONFIG_GLOBAL=/tmp/p6a-stability-gitconfig.JwJbqX timeout 900 go test -race ./tests/integration/... -run ^TestFiftyConcurrentTasks$ -count=10 -timeout 800s
-ok   github.com/zzjcool/homer-cli/tests/integration	212.412s
+ok   github.com/zzjcool/homer/tests/integration	212.412s
 $ GIT_CONFIG_GLOBAL=/tmp/p6a-stability-gitconfig.JwJbqX timeout 900 go test -race ./tests/integration/... -run ^TestGracefulShutdownClose$ -count=10 -timeout 800s
-ok   github.com/zzjcool/homer-cli/tests/integration	9.626s
+ok   github.com/zzjcool/homer/tests/integration	9.626s
 ```
 
 ## MR link
 
-https://github.com/zzjcool/homer-cli/pull/14 (branch `ws/p6a-integration`, base `master`).
+https://github.com/zzjcool/homer/pull/14 (branch `ws/p6a-integration`, base `master`).
 
 ## Open issues
 
@@ -84,5 +84,5 @@ https://github.com/zzjcool/homer-cli/pull/14 (branch `ws/p6a-integration`, base 
         ; see P6a_REPORT.md
 --- SKIP: TestCancelTaskHTTPContext (1.09s)
 PASS
-ok   github.com/zzjcool/homer-cli/tests/integration  2.629s
+ok   github.com/zzjcool/homer/tests/integration  2.629s
 ```

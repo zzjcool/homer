@@ -10,7 +10,7 @@ import (
 
 	"filippo.io/age"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 const identityFileName = "age.txt"

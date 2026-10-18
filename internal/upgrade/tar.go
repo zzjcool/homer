@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/shellenv"
+	"github.com/zzjcool/homer/internal/shellenv"
 )
 
 // runTar extracts the archive with the system tar inside a bounded timeout

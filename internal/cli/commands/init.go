@@ -9,11 +9,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/adapter"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/gitx"
-	"github.com/zzjcool/homer-cli/internal/orderedjson"
-	"github.com/zzjcool/homer-cli/internal/pluginregistry"
+	"github.com/zzjcool/homer/internal/adapter"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/gitx"
+	"github.com/zzjcool/homer/internal/orderedjson"
+	"github.com/zzjcool/homer/internal/pluginregistry"
 )
 
 // InitOptions controls the non-interactive scan performed by homer init.

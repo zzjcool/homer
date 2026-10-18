@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/adapter"
+	"github.com/zzjcool/homer/internal/adapter"
 )
 
 func TestSourceErrorMessagesDefaultOmitsDetail(t *testing.T) {

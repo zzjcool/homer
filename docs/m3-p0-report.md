@@ -41,7 +41,7 @@
 
 ```
 $ npm run typecheck
-> homer-cli@0.0.0 typecheck
+> homer@0.0.0 typecheck
 > tsc --noEmit
 exit=0
 
@@ -147,7 +147,7 @@ plaintext = hello homer          # roundtrip OK
 
 1. **PR 未创建**：本机无 `gh` CLI 也无 `GITHUB_TOKEN`，无法自动开 PR。分支已推送，
    PR 可由以下任一方式创建：
-   - https://github.com/zzjcool/homer-cli/pull/new/m3-p0-scaffold
+   - https://github.com/zzjcool/homer/pull/new/m3-p0-scaffold
    - 或 orchestrator 侧 `gh pr create --head m3-p0-scaffold`
 2. **`docs/m3-scout-report.md` 未纳入本 commit**：该文件是并行 worker S0-scout 的产出，
    非 M0 授权文件，故保持 untracked 留给其 owner 提交（避免跨 worker 抢文件）。

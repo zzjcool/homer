@@ -1,10 +1,10 @@
-# homer-cli (npm compatibility wrapper)
+# homer (npm compatibility wrapper)
 
-`homer-cli` is a thin npm wrapper around the native Go `homer` binary. The
+`homer` is a thin npm wrapper around the native Go `homer` binary. The
 primary installation channel is the POSIX release installer:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/zzjcool/homer-cli/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/zzjcool/homer/master/install.sh | sh
 ```
 
 The npm package runs a best-effort `postinstall` download for Linux/macOS
@@ -13,7 +13,7 @@ prints a pointer to `install.sh` and exits with a useful message if no native
 binary is available.
 
 ```sh
-npm install -g homer-cli
+npm install -g @zzjcool/homer
 # Offline/test installation:
 HOMER_INSTALL_PACKAGE=/path/to/homer_linux_amd64 npm install -g ./npm
 ```

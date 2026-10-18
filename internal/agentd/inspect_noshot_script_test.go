@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/kballard/go-shellquote"
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 func TestInspectNoHubSnapshotUsesParallelPathOnce(t *testing.T) {

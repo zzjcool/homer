@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/gitx"
-	"github.com/zzjcool/homer-cli/internal/manifest"
-	syncx "github.com/zzjcool/homer-cli/internal/sync"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/gitx"
+	"github.com/zzjcool/homer/internal/manifest"
+	syncx "github.com/zzjcool/homer/internal/sync"
 )
 
 type w4ManifestCommandFake struct {

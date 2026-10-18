@@ -1,6 +1,6 @@
 package opencode
 
-import "github.com/zzjcool/homer-cli/internal/core"
+import "github.com/zzjcool/homer/internal/core"
 
 // OpencodeAdapterID is the stable adapter identifier.
 const OpencodeAdapterID = "opencode"

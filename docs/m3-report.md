@@ -134,7 +134,7 @@ C 机器 `home --yes` → `secret keygen` → A 追加 C 公钥（commit）→ A
 $ npm run typecheck && npm test
 > tsc --noEmit
 
- RUN  v5.0.1 /root/code/homer-cli-w9
+ RUN  v5.0.1 /root/code/homer-w9
 
  Test Files  53 passed (53)
       Tests  1166 passed | 1 skipped (1167)
@@ -160,7 +160,7 @@ $ sh -n install.sh && echo OK
 OK
 
 $ npm run build && npm pack --pack-destination /tmp/w9pack
-homer-cli-0.0.0.tgz        # 255475 bytes
+homer-0.0.0.tgz        # 255475 bytes
 
 $ PREFIX=$(mktemp -d)
 $ HOMER_INSTALL_PACKAGE=$(ls /tmp/w9pack/*.tgz) NPM_CONFIG_PREFIX=$PREFIX \

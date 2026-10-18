@@ -5,13 +5,13 @@ package pluginregistry
 import (
 	"runtime"
 
-	"github.com/zzjcool/homer-cli/internal/adapter"
-	"github.com/zzjcool/homer-cli/internal/adapter/herdr"
-	"github.com/zzjcool/homer-cli/internal/adapter/keys"
-	"github.com/zzjcool/homer-cli/internal/adapter/opencode"
-	"github.com/zzjcool/homer-cli/internal/adapter/pi"
-	"github.com/zzjcool/homer-cli/internal/adapter/vscode"
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/adapter"
+	"github.com/zzjcool/homer/internal/adapter/herdr"
+	"github.com/zzjcool/homer/internal/adapter/keys"
+	"github.com/zzjcool/homer/internal/adapter/opencode"
+	"github.com/zzjcool/homer/internal/adapter/pi"
+	"github.com/zzjcool/homer/internal/adapter/vscode"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 // Role identifies the kind of capability a plugin provides.

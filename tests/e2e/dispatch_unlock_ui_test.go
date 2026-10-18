@@ -14,10 +14,10 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/gens"
-	"github.com/zzjcool/homer-cli/internal/keyring"
-	"github.com/zzjcool/homer-cli/internal/web"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/gens"
+	"github.com/zzjcool/homer/internal/keyring"
+	"github.com/zzjcool/homer/internal/web"
 )
 
 // The dispatch dialog is one conversation: pick adapters, then type the

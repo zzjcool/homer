@@ -1,6 +1,6 @@
 package pi
 
-import "github.com/zzjcool/homer-cli/internal/core"
+import "github.com/zzjcool/homer/internal/core"
 
 // PIAdapterID is the stable adapter identifier written to snapshots and
 // homer.json.

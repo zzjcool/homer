@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/adapter/keys"
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/adapter/keys"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 func bootstrapPaths(t *testing.T, home string) core.HomerPaths {

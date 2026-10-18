@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/hub"
-	"github.com/zzjcool/homer-cli/internal/stream"
-	"github.com/zzjcool/homer-cli/internal/stream/wsconn"
-	"github.com/zzjcool/homer-cli/internal/web"
+	"github.com/zzjcool/homer/internal/hub"
+	"github.com/zzjcool/homer/internal/stream"
+	"github.com/zzjcool/homer/internal/stream/wsconn"
+	"github.com/zzjcool/homer/internal/web"
 )
 
 func TestReportedAdaptersAgentsRecordsStatusAndPull(t *testing.T) {

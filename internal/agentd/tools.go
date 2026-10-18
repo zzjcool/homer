@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/toolctl"
+	"github.com/zzjcool/homer/internal/toolctl"
 )
 
 // Toolkit is how the daemon looks at, and upgrades, the programs the adapters

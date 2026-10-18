@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/toolctl"
+	"github.com/zzjcool/homer/internal/toolctl"
 )
 
 // AgentTool is one program an adapter drives (pi, herdr, opencode...) as

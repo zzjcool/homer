@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 const testRecordedAt = "2026-10-20T08:00:00Z"

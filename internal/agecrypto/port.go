@@ -6,7 +6,7 @@ import (
 
 	"filippo.io/age"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 // AgeCryptoPort is the seam consumed by doctor, secret, and home command

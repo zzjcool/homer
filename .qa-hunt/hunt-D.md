@@ -1,6 +1,6 @@
 # 狩猎角度 D · agent 生命周期 / 下发链路 / 状态卡死
 
-仓库 `/root/code/homer-cli`，HEAD `010521a`。时间窗口 2026-10-16 12:58Z ~ 13:30Z。
+仓库 `/root/code/homer`，HEAD `010521a`。时间窗口 2026-10-16 12:58Z ~ 13:30Z。
 产物目录 `.qa-hunt/D/`。角度边界：**只做**生命周期与下发链路（断线/重连/重复接入/半开、
 任务卡中间态、下发后状态不一致）；不做鉴权矩阵、不做密钥、不做文档一致性。
 
@@ -378,7 +378,7 @@
 
 ## 环境
 
-- 宿主 `/root/code/homer-cli`，HEAD `010521a`；hub `http://127.0.0.1:17760`（容器内 `http://hub:7760`）
+- 宿主 `/root/code/homer`，HEAD `010521a`；hub `http://127.0.0.1:17760`（容器内 `http://hub:7760`）
 - Bearer `qa-hub-token`；管理员密码 `qa-admin-password`；CDP `http://127.0.0.1:3000`
 - 主要用 **box-c**（hostname `54d0c3373428`）做假死/重复接入；
   box-a 未使用（其上有 STOPPED 进程 205/29/309，是别的 hunter 造成的，我未触碰）

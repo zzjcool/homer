@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/agecrypto"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/doctor"
-	"github.com/zzjcool/homer-cli/internal/orderedjson"
+	"github.com/zzjcool/homer/internal/agecrypto"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/doctor"
+	"github.com/zzjcool/homer/internal/orderedjson"
 )
 
 // DoctorOptions is the command-layer option shape. The command parser owned by

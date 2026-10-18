@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/agecrypto"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/pair"
-	"github.com/zzjcool/homer-cli/internal/pair/pairtest"
+	"github.com/zzjcool/homer/internal/agecrypto"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/pair"
+	"github.com/zzjcool/homer/internal/pair/pairtest"
 )
 
 type pairConfirmFake struct {

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/stream"
+	"github.com/zzjcool/homer/internal/stream"
 )
 
 func TestDispatcherQueuedCallAfterDetachReturnsOffline(t *testing.T) {

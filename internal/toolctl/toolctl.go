@@ -17,10 +17,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/adapter"
-	"github.com/zzjcool/homer-cli/internal/pluginregistry"
-	"github.com/zzjcool/homer-cli/internal/shellenv"
-	"github.com/zzjcool/homer-cli/internal/upgrade"
+	"github.com/zzjcool/homer/internal/adapter"
+	"github.com/zzjcool/homer/internal/pluginregistry"
+	"github.com/zzjcool/homer/internal/shellenv"
+	"github.com/zzjcool/homer/internal/upgrade"
 )
 
 const (

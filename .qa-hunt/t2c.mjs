@@ -7,5 +7,5 @@ await waitFor(sid, "!document.querySelector('#workspace').classList.contains('hi
 const L=(...a)=>console.log(...a);
 L(JSON.stringify(await ev(sid,"[...document.querySelectorAll('.agent-card')].map(c=>({id:c.dataset.agentId,txt:c.textContent.slice(0,90),btns:[...c.querySelectorAll('button')].map(b=>b.textContent.trim())}))"),null,1));
 L("hero:", await ev(sid,"document.querySelector('#hero').textContent.slice(0,200)"));
-await shot(sid,"/root/code/homer-cli/.qa-hunt/shots-B/03-list.png");
+await shot(sid,"/root/code/homer/.qa-hunt/shots-B/03-list.png");
 process.exit(0);

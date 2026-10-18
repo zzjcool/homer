@@ -15,9 +15,9 @@ import (
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/toolctl"
-	"github.com/zzjcool/homer-cli/internal/web"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/toolctl"
+	"github.com/zzjcool/homer/internal/web"
 )
 
 // toolUIStub is a hub with four machines and a pretend way to upgrade the

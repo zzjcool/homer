@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/zzjcool/homer-cli/internal/adapter/pi"
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/web"
+	"github.com/zzjcool/homer/internal/adapter/pi"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/web"
 )
 
 type collectUIStub struct {

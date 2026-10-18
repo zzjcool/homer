@@ -19,10 +19,10 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/gens"
-	syncx "github.com/zzjcool/homer-cli/internal/sync"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/gens"
+	syncx "github.com/zzjcool/homer/internal/sync"
 )
 
 // Manual sync (planner-frozen MVP step 2): one console action collapses

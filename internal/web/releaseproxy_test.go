@@ -9,7 +9,7 @@ import (
 
 	"runtime"
 
-	"github.com/zzjcool/homer-cli/internal/gens"
+	"github.com/zzjcool/homer/internal/gens"
 )
 
 // otherPlatform returns a platform pair guaranteed to differ from the

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/engine"
-	"github.com/zzjcool/homer-cli/internal/orderedjson"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/engine"
+	"github.com/zzjcool/homer/internal/orderedjson"
 )
 
 // DiffOptions controls the read-only detailed diff command.

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/stream"
-	"github.com/zzjcool/homer-cli/internal/stream/streamtest"
+	"github.com/zzjcool/homer/internal/stream"
+	"github.com/zzjcool/homer/internal/stream/streamtest"
 )
 
 func TestCancelWinsBeforeHandlerReturnsNoResponse(t *testing.T) {

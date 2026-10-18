@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/gitx"
+	"github.com/zzjcool/homer/internal/gitx"
 )
 
 func TestCLIPushYesMissingIdentityExitsZeroAndFailureExitsOne(t *testing.T) {

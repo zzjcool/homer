@@ -1,4 +1,4 @@
-# homer-cli v1.3 P3 收口报告
+# homer v1.3 P3 收口报告
 
 > 本报告对应综合修复分支 `fix/v1.3-adversarial-review`；P3 只修改进程边界 e2e、README 与本报告；
 > P0–P2 的协议、tailcat 适配器和 CLI 接缝以 `927ce8e` 为基线。
@@ -86,27 +86,27 @@ $ go build ./...
 $ go vet ./...
 $ gofmt -l . | grep -v vendor
 $ go test -count=1 ./...
-?    github.com/zzjcool/homer-cli/cmd/homer [no test files]
-ok   github.com/zzjcool/homer-cli/internal/adapter 0.016s
-ok   github.com/zzjcool/homer-cli/internal/adapter/herdr 0.003s [no tests to run]
-ok   github.com/zzjcool/homer-cli/internal/adapter/opencode 0.002s [no tests to run]
-ok   github.com/zzjcool/homer-cli/internal/adapter/pi 0.002s [no tests to run]
-ok   github.com/zzjcool/homer-cli/internal/adapter/vscode 0.002s
-ok   github.com/zzjcool/homer-cli/internal/agecrypto 0.050s
-ok   github.com/zzjcool/homer-cli/internal/backup 0.008s
-ok   github.com/zzjcool/homer-cli/internal/cli 0.234s
-ok   github.com/zzjcool/homer-cli/internal/cli/commands 2.009s
-ok   github.com/zzjcool/homer-cli/internal/core 0.019s
-ok   github.com/zzjcool/homer-cli/internal/doctor 0.205s
-ok   github.com/zzjcool/homer-cli/internal/engine 0.011s
-ok   github.com/zzjcool/homer-cli/internal/gitx 0.936s
-ok   github.com/zzjcool/homer-cli/internal/manifest 0.170s
-ok   github.com/zzjcool/homer-cli/internal/orderedjson 0.007s
-ok   github.com/zzjcool/homer-cli/internal/pair 0.457s
-ok   github.com/zzjcool/homer-cli/internal/pair/pairtest 0.014s
-ok   github.com/zzjcool/homer-cli/internal/secretscan 0.003s
-ok   github.com/zzjcool/homer-cli/internal/sync 0.294s
-ok   github.com/zzjcool/homer-cli/tests/e2e 7.058s
+?    github.com/zzjcool/homer/cmd/homer [no test files]
+ok   github.com/zzjcool/homer/internal/adapter 0.016s
+ok   github.com/zzjcool/homer/internal/adapter/herdr 0.003s [no tests to run]
+ok   github.com/zzjcool/homer/internal/adapter/opencode 0.002s [no tests to run]
+ok   github.com/zzjcool/homer/internal/adapter/pi 0.002s [no tests to run]
+ok   github.com/zzjcool/homer/internal/adapter/vscode 0.002s
+ok   github.com/zzjcool/homer/internal/agecrypto 0.050s
+ok   github.com/zzjcool/homer/internal/backup 0.008s
+ok   github.com/zzjcool/homer/internal/cli 0.234s
+ok   github.com/zzjcool/homer/internal/cli/commands 2.009s
+ok   github.com/zzjcool/homer/internal/core 0.019s
+ok   github.com/zzjcool/homer/internal/doctor 0.205s
+ok   github.com/zzjcool/homer/internal/engine 0.011s
+ok   github.com/zzjcool/homer/internal/gitx 0.936s
+ok   github.com/zzjcool/homer/internal/manifest 0.170s
+ok   github.com/zzjcool/homer/internal/orderedjson 0.007s
+ok   github.com/zzjcool/homer/internal/pair 0.457s
+ok   github.com/zzjcool/homer/internal/pair/pairtest 0.014s
+ok   github.com/zzjcool/homer/internal/secretscan 0.003s
+ok   github.com/zzjcool/homer/internal/sync 0.294s
+ok   github.com/zzjcool/homer/tests/e2e 7.058s
 $ CGO_ENABLED=0 go build -trimpath ./cmd/homer
 verification: PASS
 ```
@@ -117,9 +117,9 @@ verification: PASS
 $ npm run typecheck && npm test
 npm error code ENOENT
 npm error syscall open
-npm error path /root/code/homer-cli-v1.3-review-fix/package.json
+npm error path /root/code/homer-v1.3-review-fix/package.json
 npm error errno -2
-npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/root/code/homer-cli-v1.3-review-fix/package.json'
+npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/root/code/homer-v1.3-review-fix/package.json'
 npm error enoent
 npm error A complete log of this run can be found in: /root/.npm/_logs/2026-09-25T13_31_30_999Z-debug-0.log
 ```
@@ -130,7 +130,7 @@ events，所有 Go 终检命令 exit 0。
 ## MR / PR
 
 分支已 push：`fix/v1.3-adversarial-review`。GitHub PR 创建 URL：
-<https://github.com/zzjcool/homer-cli/pull/new/fix/v1.3-adversarial-review>
+<https://github.com/zzjcool/homer/pull/new/fix/v1.3-adversarial-review>
 
 当前 worker 没有 `gh`/`glab` 或 GitHub API token；匿名 API 请求还受到 rate limit（HTTP
 403），所以无法在无人值守环境中代替维护者点击创建 PR。上面的 URL 可直接打开并以

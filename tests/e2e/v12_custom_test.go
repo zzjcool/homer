@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/adapter"
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/adapter"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 func v12HandwrittenFakeCLIConfig(listCmd, applyCmd string) string {

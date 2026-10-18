@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/pluginregistry"
+	"github.com/zzjcool/homer/internal/pluginregistry"
 )
 
 func TestOfficialInstallPi(t *testing.T) {

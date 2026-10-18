@@ -11,15 +11,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/hub"
-	"github.com/zzjcool/homer-cli/internal/keyring"
-	"github.com/zzjcool/homer-cli/internal/pluginregistry"
-	"github.com/zzjcool/homer-cli/internal/resolutions"
-	"github.com/zzjcool/homer-cli/internal/sshkey"
-	"github.com/zzjcool/homer-cli/internal/stream"
-	"github.com/zzjcool/homer-cli/internal/web"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/hub"
+	"github.com/zzjcool/homer/internal/keyring"
+	"github.com/zzjcool/homer/internal/pluginregistry"
+	"github.com/zzjcool/homer/internal/resolutions"
+	"github.com/zzjcool/homer/internal/sshkey"
+	"github.com/zzjcool/homer/internal/stream"
+	"github.com/zzjcool/homer/internal/web"
 )
 
 // registerHandlers installs every task method before Session.Run starts. Each

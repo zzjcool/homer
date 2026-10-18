@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/shellenv"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/shellenv"
 )
 
 type fakePort struct {

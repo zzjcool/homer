@@ -1,7 +1,7 @@
 # 独立复现判定 · 第 1 组：鉴权/越权（角度 A 全部 candidate）
 
 判定者：qa-repro（独立判据，不复用 qa-hunter 的 detector）
-仓库 /root/code/homer-cli，HEAD=010521a。时间窗 2026-10-16 13:33–13:47 UTC。
+仓库 /root/code/homer，HEAD=010521a。时间窗 2026-10-16 13:33–13:47 UTC。
 环境：hub http://127.0.0.1:17760，Bearer qa-hub-token，容器 homer-qa-hub/box-a/b/c。
 
 ## 判据纪律声明

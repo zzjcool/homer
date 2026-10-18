@@ -3,7 +3,7 @@ package agentd
 import (
 	"sync"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 // snapshotCache keeps one decoded hub generation in memory. The epoch guards

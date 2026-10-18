@@ -6,12 +6,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/adapter"
-	"github.com/zzjcool/homer-cli/internal/backup"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/orderedjson"
-	"github.com/zzjcool/homer-cli/internal/secretscan"
-	syncx "github.com/zzjcool/homer-cli/internal/sync"
+	"github.com/zzjcool/homer/internal/adapter"
+	"github.com/zzjcool/homer/internal/backup"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/orderedjson"
+	"github.com/zzjcool/homer/internal/secretscan"
+	syncx "github.com/zzjcool/homer/internal/sync"
 )
 
 // MergeOptions controls conflict resolution. The two accept flags are

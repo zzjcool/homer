@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/hub"
-	"github.com/zzjcool/homer-cli/internal/hubclient"
+	"github.com/zzjcool/homer/internal/hub"
+	"github.com/zzjcool/homer/internal/hubclient"
 )
 
 // hubRequested reports whether this invocation should talk to a hub.

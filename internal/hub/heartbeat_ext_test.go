@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/stream"
+	"github.com/zzjcool/homer/internal/stream"
 )
 
 func TestMachineReportedAdapters(t *testing.T) {

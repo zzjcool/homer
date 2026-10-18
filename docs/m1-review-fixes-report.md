@@ -1,4 +1,4 @@
-# homer-cli M1 对抗式 review 修复报告
+# homer M1 对抗式 review 修复报告
 
 commit: `d8585ef` · branch: `pi-subagent/m1-review-fixes`（已 push 到 origin）· base: `a476beb` (master)
 
@@ -29,7 +29,7 @@ commit: `d8585ef` · branch: `pi-subagent/m1-review-fixes`（已 push 到 origin
 
 ```
 $ npm run typecheck
-> homer-cli@0.0.0 typecheck
+> homer@0.0.0 typecheck
 > tsc --noEmit
 （无错误）
 
@@ -45,7 +45,7 @@ $ npm test
 
 分支已 push：`origin/pi-subagent/m1-review-fixes`。
 **无法开 MR**：远端只有本分支（无 `master`/其它 base），本机无 `gh`/`glab`/token（`pull/new` 端点 302 → login），且硬约束禁止 push 到 main/master。手工建 PR：
-https://github.com/zzjcool/homer-cli/pull/new/pi-subagent/m1-review-fixes
+https://github.com/zzjcool/homer/pull/new/pi-subagent/m1-review-fixes
 
 ## 未决问题
 

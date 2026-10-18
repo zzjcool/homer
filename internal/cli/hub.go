@@ -14,11 +14,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/agentd"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/hub"
-	"github.com/zzjcool/homer-cli/internal/pluginruntime"
-	"github.com/zzjcool/homer-cli/internal/web"
+	"github.com/zzjcool/homer/internal/agentd"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/hub"
+	"github.com/zzjcool/homer/internal/pluginruntime"
+	"github.com/zzjcool/homer/internal/web"
 )
 
 // hubDefaults mirrors plan §2.6: serve binds loopback by default; the token

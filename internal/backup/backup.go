@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 // BackupTarget maps an existing source path to a controlled, store-relative

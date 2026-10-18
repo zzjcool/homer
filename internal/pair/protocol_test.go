@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/agecrypto"
+	"github.com/zzjcool/homer/internal/agecrypto"
 )
 
 type oneByteReader struct{ data []byte }

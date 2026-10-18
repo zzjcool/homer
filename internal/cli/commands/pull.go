@@ -6,11 +6,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/backup"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/manifest"
-	"github.com/zzjcool/homer-cli/internal/orderedjson"
-	syncx "github.com/zzjcool/homer-cli/internal/sync"
+	"github.com/zzjcool/homer/internal/backup"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/manifest"
+	"github.com/zzjcool/homer/internal/orderedjson"
+	syncx "github.com/zzjcool/homer/internal/sync"
 )
 
 // PullOptions is the option set for the pull command. Home is retained as a

@@ -7,11 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/agecrypto"
-	"github.com/zzjcool/homer-cli/internal/backup"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/gitx"
-	"github.com/zzjcool/homer-cli/internal/orderedjson"
+	"github.com/zzjcool/homer/internal/agecrypto"
+	"github.com/zzjcool/homer/internal/backup"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/gitx"
+	"github.com/zzjcool/homer/internal/orderedjson"
 )
 
 // SecretSubcommand is one of the four frozen secret command names.

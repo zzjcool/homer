@@ -1,7 +1,7 @@
 #!/bin/sh
 # Does a half-open (frozen) agent's pull hold the global writeMutex and block other machines?
-LOG=/root/code/homer-cli/.qa-hunt/D/mutex.log
-DC="docker compose -f /root/code/homer-cli/qa/env/docker-compose.yml"
+LOG=/root/code/homer/.qa-hunt/D/mutex.log
+DC="docker compose -f /root/code/homer/qa/env/docker-compose.yml"
 : > $LOG
 DEAD=54d0c3373428-4323    # my isolated agent on box-c
 LIVE=b6675d68ddf7-7920    # healthy machine (box-b)

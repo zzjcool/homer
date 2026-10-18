@@ -1,6 +1,6 @@
 # 狩猎 · 角度 A：鉴权边界 / 越权 / 敏感数据
 
-仓库 /root/code/homer-cli，HEAD `010521a`。
+仓库 /root/code/homer，HEAD `010521a`。
 时间窗 2026-10-16 13:00–13:10 UTC。全部结论**实机验证**（curl / 裸 WebSocket）。
 
 ## 角度与边界

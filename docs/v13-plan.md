@@ -1,4 +1,4 @@
-# homer-cli v1.3 实施计划（docs/v13-plan.md 内容）
+# homer v1.3 实施计划（docs/v13-plan.md 内容）
 
 > 基线：master `f24188e`（v1.2.0 已发布，455 tests 绿）。两大交付：① `homer pair` 在线配对命令（tailcat CLI 可选依赖做传输层，age 保持 at-rest 加密）② 状态/文档/测试收口。git 主通道、引擎、既有命令**零破坏性修改**，全部 additive。
 >

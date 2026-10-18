@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/stream"
+	"github.com/zzjcool/homer/internal/stream"
 )
 
 const defaultPipeBuffer = 256

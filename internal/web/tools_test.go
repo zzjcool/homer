@@ -9,8 +9,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/pluginregistry"
-	"github.com/zzjcool/homer-cli/internal/toolctl"
+	"github.com/zzjcool/homer/internal/pluginregistry"
+	"github.com/zzjcool/homer/internal/toolctl"
 )
 
 func testTool(id, version string) AgentTool {

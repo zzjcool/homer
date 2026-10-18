@@ -1,4 +1,4 @@
-# homer-cli v1.2 实施计划（docs/v12-plan.md 内容）
+# homer v1.2 实施计划（docs/v12-plan.md 内容）
 
 > 基线：master `d4c4b1c`（v1.0.0，388 tests 绿）。三大特性：① 交互式 init 向导（体验层）② 用户自定义 adapter（声明层）③ manifest 分类 + VS Code adapter（结构增量）。引擎三路判定/快照/store 语义**零破坏性修改**，仅 additive。
 

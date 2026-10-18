@@ -7,9 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/keyring"
-	"github.com/zzjcool/homer-cli/internal/pluginregistry"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/keyring"
+	"github.com/zzjcool/homer/internal/pluginregistry"
 	"golang.org/x/term"
 )
 

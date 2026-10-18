@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/stream"
+	"github.com/zzjcool/homer/internal/stream"
 )
 
 func sendEnrollmentHello(t *testing.T, conn stream.Conn, agentID string) *stream.Frame {

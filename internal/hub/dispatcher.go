@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/keyring"
-	"github.com/zzjcool/homer-cli/internal/stream"
-	"github.com/zzjcool/homer-cli/internal/toolctl"
-	"github.com/zzjcool/homer-cli/internal/web"
+	"github.com/zzjcool/homer/internal/keyring"
+	"github.com/zzjcool/homer/internal/stream"
+	"github.com/zzjcool/homer/internal/toolctl"
+	"github.com/zzjcool/homer/internal/web"
 )
 
 const agentCallConcurrency = 64

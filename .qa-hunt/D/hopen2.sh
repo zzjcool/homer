@@ -1,6 +1,6 @@
 #!/bin/sh
-LOG=/root/code/homer-cli/.qa-hunt/D/hopen2.log
-DC="docker compose -f /root/code/homer-cli/qa/env/docker-compose.yml"
+LOG=/root/code/homer/.qa-hunt/D/hopen2.log
+DC="docker compose -f /root/code/homer/qa/env/docker-compose.yml"
 API="http://127.0.0.1:17760/api/agents"
 : > $LOG
 PID=40

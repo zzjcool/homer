@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 // storeMu serializes all in-process reads and writes. Record, Clear, and

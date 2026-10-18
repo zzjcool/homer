@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/manifest"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/manifest"
 )
 
 func TestSplitManifestActionsGoldenVectors(t *testing.T) {

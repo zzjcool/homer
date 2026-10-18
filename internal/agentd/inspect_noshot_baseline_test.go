@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 // A brand-new hub has no snapshot yet (HTTP 409), but this machine's own store

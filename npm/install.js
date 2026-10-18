@@ -44,7 +44,7 @@ function download(url, destination, redirects = 0) {
   }
   const client = url.startsWith('https:') ? https : http;
   return new Promise((resolve, reject) => {
-    const request = client.get(url, { headers: { 'User-Agent': 'homer-cli-npm' } }, (response) => {
+    const request = client.get(url, { headers: { 'User-Agent': 'homer-npm' } }, (response) => {
       if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
         response.resume();
         const next = new URL(response.headers.location, url).toString();
@@ -113,7 +113,7 @@ function archiveURL(info) {
     return `${direct.replace(/\/$/, '')}/${info.archive}`;
   }
   const version = process.env.HOMER_INSTALL_VERSION || 'latest';
-  const base = process.env.HOMER_NPM_BASE_URL || process.env.HOMER_INSTALL_BASE_URL || 'https://github.com/zzjcool/homer-cli/releases';
+  const base = process.env.HOMER_NPM_BASE_URL || process.env.HOMER_INSTALL_BASE_URL || 'https://github.com/zzjcool/homer/releases';
   if (version === 'latest') {
     if (base.endsWith('/latest/download')) return `${base}/${info.archive}`;
     if (base.endsWith('/releases')) return `${base}/latest/download/${info.archive}`;
@@ -127,7 +127,7 @@ function archiveURL(info) {
 
 async function install() {
   if (process.env.HOMER_NPM_SKIP_INSTALL === '1') {
-    console.log('homer-cli: postinstall skipped (HOMER_NPM_SKIP_INSTALL=1)');
+    console.log('homer: postinstall skipped (HOMER_NPM_SKIP_INSTALL=1)');
     return;
   }
   const info = platform();
@@ -179,15 +179,15 @@ async function install() {
     fs.copyFileSync(binary, staged);
     fs.chmodSync(staged, 0o755);
     fs.renameSync(staged, vendorBinary);
-    console.log(`homer-cli: installed Go binary at ${vendorBinary}`);
+    console.log(`homer: installed Go binary at ${vendorBinary}`);
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
   }
 }
 
 install().catch((error) => {
-  console.warn(`homer-cli: binary download skipped (${error.message})`);
-  console.warn('homer-cli: use install.sh for the primary channel or retry with HOMER_INSTALL_PACKAGE.');
+  console.warn(`homer: binary download skipped (${error.message})`);
+  console.warn('homer: use install.sh for the primary channel or retry with HOMER_INSTALL_PACKAGE.');
   // A failed optional download must never make npm install fail.
   process.exitCode = 0;
 });

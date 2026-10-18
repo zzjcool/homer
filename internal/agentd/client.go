@@ -14,10 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/hub"
-	"github.com/zzjcool/homer-cli/internal/stream"
-	"github.com/zzjcool/homer-cli/internal/stream/wsconn"
-	"github.com/zzjcool/homer-cli/internal/web"
+	"github.com/zzjcool/homer/internal/hub"
+	"github.com/zzjcool/homer/internal/stream"
+	"github.com/zzjcool/homer/internal/stream/wsconn"
+	"github.com/zzjcool/homer/internal/web"
 )
 
 type streamDialer func(context.Context, string, wsconn.DialOptions) (stream.Conn, *http.Response, error)

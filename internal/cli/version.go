@@ -1,13 +1,13 @@
 package cli
 
 import (
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/cli/commands"
 	"io"
 	"os"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/upgrade"
-	"github.com/zzjcool/homer-cli/internal/web"
+	"github.com/zzjcool/homer/internal/upgrade"
+	"github.com/zzjcool/homer/internal/web"
 )
 
 // version is populated by cmd/homer from the GoReleaser ldflag. Keeping the

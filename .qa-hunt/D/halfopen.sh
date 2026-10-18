@@ -1,7 +1,7 @@
 #!/bin/sh
 # Half-open simulation: SIGSTOP the agent process on box-c (TCP stays ESTABLISHED, no pongs)
-LOG=/root/code/homer-cli/.qa-hunt/D/halfopen.log
-DC="docker compose -f /root/code/homer-cli/qa/env/docker-compose.yml"
+LOG=/root/code/homer/.qa-hunt/D/halfopen.log
+DC="docker compose -f /root/code/homer/qa/env/docker-compose.yml"
 API="http://127.0.0.1:17760/api/agents"
 : > $LOG
 pid=$(timeout 20 $DC exec -T box-c sh -c 'for p in /proc/[0-9]*; do c=$(tr "\0" " " < $p/cmdline 2>/dev/null); case "$c" in *"/root/.local/bin/homer agent"*) basename $p;; esac; done | head -1')

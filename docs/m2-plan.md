@@ -1,4 +1,4 @@
-# homer-cli M2 实施计划（同步内核：push / pull / merge / 备份 / 密钥扫描）
+# homer M2 实施计划（同步内核：push / pull / merge / 备份 / 密钥扫描）
 
 > 目标（DESIGN §6 M2）：跑通「安全往返」——本地 ⇄ store ⇄ git 远端 的完整写路径，含密钥扫描拒推、应用前备份、交互式冲突解决。
 > 本文冻结全部新增 TS 接口；worker 只实现，不发明接口。M1 冻结接口**不做破坏性修改**，仅允许 §1.0 列出的 3 处 additive 变更。

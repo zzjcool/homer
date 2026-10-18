@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/toolctl"
+	"github.com/zzjcool/homer/internal/toolctl"
 )
 
 type fakeTools struct {

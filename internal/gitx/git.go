@@ -16,7 +16,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/shellenv"
+	"github.com/zzjcool/homer/internal/shellenv"
 )
 
 // ExecResult is the non-throwing result of a git subprocess.

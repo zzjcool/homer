@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/hub"
-	"github.com/zzjcool/homer-cli/internal/resolutions"
-	"github.com/zzjcool/homer-cli/internal/stream"
-	"github.com/zzjcool/homer-cli/internal/stream/streamtest"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/hub"
+	"github.com/zzjcool/homer/internal/resolutions"
+	"github.com/zzjcool/homer/internal/stream"
+	"github.com/zzjcool/homer/internal/stream/streamtest"
 )
 
 func TestRunResolveRecord_RecordListClear(t *testing.T) {

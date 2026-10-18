@@ -1,4 +1,4 @@
-# homer-cli Go 重写实施计划（MVP = TS 版 M1-M3 全功能对等）
+# homer Go 重写实施计划（MVP = TS 版 M1-M3 全功能对等）
 
 > 基线：TS 实现 master=5b65ee5（1202 tests）已归档 `legacy/ts` 分支 + `ts-v1.0.0` tag。Go 版照 DESIGN.md 与 m1/m2/m3-plan 的冻结语义重写，**TS 版各轮对抗 review 修复过的行为必须原样保留**。规格来源齐全，重写 = 按图纸重盖；结构自由映射 Go 惯例，语义零漂移。
 
@@ -17,12 +17,12 @@
 
 ```bash
 # 前置确认（幂等保险）
-git -C /root/code/homer-cli rev-parse legacy/ts ts-v1.0.0   # 均存在
+git -C /root/code/homer rev-parse legacy/ts ts-v1.0.0   # 均存在
 
 # 1) 先抽黄金向量（不可省，见 §4.2）：在 legacy/ts 的 worktree 里跑 TS 引擎，
 #    生成 testdata/golden/*.json 落回 master（此时 master 还是 TS 结构，直接写 testdata/）
 git worktree add ../homer-ts-vec legacy/ts
-# 在 worktree 中用 vitest/tsx 跑导出脚本（见 §4.2 清单）→ 输出到 /root/code/homer-cli/testdata/golden/
+# 在 worktree 中用 vitest/tsx 跑导出脚本（见 §4.2 清单）→ 输出到 /root/code/homer/testdata/golden/
 #    注意向量只含测试自造数据，绝不含任何真实密钥
 
 # 2) 一次 commit 完成目录替换
@@ -34,7 +34,7 @@ git add -A && git commit -m "chore: switch repo to Go layout (TS archived at leg
 **Go 结构（冻结）**：
 
 ```
-/                              # go.mod 在根，module github.com/<owner>/homer-cli
+/                              # go.mod 在根，module github.com/<owner>/homer
 ├── go.mod                     # Go 当前稳定版（落地时取 go1.2x 最新）
 ├── cmd/homer/main.go          # 薄入口：调用 internal/cli.Run(os.Args)
 ├── internal/core/             # types.go paths.go config.go state.go errors.go entrykind.go scanguard.go
@@ -310,7 +310,7 @@ builds:
     ldflags: ["-s -w -X main.version={{.Version}}"]
 archives: [{ formats: [tar.gz] }]  # name_template 含 {{ .Os }}_{{ .Arch }}
 checksum: { name_template: 'checksums.txt' }
-release: { github: { owner: <owner>, name: homer-cli } }
+release: { github: { owner: <owner>, name: homer } }
 ```
 
 `.github/workflows/release.yml`：tag push → goreleaser release。本地验收：`goreleaser build --snapshot --clean` 四平台产物 + `checksums.txt`。
@@ -321,7 +321,7 @@ release: { github: { owner: <owner>, name: homer-cli } }
 
 ### 7.3 npm 薄壳包（决策点，建议：保留）
 
-**决策：保留 `npm/homer-cli` 薄壳包**，主通道 = 二进制。薄壳：`package.json`（bin: `homer` → install 脚本下载的 wrapper，或 postinstall 从 GitHub releases 拉取对应平台二进制到 `node_modules/.bin`；**下载失败不阻断 `npm install`**，wrapper 检测缺失时提示 install.sh）。理由：pi 生态 `pi install npm:homer-cli` 是既有安装路径（DESIGN §4 双形态），砍掉破坏存量；成本仅一个目录。**风险记录**：postinstall 拉网依赖 GitHub 可达性，README 明示离线场景用 install.sh。
+**决策：保留 `npm/homer` 薄壳包**，主通道 = 二进制。薄壳：`package.json`（bin: `homer` → install 脚本下载的 wrapper，或 postinstall 从 GitHub releases 拉取对应平台二进制到 `node_modules/.bin`；**下载失败不阻断 `npm install`**，wrapper 检测缺失时提示 install.sh）。理由：pi 生态 `pi install npm:@zzjcool/homer` 是既有安装路径（DESIGN §4 双形态），砍掉破坏存量；成本仅一个目录。**风险记录**：postinstall 拉网依赖 GitHub 可达性，README 明示离线场景用 install.sh。
 
 ## 8. 风险表与回滚点
 

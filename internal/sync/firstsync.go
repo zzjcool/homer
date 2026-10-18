@@ -3,7 +3,7 @@ package sync
 import (
 	"sort"
 
-	"github.com/zzjcool/homer-cli/internal/core"
+	"github.com/zzjcool/homer/internal/core"
 )
 
 // FirstContactMode is the home/first-contact three-way choice.

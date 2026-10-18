@@ -1,4 +1,4 @@
-module github.com/zzjcool/homer-cli
+module github.com/zzjcool/homer
 
 go 1.23.4
 

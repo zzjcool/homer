@@ -18,5 +18,5 @@ L("after choices kids:", await ev(sid,"document.querySelector('#confirm-choices'
 L("pendingAction:", await ev(sid,"JSON.stringify({kind:app.pendingAction&&app.pendingAction.kind,step:app.scopeStep,dir:app.scopeDirection})"));
 L("adapters:", await ev(sid,"JSON.stringify([...document.querySelectorAll('#confirm-choices input[data-adapter]')].map(i=>[i.dataset.adapter,i.checked,i.disabled]))"));
 L("ok:", await ev(sid,"JSON.stringify({t:document.querySelector('#btn-confirm-ok').textContent,d:document.querySelector('#btn-confirm-ok').disabled})"));
-await shot(sid,"/root/code/homer-cli/.qa-hunt/shots-B/02-dispatch-dlg.png");
+await shot(sid,"/root/code/homer/.qa-hunt/shots-B/02-dispatch-dlg.png");
 process.exit(0);

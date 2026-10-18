@@ -15,10 +15,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/gens"
-	"github.com/zzjcool/homer-cli/internal/gitx"
-	"github.com/zzjcool/homer-cli/internal/keyring"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/gens"
+	"github.com/zzjcool/homer/internal/gitx"
+	"github.com/zzjcool/homer/internal/keyring"
 )
 
 // Planner-frozen test names (MVP step 2). The sync API collapses

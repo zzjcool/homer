@@ -23,6 +23,6 @@ L("T2 desc:", await ev(sid,"document.querySelector('#confirm-desc').textContent"
 L("T2 pendingAction:", await ev(sid,"JSON.stringify({kind:app.pendingAction&&app.pendingAction.kind,step:app.scopeStep,dir:app.scopeDirection})"));
 L("T2 adapter checkboxes:", await ev(sid,"JSON.stringify([...document.querySelectorAll('#confirm-choices input[data-adapter]')].map(i=>[i.dataset.adapter,i.checked,i.disabled]))"));
 L("T2 ok btn:", await ev(sid,"JSON.stringify({t:btn_confirm_ok.textContent,d:btn_confirm_ok.disabled})"));
-await shot(sid,"/root/code/homer-cli/.qa-hunt/shots-B/02-dispatch-dlg.png");
+await shot(sid,"/root/code/homer/.qa-hunt/shots-B/02-dispatch-dlg.png");
 await ev(sid,"document.querySelector('#dlg-confirm').close('cancel')");
 process.exit(0);

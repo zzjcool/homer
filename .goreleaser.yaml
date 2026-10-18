@@ -33,7 +33,7 @@ checksum:
 release:
   github:
     owner: zzjcool
-    name: homer-cli
+    name: homer
   mode: replace
 
 changelog:

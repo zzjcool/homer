@@ -3,8 +3,8 @@ package commands
 import (
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/engine"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/engine"
 )
 
 // The hub's wire snapshot knows neither a category's sync mode nor its

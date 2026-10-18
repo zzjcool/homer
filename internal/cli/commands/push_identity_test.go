@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/doctor"
-	"github.com/zzjcool/homer-cli/internal/gitx"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/doctor"
+	"github.com/zzjcool/homer/internal/gitx"
 )
 
 func isolateMissingGitIdentity(t *testing.T) string {

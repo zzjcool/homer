@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/gens"
-	"github.com/zzjcool/homer-cli/internal/resolutions"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/gens"
+	"github.com/zzjcool/homer/internal/resolutions"
 )
 
 // Conflict resolution (planner-frozen MVP step 4): the console never

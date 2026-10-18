@@ -1,6 +1,6 @@
 package hub
 
-import "github.com/zzjcool/homer-cli/internal/toolctl"
+import "github.com/zzjcool/homer/internal/toolctl"
 
 const (
 	// maxTools bounds how many programs one machine may list. The registry

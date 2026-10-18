@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/hub"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/hub"
 )
 
 type taskClass uint8

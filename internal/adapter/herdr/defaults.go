@@ -1,6 +1,6 @@
 package herdr
 
-import "github.com/zzjcool/homer-cli/internal/core"
+import "github.com/zzjcool/homer/internal/core"
 
 // HerdrAdapterID is the stable adapter identifier.
 const HerdrAdapterID = "herdr"

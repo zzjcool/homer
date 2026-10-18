@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/pluginregistry"
-	"github.com/zzjcool/homer-cli/internal/pluginruntime"
-	"github.com/zzjcool/homer-cli/internal/web"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/pluginregistry"
+	"github.com/zzjcool/homer/internal/pluginruntime"
+	"github.com/zzjcool/homer/internal/web"
 )
 
 func TestPluginManagementConsole(t *testing.T) {

@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/stream"
-	"github.com/zzjcool/homer-cli/internal/stream/streamtest"
-	"github.com/zzjcool/homer-cli/internal/toolctl"
+	"github.com/zzjcool/homer/internal/stream"
+	"github.com/zzjcool/homer/internal/stream/streamtest"
+	"github.com/zzjcool/homer/internal/toolctl"
 )
 
 func toolStatus(id, version string) toolctl.Status {

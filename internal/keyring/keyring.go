@@ -22,10 +22,10 @@ import (
 
 	"filippo.io/age"
 
-	"github.com/zzjcool/homer-cli/internal/adapter/keys"
-	"github.com/zzjcool/homer-cli/internal/agecrypto"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/gens"
+	"github.com/zzjcool/homer/internal/adapter/keys"
+	"github.com/zzjcool/homer/internal/agecrypto"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/gens"
 )
 
 const (

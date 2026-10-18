@@ -16,7 +16,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/coder/websocket"
-	"github.com/zzjcool/homer-cli/internal/stream"
+	"github.com/zzjcool/homer/internal/stream"
 )
 
 const (

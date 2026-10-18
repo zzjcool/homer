@@ -1,6 +1,6 @@
 package keys
 
-import "github.com/zzjcool/homer-cli/internal/core"
+import "github.com/zzjcool/homer/internal/core"
 
 // AdapterID is the synced keyring. The id is "keyring", not "keys": homer's
 // gitignore entry "keys/" hides the local age identity directory and would

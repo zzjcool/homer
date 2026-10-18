@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zzjcool/homer-cli/internal/core"
-	syncx "github.com/zzjcool/homer-cli/internal/sync"
+	"github.com/zzjcool/homer/internal/core"
+	syncx "github.com/zzjcool/homer/internal/sync"
 )
 
 func TestScopedCollectPublishesOnlyTheSelection(t *testing.T) {

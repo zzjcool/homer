@@ -14,10 +14,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zzjcool/homer-cli/internal/agecrypto"
-	"github.com/zzjcool/homer-cli/internal/cli/commands"
-	"github.com/zzjcool/homer-cli/internal/core"
-	"github.com/zzjcool/homer-cli/internal/pair/pairtest"
+	"github.com/zzjcool/homer/internal/agecrypto"
+	"github.com/zzjcool/homer/internal/cli/commands"
+	"github.com/zzjcool/homer/internal/core"
+	"github.com/zzjcool/homer/internal/pair/pairtest"
 )
 
 func TestV13PairCLIBinaryWithEmptyPATHShowsInstallAndGitFallback(t *testing.T) {

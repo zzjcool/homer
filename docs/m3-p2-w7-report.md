@@ -67,7 +67,7 @@
 
 ```
 $ npm run typecheck
-> homer-cli@0.0.0 typecheck
+> homer@0.0.0 typecheck
 > tsc --noEmit
 （无输出 = 成功）
 

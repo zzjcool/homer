@@ -1,7 +1,7 @@
 #!/bin/sh
 # Repeat mutex test with confirm=true so both pull requests reach the real dispatch path.
-LOG=/root/code/homer-cli/.qa-hunt/D/mutex2.log
-DC="docker compose -f /root/code/homer-cli/qa/env/docker-compose.yml"
+LOG=/root/code/homer/.qa-hunt/D/mutex2.log
+DC="docker compose -f /root/code/homer/qa/env/docker-compose.yml"
 : > $LOG
 DEAD=54d0c3373428-4323
 LIVE=b6675d68ddf7-7920

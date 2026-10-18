@@ -1,6 +1,6 @@
 package opencode
 
-import "github.com/zzjcool/homer-cli/internal/adapter"
+import "github.com/zzjcool/homer/internal/adapter"
 
 type ScanError = adapter.ScanError
 type ScanOutcome = adapter.ScanOutcome

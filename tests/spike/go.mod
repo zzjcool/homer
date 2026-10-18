@@ -1,4 +1,4 @@
-module github.com/zzjcool/homer-cli/tests/spike
+module github.com/zzjcool/homer/tests/spike
 
 go 1.23.4
 
