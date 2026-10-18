@@ -612,6 +612,18 @@ dialog[open] {
 }
 #dlg-confirm { max-width: 560px; }
 #dlg-view { max-width: 640px; }
+#dlg-hub { max-width: 520px; }
+.hub-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 5px 14px; margin: 0; font-size: var(--fs-small); }
+.hub-facts dt { color: var(--ink-dim); }
+.hub-facts dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.hub-progress { margin-top: 12px; }
+.hub-progress .bar { height: 6px; background: var(--bg-sink); border: 1px solid var(--line); border-radius: 99px; overflow: hidden; }
+.hub-progress .bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width var(--dur-3) var(--ease-out); }
+.hub-progress p { margin: 6px 0 0; }
+#hub-note { margin: 10px 0 0; white-space: pre-line; }
+#hub-note:empty { display: none; }
+.hub-rollback { margin: 10px 0 0; color: var(--warn); font-size: var(--fs-small); }
+.hub-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .choice-list { display: grid; gap: 8px; margin-top: 10px; max-height: 42vh; overflow: auto; }
 .cred-note { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; color: var(--danger); }
 .choice-block { border: 1px solid var(--line); border-radius: var(--radius); }
@@ -785,6 +797,7 @@ dialog menu { display: flex; gap: 8px; justify-content: flex-end; padding: 0; ma
     </select>
   </div>
   <button class="text" id="btn-plugins" type="button" aria-haspopup="dialog">插件</button>
+  <button class="text" id="btn-hub" type="button">Hub</button>
   <button class="text" id="btn-join-top" type="button">接入命令</button>
   <button class="text" id="btn-refresh" type="button">刷新</button>
   <button class="text" id="btn-logout" type="button">退出</button>
@@ -968,6 +981,30 @@ dialog menu { display: flex; gap: 8px; justify-content: flex-end; padding: 0; ma
   </form>
 </dialog>
 
+<!-- ============ hub dialog: the center's own program ============ -->
+<dialog id="dlg-hub" aria-labelledby="hub-title">
+  <form method="dialog" style="margin:0">
+    <h2 id="hub-title">Hub</h2>
+    <p class="muted small">中心就是这台机器上的 homer 服务。更新会先下载并核对新版本，装好之后中心自己重启，这期间控制台读不到状态是正常的。</p>
+    <dl class="hub-facts">
+      <dt>当前版本</dt><dd id="hub-current">—</dd>
+      <dt>最新版本</dt><dd id="hub-latest">未知</dd>
+      <dt>状态</dt><dd id="hub-phase">—</dd>
+    </dl>
+    <div id="hub-progress" class="hub-progress hidden">
+      <div class="bar"><i id="hub-progress-bar"></i></div>
+      <p class="muted small" id="hub-progress-text"></p>
+    </div>
+    <p id="hub-note" class="muted small"></p>
+    <p id="hub-rollback" class="hub-rollback hidden" role="status">已回滚到上一个版本</p>
+    <div class="hub-actions">
+      <button type="button" class="primary" id="btn-hub-upgrade">更新并重启</button>
+      <button type="button" id="btn-hub-restart">仅重启</button>
+    </div>
+    <menu><button value="ok" id="btn-hub-close">关闭</button></menu>
+  </form>
+</dialog>
+
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
@@ -978,7 +1015,10 @@ const $ = id => document.getElementById(id);
  * POST /api/auth/login    {password}
  * POST /api/auth/logout
  * GET  /api/auth/join     {command}
- * GET  /api/health        {version}
+ * GET  /api/health        {version,bootId,startedAt}
+ * GET  /api/hub           {version,bootId,phase,canUpdate,latest,downloaded,total,note,rolledBack}
+ * POST /api/hub/upgrade   202 {phase,bootId}
+ * POST /api/hub/restart   202 {restartId,bootId,busy}
  * GET  /api/console       {published, generation, machines:[{agentId,hostname,stale,drift:{push,pull,conflicts},adapters:[{id,push,pull,conflicts}]}]}
  *                         (adapters always present; [] when no per-adapter detail — #51 fleet overview aggregates by id)
  * GET  /api/status        {report:{...}} (机器视角的兼容端点)
@@ -1001,6 +1041,8 @@ const app = {
   agents: [],             // 最近一次 /api/agents 的机器列表
   refreshing: false,
   refreshManualRequested: false,
+  restarting: false,      // 中心重启中：主轮询暂停，重启流程自己做健康检查（D19）
+  hub: null,              // 最近一次 /api/hub 的返回值，只在 Hub 弹窗里用
   plugins: null,          // 最近一次 /api/plugins 的安装状态
   pluginAction: null,     // 当前正在填写的 action 插件
   pluginListSignature: null,
@@ -1080,7 +1122,7 @@ function showGate(which, note) {
   $("workspace").classList.add("hidden");
   $("gate-setup").classList.toggle("hidden", which !== "setup");
   $("gate-login").classList.toggle("hidden", which !== "login");
-  $("btn-plugins").classList.add("hidden"); $("btn-join-top").classList.add("hidden"); $("btn-refresh").classList.add("hidden"); $("btn-logout").classList.add("hidden");
+  $("btn-plugins").classList.add("hidden"); $("btn-hub").classList.add("hidden"); $("btn-join-top").classList.add("hidden"); $("btn-refresh").classList.add("hidden"); $("btn-logout").classList.add("hidden");
   if (which === "login") {
     $("login-note").textContent = note || "homer hub 控制台";
     setTimeout(() => $("in-login-pw").focus(), 0);
@@ -1090,7 +1132,7 @@ function showGate(which, note) {
 function showWorkspace() {
   $("gate-setup").classList.add("hidden"); $("gate-login").classList.add("hidden");
   $("workspace").classList.remove("hidden");
-  $("btn-plugins").classList.remove("hidden"); $("btn-join-top").classList.remove("hidden"); $("btn-refresh").classList.remove("hidden"); $("btn-logout").classList.remove("hidden");
+  $("btn-plugins").classList.remove("hidden"); $("btn-hub").classList.remove("hidden"); $("btn-join-top").classList.remove("hidden"); $("btn-refresh").classList.remove("hidden"); $("btn-logout").classList.remove("hidden");
 }
 
 /* ---------- ① hero: the server's storage view ---------- */
@@ -5145,6 +5187,9 @@ function stampRefresh(failed) {
 }
 
 async function refresh(source) {
+  // 中心正在重启：这一段所有请求都会失败，30s 主轮询必须安静下来，
+  // 否则首页会被打成「状态加载失败」。重启流程自己轮询 /api/health（D19）。
+  if (app.restarting) return;
   const manual = source === "manual";
   const btn = $("btn-refresh");
   if (app.refreshing) {
@@ -5275,6 +5320,253 @@ $("form-plugin-manifest").addEventListener("submit", submitThirdPartyPlugin);
 $("form-plugin-action").addEventListener("submit", submitPluginAction);
 $("btn-plugin-action-cancel").addEventListener("click", () => $("dlg-plugin-action").close());
 $("dlg-plugin-action").addEventListener("close", () => { app.pluginAction = null; });
+
+/* ---------- hub: the center's own program (contract D15–D19) ---------- */
+const HUB_RESTART_POLL_MS = 500;
+const HUB_RESTART_TIMEOUT_MS = 60000;
+const HUB_UPDATE_POLL_MS = 1000;
+const HUB_UPDATE_TIMEOUT_MS = 10 * 60 * 1000;
+const HUB_ACTIVE_PHASES = ["checking", "downloading", "installing", "restarting"];
+const HUB_RESTART_QUESTION = "重新启动中心？控制台大约 10 秒不可用，正在进行的同步会被中断。";
+
+function hubSleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+function hubVersionText(value) {
+  const raw = value == null ? "" : String(value).trim();
+  if (!raw) return "未知";
+  return (raw === "dev" || raw.charAt(0) === "v") ? raw : "v" + raw;
+}
+function hubPhaseText(phase) {
+  switch (phase) {
+    case "checking": return "正在检查最新版本…";
+    case "downloading": return "正在下载新版本…";
+    case "installing": return "正在安装新版本…";
+    case "restarting": return "正在重启中心…";
+    case "failed": return "没有成功";
+    case "unknown": return "读不到状态";
+    default: return "空闲";
+  }
+}
+function hubProgressPercent(status) {
+  const total = Number(status.total) || 0, done = Number(status.downloaded) || 0;
+  if (total <= 0) return null;
+  return Math.max(0, Math.min(100, (done / total) * 100));
+}
+function hubProgressText(status) {
+  const total = Number(status.total) || 0, done = Number(status.downloaded) || 0;
+  if (total > 0) return fmtBytes(done) + " / " + fmtBytes(total);
+  return "已下载 " + fmtBytes(done);
+}
+// 把一份 /api/hub 回执画到弹窗里。不拼 HTML：一律 el()/textContent（项目约定）。
+function renderHubDialog(status) {
+  const view = status || {};
+  const phase = view.phase || "idle";
+  $("hub-current").textContent = hubVersionText(view.version);
+  $("hub-latest").textContent = view.latest ? hubVersionText(view.latest) : "未知";
+  $("hub-phase").textContent = hubPhaseText(phase);
+  const progress = $("hub-progress"), bar = $("hub-progress-bar");
+  if (phase === "downloading") {
+    const pct = hubProgressPercent(view);
+    progress.classList.remove("hidden");
+    bar.style.width = (pct == null ? 0 : pct) + "%";
+    $("hub-progress-text").textContent = hubProgressText(view);
+  } else {
+    progress.classList.add("hidden");
+    bar.style.width = "0%";
+    $("hub-progress-text").textContent = "";
+  }
+  $("hub-note").textContent = view.note || "";
+  $("hub-rollback").classList.toggle("hidden", view.rolledBack !== true);
+  const busy = HUB_ACTIVE_PHASES.indexOf(phase) >= 0 || app.restarting;
+  const upgrade = $("btn-hub-upgrade"), restart = $("btn-hub-restart");
+  upgrade.disabled = busy || view.canUpdate !== true;
+  restart.disabled = busy;
+  upgrade.title = view.canUpdate === true ? "检查、下载并装好新版本，然后中心自动重启" : (view.note || "这个中心不能自动更新");
+  restart.title = "不换程序，只把中心重启一遍";
+}
+async function openHub() {
+  renderHubDialog(app.hub);
+  const dlg = $("dlg-hub");
+  if (!dlg.open) dlg.showModal();
+  await hubReloadStatus();
+}
+async function hubReloadStatus() {
+  try {
+    app.hub = await api("/api/hub");
+  } catch (e) {
+    app.hub = {
+      version: "", bootId: "", phase: "unknown", canUpdate: false,
+      latest: "", downloaded: 0, total: 0, note: (e && e.message) || "读不到中心的状态",
+      rolledBack: false,
+    };
+  }
+  renderHubDialog(app.hub);
+  return app.hub;
+}
+function hubErrorLine(e) {
+  const details = e && Array.isArray(e.errors) ? e.errors.filter(Boolean) : [];
+  const message = (e && e.message) || "没有完成";
+  return details.length ? message + "：" + details.join("；") : message;
+}
+// 弹窗是 modal：页级提示条在它后面。先关弹窗再报错，否则用户什么也看不到。
+function hubAlert(title, lines, hint, actions) {
+  const dlg = $("dlg-hub");
+  if (dlg.open) dlg.close();
+  showAlert(title, lines, hint, actions);
+}
+function hubUpdateQuestion(status) {
+  const current = hubVersionText(status && status.version);
+  const latest = status && status.latest ? hubVersionText(status.latest) : "";
+  if (latest) {
+    return "把中心从 " + current + " 更新到 " + latest + "？下载完成后中心会重启，控制台大约 10 秒不可用。";
+  }
+  return "更新到最新版本？会先检查再下载；完成后中心会重启，控制台大约 10 秒不可用。";
+}
+// 重启成功判据只看 bootId（版本在纯重启后不变，dev hub 也恒「最新」）。
+// 每轮单独 try/catch：中心停机时请求会直接失败，那正是重启窗口。
+async function hubWaitForBoot(oldBootId) {
+  const deadline = Date.now() + HUB_RESTART_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    await hubSleep(HUB_RESTART_POLL_MS);
+    try {
+      const res = await fetch("/api/health", {
+        credentials: "same-origin",
+        headers: { "Accept": "application/json" },
+        cache: "no-store",
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      // 基线 bootId 未知时不能凭「有 bootId」就当重启成功：那会把“旧进程
+      // 还没死”读成已完成。只认「和重启前的 bootId 不一样」。
+      if (oldBootId && data && data.bootId && data.bootId !== oldBootId) {
+        return { ok: true, version: data.version == null ? "" : String(data.version) };
+      }
+    } catch (_) {
+      // 还没回来，继续等。
+    }
+  }
+  return { ok: false };
+}
+// 重启前那个进程的 bootId。POST 的 202 回执已经带了；万一没有就现读一次，
+// 否则判据会退化成“任何健康回话都算成功”。
+async function hubOldBootId(fallback) {
+  if (fallback) return String(fallback);
+  try {
+    const status = await api("/api/hub");
+    return (status && status.bootId) || "";
+  } catch (_) {
+    return "";
+  }
+}
+async function hubAwaitRestart(oldBootId, versionBefore) {
+  app.restarting = true;
+  if (app.hub) { app.hub.phase = "restarting"; renderHubDialog(app.hub); }
+  const result = await hubWaitForBoot(oldBootId);
+  app.restarting = false;
+  if (!result.ok) {
+    hubAlert("中心没有在预期时间内回来",
+      ["已经等待 60 秒，健康检查仍然失败。"],
+      "请在服务器上确认 homer 进程还在、查看它的日志；必要时重新执行 `homer serve`。",
+      [{ label: "重新加载页面", primary: true, onClick: () => location.reload() }]);
+    return false;
+  }
+  // header 的版本只在 boot() 里读过一次，不重读就永远显示旧值。
+  await loadHeaderVersion();
+  try { await refresh(); } catch (_) {}
+  if (versionBefore && result.version && result.version !== versionBefore) {
+    toast("中心已重启（" + hubVersionText(result.version) + "）");
+  } else {
+    toast("中心已重启，版本没有变化");
+  }
+  await hubReloadStatus();
+  return true;
+}
+async function hubRestartNow() {
+  let status = app.hub;
+  if (!status || status.phase === "unknown") status = await hubReloadStatus();
+  const versionBefore = status && status.version ? String(status.version) : "";
+  if (!window.confirm(HUB_RESTART_QUESTION)) return;
+  setBusy("正在重启中心…");
+  let accepted = null;
+  try {
+    accepted = await api("/api/hub/restart", { method: "POST", body: {} });
+  } catch (e) {
+    hubAlert("中心没有重启", [hubErrorLine(e)],
+      "这次重启没有被受理，中心应该还在正常运行；可以先重新加载页面确认。");
+    return;
+  } finally { clearBusy(); }
+  if (accepted && accepted.busy === true) toast("有同步被中断，中心正在重启");
+  const oldBootId = await hubOldBootId(accepted && accepted.bootId);
+  await hubAwaitRestart(oldBootId, versionBefore);
+}
+async function hubUpdateAndRestart() {
+  let status = app.hub;
+  if (!status || status.phase === "unknown") status = await hubReloadStatus();
+  if (status.canUpdate !== true) {
+    hubAlert("中心不能自己更新", [status.note || "这个中心不能自动更新"],
+      "请在服务器上用发布出来的新版本替换 homer，然后重启服务。");
+    return;
+  }
+  const versionBefore = status.version ? String(status.version) : "";
+  if (!window.confirm(hubUpdateQuestion(status))) return;
+  setBusy("正在更新中心…");
+  let accepted = null;
+  try {
+    accepted = await api("/api/hub/upgrade", { method: "POST", body: {} });
+  } catch (e) {
+    hubAlert("中心没有更新成功", [hubErrorLine(e)],
+      "这次更新没有被受理，中心应该还在正常运行，可以直接重试。");
+    return;
+  } finally { clearBusy(); }
+  const oldBootId = await hubOldBootId(accepted && accepted.bootId);
+  await hubWatchUpdate(oldBootId, versionBefore);
+}
+// 更新期间的进度：每秒读一次 /api/hub，直到 restarting / failed / idle。
+// 中心换进程时 /api/hub 会连不上，从那一刻起只等健康检查回话。
+async function hubWatchUpdate(oldBootId, versionBefore) {
+  const deadline = Date.now() + HUB_UPDATE_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    await hubSleep(HUB_UPDATE_POLL_MS);
+    let status = null;
+    try {
+      status = await api("/api/hub");
+    } catch (e) {
+      if (e && e.status === 401) {
+        // 会话过期跟「中心重启中」是两回事，不要等 60 秒再报重启超时。
+        hubAlert("会话已经过期", [hubErrorLine(e)], "请重新登录后点开右上角的 Hub 看看更新到了哪一步。");
+        return;
+      }
+      await hubAwaitRestart(oldBootId, versionBefore);
+      return;
+    }
+    app.hub = status;
+    renderHubDialog(status);
+    if (status.phase === "restarting") {
+      await hubAwaitRestart(oldBootId, versionBefore);
+      return;
+    }
+    if (status.phase === "failed") { hubShowUpdateFailure(status); return; }
+    if (status.phase === "idle") {
+      if (status.note) toast(status.note);
+      return;
+    }
+  }
+  hubShowUpdateFailure({ note: "这次更新在 10 分钟里没有结束。" });
+}
+// 后端只用 note 区分两条失败分支（没有单独的机器可读字段），这里按 note 分。
+function hubUpdateFailureHint(note) {
+  const text = String(note || "");
+  if (/装好|已安装|没有重启|未重启/.test(text)) return "新版本已经装好，重启中心就会生效。";
+  return "这次没有替换任何文件，可以直接重试。";
+}
+function hubShowUpdateFailure(status) {
+  const note = (status && status.note) || "更新没有完成。";
+  hubAlert("中心没有更新成功", [note], hubUpdateFailureHint(note),
+    [{ label: "重新加载页面", onClick: () => location.reload() }]);
+}
+
+$("btn-hub").addEventListener("click", openHub);
+$("btn-hub-upgrade").addEventListener("click", hubUpdateAndRestart);
+$("btn-hub-restart").addEventListener("click", hubRestartNow);
 
 
 /* ---------- theme (VISUAL.md §1: system / light / dark) ---------- */
