@@ -94,6 +94,14 @@ const (
 	hubHTTPSShutdownWait = 2 * time.Second
 	// Best-effort write-lock probe (D11). Losing it never blocks a restart.
 	hubWriteProbeWait = 2 * time.Second
+	// execVerdictWait bounds how long the serve loop waits for the restart
+	// goroutine's failure verdict after the HTTP server has been drained.
+	// syscall.Exec never returns on success, so this window only has to cover
+	// the drain steps plus a failed exec (200ms grace + 3s agents + 2s HTTP +
+	// 2s probe ≈ 7.2s) with room to spare. Exceeding it means that goroutine
+	// died unexpectedly; the loop then re-binds instead of hanging with
+	// nothing listening.
+	execVerdictWait = 30 * time.Second
 	// D5's budget for reloading local agents onto the new binary.
 	hubAgentRestartWait = 10 * time.Second
 	// D13: only a same-binary restart within this window is a crash-loop

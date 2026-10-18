@@ -219,6 +219,23 @@ func runServe(options CommandOptions, out, errOut io.Writer) int {
 				writeLine(errOut, fmt.Sprintf("homer serve: %s", err.Error()))
 				return 1
 			}
+			// Serve returned nil, which only http.Server.Shutdown produces here:
+			// a console restart drained this stack on its way to syscall.Exec.
+			// The exec runs on its own goroutine, so returning now would exit
+			// the process before the image is replaced — the restart would
+			// answer 202 and then simply kill the hub (observed in smoke
+			// testing). Wait for the exec's verdict instead: success never
+			// reports back, so only the failure signal can arrive. The bound
+			// keeps a panic in that goroutine from hanging the hub silently;
+			// behaving like a failed exec (re-bind and serve) is strictly
+			// better than freezing with nothing listening.
+			select {
+			case <-hubOps.execFailed:
+				recover = true
+			case <-time.After(execVerdictWait):
+				writeLine(errOut, "homer serve: 重启没有按预期替换进程，继续提供服务。")
+				recover = true
+			}
 		case <-ctx.Done():
 			shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			// Tell every agent we are going away (close 1001) before the HTTP

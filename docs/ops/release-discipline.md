@@ -33,7 +33,30 @@ xattr -d com.apple.quarantine ~/.local/bin/homer
   带 `X-Homer-Platform` 响应头，agent 侧校验拒绝错架构。
 - Windows：`reexec_other.go` 空实现，升级后需手动重启。
 
-## hub 自身升级（hw 机器）
+## hub 自身升级与重启（控制台一键完成）
+
+控制台右上角 **Hub** 按钮可以直接「更新并重启」或「仅重启」中心，不必登录机器。
+
+- **更新并重启**：从 GitHub Releases 拉最新版（带 `checksums.txt` SHA256 校验）→ 换二进制 →
+  重启本机 agent → 原地重启 hub。源码构建（`version == dev`）的 hub 会拒绝此操作：
+  那会把 dev 降级成 release，请走下面的手工流程。
+- **仅重启**：只重启 hub，不碰 agent 进程。
+- 重启方式 = `syscall.Exec` **原地换进程（PID 不变）**。这与 `systemctl --user restart`
+  的区别很重要：不依赖 unit 的 `Restart=` 策略，`Type=simple` / `Restart=always` /
+  `Restart=no` 三种配置行为一致，也不会和 supervisor 抢端口。
+- 重启会先给所有 agent 发 `close 1001 "hub restarting"`，agent 自动退避重连，无需人工干预。
+  正在进行的同步会被中断（最多丢掉一次约 12 分钟的同步），恢复后重新发起即可。
+- 前端以 `/api/health` 的 `bootId` 变化判定重启成功（纯重启版本号不变，所以不能看版本）。
+
+**防崩溃循环**：换二进制前会把现程序备份成 `<binary>.prev`，并在 `keys/.hub-boot`
+写启动标记。若同一份新二进制连续两次没活到监听成功，会自动回滚到 `.prev` 并再 exec 一次，
+控制台会显示「已回滚到上一个版本」。同一版本只回滚一次，不会循环。
+
+**没有 supervisor 时**（裸 `nohup`、容器 PID 1、macOS 终端跑）：exec 失败不会让 hub 消失，
+它会重新绑定端口继续服务并在日志里报错。检测到 systemd（`INVOCATION_ID` 非空）才交回给
+supervisor。
+
+### 手工升级（源码构建 / dev 版本 / 无网络时）
 
 ```bash
 cd ~/code/homer && git pull
@@ -41,3 +64,6 @@ go build -ldflags "-s -w -X main.version=$(git describe --tags)" -o /tmp/homer .
 install -m 755 /tmp/homer ~/.local/bin/homer.new && mv ~/.local/bin/homer.new ~/.local/bin/homer
 systemctl --user restart homer-serve   # hub；同机 agent 也跑这个二进制，记得 restart homer-agent
 ```
+
+注意：手工替换二进制后如果**不**重启 hub，`/dl/homer` 会流式下发的仍是磁盘上那份新二进制
+（`serveSelfBinary` 读当前文件而非启动快照），但 hub 进程本身仍跑旧代码。

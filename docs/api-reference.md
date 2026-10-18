@@ -251,3 +251,82 @@ curl -sS -X POST "$HUB/api/agents/<agentID>/adapters/pi" \
 - 显式下发停用项：`POST /api/agents/<id>/pull` 返回 400 `adapter-disabled-for-agent`
 - 扇出跳过：`POST /api/sync?direction=dispatch` 响应 `agents[].skipped=true` +
   `reason: "adapters disabled for this agent"`
+
+## Hub 自身：状态、更新与重启
+
+控制台右上角「Hub」按钮用的三个端点。它们操作的是 **hub 自己**，与
+`/api/agents/<id>/upgrade`（更新某台机器）无关。契约见
+`docs/plan/2026-10-18-hub-self-update-contract.md`。
+
+三者都是 admin-only（浏览器会话 cookie 或 hub token）；机器凭证（per-agent secret）
+访问会被 401 拒绝。
+
+### `GET /api/hub`
+
+```sh
+curl -sS -H "Authorization: Bearer $HOMER_HUB_TOKEN" "$HUB/api/hub"
+```
+
+```json
+{"version":"v1.5.0","bootId":"9f3c1a77","phase":"idle","canUpdate":true,
+ "latest":"v1.5.0","downloaded":0,"total":0}
+```
+
+| 字段 | 说明 |
+|---|---|
+| `version` | 本进程的构建版本；源码构建为 `dev` |
+| `bootId` | 本进程身份，8 hex，每次进程启动重新生成 |
+| `phase` | `idle`/`checking`/`downloading`/`installing`/`restarting`/`failed` |
+| `canUpdate` | 是否能自更新；`dev` 构建或 `HOMER_NO_VERSION_CHECK=1` 时为 `false` |
+| `latest` | 已知最新 tag（后台 10 分钟缓存，可能缺失） |
+| `downloaded`/`total` | 下载进度；`total` 为 0 表示服务端未给长度 |
+| `note` | 人话说明（失败原因 / 已是最新 / 为何不能更新） |
+| `rolledBack` | 本次启动是靠回滚上一版起来的 |
+
+读路径**不发网络请求**；hub 未接线该能力时 501 `hub-disabled`。
+
+### `POST /api/hub/upgrade`
+
+检查 → 下载 → SHA256 校验（`checksums.txt`）→ 换二进制 → 重启本机 agent →
+原地重启 hub。**202 只表示已受理**，过程在后台跑，进度靠 `GET /api/hub` 轮询。
+
+```sh
+curl -sS -X POST -H "Authorization: Bearer $HOMER_HUB_TOKEN" "$HUB/api/hub/upgrade"
+# 202 {"phase":"checking","bootId":"9f3c1a77"}
+```
+
+| 码 | code | 场景 |
+|---|---|---|
+| 202 | — | 已受理 |
+| 409 | `hub-dev-version` | 源码构建的 hub，拒绝自更新（不提供 force） |
+| 409 | `hub-up-to-date` | 已是最新版本 |
+| 409 | `hub-update-running` | 已有更新在跑（`downloading`/`installing` 期间 restart 同此码） |
+| 502 | `hub-update-failed` | 受理前的同步失败（如无法定位当前程序） |
+| 501 | `hub-disabled` | hub 未接线该能力 |
+
+### `POST /api/hub/restart`
+
+原地重启（`syscall.Exec`，**PID 不变**）。先给所有 agent 发 close 1001
+`"hub restarting"`，再迅速换进程；agent 自动重连。
+
+```sh
+curl -sS -X POST -H "Authorization: Bearer $HOMER_HUB_TOKEN" "$HUB/api/hub/restart"
+# 202 {"restartId":"985a440ccda6d9c8","bootId":"82396652","busy":false}
+```
+
+- `busy:true` 表示受理瞬间有写操作持有中心写锁（例如一次长时间下发）：
+  它已被中断，客户端应提示用户重新发起。
+- **确认重启成功**：轮询 `GET /api/health`（免鉴权），直到 `200` 且 `bootId` 变化。
+  不要用 `version` 判断——纯重启版本号不变。
+- 非 linux/darwin 平台 501 `hub-restart-unsupported`，且绝不会让进程退出。
+- 重启窗口内其他写请求返回 503 `restarting`「中心正在重启，请稍后重试」
+  （区别于写锁竞争的 503 `write-busy`）。
+
+### `GET /api/health`（扩展字段）
+
+```json
+{"ok":true,"status":"healthy","version":"v1.5.0","homerHome":"/root/.homer",
+ "bootId":"9f3c1a77","startedAt":"2026-10-18T10:13:42Z"}
+```
+
+免鉴权。`bootId`/`startedAt` 是本进程身份与启动时刻，供控制台判定重启是否完成。
