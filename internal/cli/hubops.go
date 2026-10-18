@@ -46,24 +46,24 @@ import (
 
 // Hub update phases and error codes.
 //
-// These are literal mirrors of the unexported hubPhase*/hubCode* constants in
-// internal/web/hubops.go: that file is the shared contract surface and
-// belongs to the integrating agent, and its identifiers are lowercase, so
-// package cli cannot reference them. The values are frozen by contract D4/D8 —
-// changing one requires changing both places. The web layer's draining rule
-// keys on Phase == "restarting", so a drift here silently disables draining.
+// These alias the exported web.HubPhase* / web.HubCode* constants, which are
+// themselves aliases of the unexported ones in internal/web/hubops.go. The
+// chain matters: web.HubStatus.Phase is what the web layer's draining rule
+// keys on, so a literal spelled here could drift from the value the web layer
+// compares against and silently disable draining. Referencing the exported
+// alias makes that impossible.
 const (
-	hubPhaseIdle        = "idle"
-	hubPhaseChecking    = "checking"
-	hubPhaseDownloading = "downloading"
-	hubPhaseInstalling  = "installing"
-	hubPhaseRestarting  = "restarting"
-	hubPhaseFailed      = "failed"
+	hubPhaseIdle        = web.HubPhaseIdle
+	hubPhaseChecking    = web.HubPhaseChecking
+	hubPhaseDownloading = web.HubPhaseDownloading
+	hubPhaseInstalling  = web.HubPhaseInstalling
+	hubPhaseRestarting  = web.HubPhaseRestarting
+	hubPhaseFailed      = web.HubPhaseFailed
 
-	hubCodeUnsupported = "hub-restart-unsupported"
-	hubCodeDevVersion  = "hub-dev-version"
-	hubCodeRunning     = "hub-update-running"
-	hubCodeFailed      = "hub-update-failed"
+	hubCodeUnsupported = web.HubCodeUnsupported
+	hubCodeDevVersion  = web.HubCodeDevVersion
+	hubCodeRunning     = web.HubCodeRunning
+	hubCodeFailed      = web.HubCodeFailed
 )
 
 // Frozen user-facing strings (contract D7/D8/D13). The console renders `note`
@@ -203,6 +203,10 @@ func newHubOps(home, boundAddr string) *hubOps {
 			return upgrade.NewDownloader(os.Getenv("HOMER_INSTALL_BASE_URL")).InstallArchive(tag, target)
 		},
 		restartAgents: commands.RestartRunningAgents,
+		// The write-lock probe is what makes HubRestartAccepted.Busy truthful:
+		// without it a restart during a long pull answers Busy=false and the
+		// console cannot tell the user a sync was interrupted (contract D11).
+		tryWriteLock:  web.ProbeWriteLock,
 		agentShutdown: func(context.Context) error { return nil },
 		httpShutdown:  func(context.Context) error { return nil },
 		phase:         hubPhaseIdle,
