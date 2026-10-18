@@ -320,6 +320,28 @@ func unlockWrite() {
 	<-writeMutex
 }
 
+// ProbeWriteLock reports whether the hub's global write lock is free right
+// now, releasing it immediately when it is. It is exported for the hub's own
+// restart path (internal/cli), which must tell the console whether a sync was
+// interrupted without ever being able to hold the lock across syscall.Exec.
+//
+// The probe never blocks longer than ctx allows and never fails: a busy hub
+// must not refuse a restart (contract D11), so the only thing it can change
+// is the Busy flag on the 202 response. true means "the lock was free: no
+// write was in flight".
+func ProbeWriteLock(ctx context.Context) bool {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	select {
+	case writeMutex <- struct{}{}:
+		<-writeMutex
+		return true
+	case <-ctx.Done():
+		return false
+	}
+}
+
 func writeLockUnavailable(w http.ResponseWriter, r *http.Request, err error) bool {
 	log.Printf("web write lock unavailable: method=%s path=%s: %v", r.Method, r.URL.Path, err)
 	writeError(w, http.StatusServiceUnavailable, "write-busy", "中心正忙，请稍后重试", nil)

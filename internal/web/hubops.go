@@ -62,6 +62,21 @@ const (
 	hubPhaseFailed      = "failed"
 )
 
+// Exported phase names for implementations outside this package (the cli
+// package builds the HubOperations implementation but cannot see unexported
+// identifiers). They are aliases, not copies: a change here changes the
+// internal constants too, so the value can never drift between the producer
+// and the consumer of HubStatus.Phase — which matters because the draining
+// rule keys on PhaseRestarting.
+const (
+	HubPhaseIdle        = hubPhaseIdle
+	HubPhaseChecking    = hubPhaseChecking
+	HubPhaseDownloading = hubPhaseDownloading
+	HubPhaseInstalling  = hubPhaseInstalling
+	HubPhaseRestarting  = hubPhaseRestarting
+	HubPhaseFailed      = hubPhaseFailed
+)
+
 // HubUpdateAccepted is the 202 body for POST /api/hub/upgrade.
 type HubUpdateAccepted struct {
 	Phase  string `json:"phase"`
@@ -108,4 +123,18 @@ const (
 	hubCodeRunning     = "hub-update-running"
 	hubCodeFailed      = "hub-update-failed"
 	hubCodeRestarting  = "restarting"
+)
+
+// Exported error codes, for the same reason as the phase aliases above: the
+// cli package constructs HubError values and must not spell the codes as
+// string literals, which would let a rename in one place silently produce an
+// unmapped code in the console.
+const (
+	HubCodeDisabled    = hubCodeDisabled
+	HubCodeUnsupported = hubCodeUnsupported
+	HubCodeDevVersion  = hubCodeDevVersion
+	HubCodeUpToDate    = hubCodeUpToDate
+	HubCodeRunning     = hubCodeRunning
+	HubCodeFailed      = hubCodeFailed
+	HubCodeRestarting  = hubCodeRestarting
 )
